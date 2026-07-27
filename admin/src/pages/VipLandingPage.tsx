@@ -188,28 +188,44 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     setError('');
 
     const cleanEmail = email.trim().toLowerCase();
+    const { ADMIN_EMAILS } = await import('../services/supabase');
 
     try {
-      const role = await getUserRoleFromSupabase(cleanEmail);
-
-      // Bloqueio de Segurança: Apenas role === 'admin' ou e-mail de fundador pode acessar
-      if (role !== 'admin' && cleanEmail !== 'wesleyfilipy454@gmail.com' && cleanEmail !== 'admin@clubparticular.com') {
-        setError('Acesso negado! Este e-mail não possui permissões de Administrador.');
-        setLoading(false);
-        return;
-      }
-
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      // 1. Tentar login no Supabase Auth com a senha digitada
+      let { data, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
 
-      if (authError) {
-        if (cleanEmail === 'wesleyfilipy454@gmail.com' || cleanEmail === 'admin@clubparticular.com') {
-          onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
-          return;
+      // Se for e-mail de fundador autorizados e ainda não existir no Auth, cria a conta no Supabase Auth
+      if (authError && ADMIN_EMAILS.includes(cleanEmail)) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              full_name: 'Wesley Filipy (Admin)',
+              role: 'admin',
+            },
+          },
+        });
+
+        if (!signUpError && signUpData?.user) {
+          data = signUpData as any;
+          authError = null;
         }
-        throw new Error('Senha ou e-mail de administrador incorretos.');
+      }
+
+      if (authError || !data?.user) {
+        throw new Error(authError?.message || 'Senha ou e-mail de administrador incorretos no Supabase.');
+      }
+
+      const role = await getUserRoleFromSupabase(data.user.id, cleanEmail);
+
+      if (role !== 'admin' && !ADMIN_EMAILS.includes(cleanEmail)) {
+        setError('Acesso negado! Este e-mail não possui permissões de Administrador.');
+        setLoading(false);
+        return;
       }
 
       onLoginSuccess('admin', cleanEmail, data.user?.user_metadata?.full_name || 'Wesley Filipy (Admin)');

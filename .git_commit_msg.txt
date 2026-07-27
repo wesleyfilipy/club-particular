@@ -1,1 +1,1 @@
-fix(auth): ajustar verificacao assincrona de e-mail de fundador no login de admin
+fix(auth): tratar validacao de e-mail e UUID sem lancar erro 22P02 no Supabase Postgres

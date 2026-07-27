@@ -22,9 +22,17 @@ export const ADMIN_EMAILS = [
 /**
  * Consulta a role oficial do usuário no Supabase user_profiles ou e-mails autorizados de fundador
  */
-export async function getUserRoleFromSupabase(userId?: string, emailParam?: string): Promise<'admin' | 'member'> {
+export async function getUserRoleFromSupabase(userIdOrEmail?: string, emailParam?: string): Promise<'admin' | 'member'> {
   try {
-    const cleanEmail = emailParam?.toLowerCase().trim();
+    let emailToTest = emailParam;
+    let userIdToTest = userIdOrEmail;
+
+    if (userIdOrEmail && userIdOrEmail.includes('@')) {
+      emailToTest = userIdOrEmail;
+      userIdToTest = undefined;
+    }
+
+    const cleanEmail = emailToTest?.toLowerCase().trim();
     if (cleanEmail && ADMIN_EMAILS.includes(cleanEmail)) {
       return 'admin';
     }
@@ -35,8 +43,10 @@ export async function getUserRoleFromSupabase(userId?: string, emailParam?: stri
       return 'admin';
     }
 
-    let targetId = userId || session?.user?.id;
-    if (targetId) {
+    let targetId = userIdToTest || session?.user?.id;
+    const isUUID = targetId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+
+    if (isUUID) {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('role')
@@ -46,6 +56,16 @@ export async function getUserRoleFromSupabase(userId?: string, emailParam?: stri
       if (error) {
         console.warn('Erro ao consultar role do usuário:', error.message);
       }
+
+      if (data && data.role === 'admin') {
+        return 'admin';
+      }
+    } else if (cleanEmail) {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('email', cleanEmail)
+        .single();
 
       if (data && data.role === 'admin') {
         return 'admin';
