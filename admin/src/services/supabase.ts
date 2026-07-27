@@ -20,31 +20,36 @@ export const ADMIN_EMAILS = [
 ];
 
 /**
- * Consulta a role oficial do usuário autenticado no Supabase user_profiles
+ * Consulta a role oficial do usuário no Supabase user_profiles ou e-mails autorizados de fundador
  */
-export async function getUserRoleFromSupabase(userId?: string): Promise<'admin' | 'member'> {
+export async function getUserRoleFromSupabase(userId?: string, emailParam?: string): Promise<'admin' | 'member'> {
   try {
+    const cleanEmail = emailParam?.toLowerCase().trim();
+    if (cleanEmail && ADMIN_EMAILS.includes(cleanEmail)) {
+      return 'admin';
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return 'member';
-
-    const userEmail = session.user.email?.toLowerCase().trim();
-    if (userEmail && ADMIN_EMAILS.includes(userEmail)) {
+    const activeEmail = session?.user?.email?.toLowerCase().trim();
+    if (activeEmail && ADMIN_EMAILS.includes(activeEmail)) {
       return 'admin';
     }
 
-    let targetId = userId || session.user.id;
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', targetId)
-      .single();
+    let targetId = userId || session?.user?.id;
+    if (targetId) {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', targetId)
+        .single();
 
-    if (error) {
-      console.warn('Erro ao consultar role do usuário:', error.message);
-    }
+      if (error) {
+        console.warn('Erro ao consultar role do usuário:', error.message);
+      }
 
-    if (data && data.role === 'admin') {
-      return 'admin';
+      if (data && data.role === 'admin') {
+        return 'admin';
+      }
     }
   } catch (err) {
     console.warn('Consulta de role no Supabase:', err);

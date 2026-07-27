@@ -60,27 +60,48 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       }
 
       // LOGIN NA CONTA EXISTENTE
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+      const cleanEmail = email.trim().toLowerCase();
+      const { ADMIN_EMAILS, getUserRoleFromSupabase } = await import('../services/supabase');
+
+      let { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
         password,
       });
 
-      if (authError || !data?.user) {
-        throw new Error(authError?.message || 'E-mail ou senha incorretos. Verifique suas credenciais.');
+      // Se o usuário de admin ainda não estiver registrado no Supabase Auth, efetua o cadastro inicial seguro
+      if (authError && (loginMode === 'admin' || ADMIN_EMAILS.includes(cleanEmail))) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              full_name: fullName || 'Wesley Filipy (Admin)',
+              role: 'admin',
+            },
+          },
+        });
+
+        if (!signUpError && signUpData?.user) {
+          data = signUpData as any;
+          authError = null;
+        }
       }
 
-      // Verificar role oficial no Supabase DB
-      const { getUserRoleFromSupabase } = await import('../services/supabase');
-      const userRole = await getUserRoleFromSupabase(data.user.id);
+      if (authError || !data?.user) {
+        throw new Error(authError?.message || 'E-mail ou senha incorretos. Verifique suas credenciais no Supabase.');
+      }
+
+      // Verificar role oficial no Supabase DB / Lista de Administradores
+      const userRole = await getUserRoleFromSupabase(data.user.id, cleanEmail);
 
       if (loginMode === 'admin' && userRole !== 'admin') {
-        throw new Error('Acesso negado: Este usuário não possui permissões administrativas.');
+        throw new Error('Acesso negado: Este e-mail não possui permissões de Administrador.');
       }
 
       onLoginSuccess(
         userRole,
-        email,
-        data.user?.user_metadata?.full_name || fullName || email.split('@')[0]
+        cleanEmail,
+        data.user?.user_metadata?.full_name || fullName || cleanEmail.split('@')[0]
       );
     } catch (err: any) {
       setError(err.message || 'Falha ao realizar autenticação. Verifique seu e-mail e senha.');

@@ -50,10 +50,30 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
     try {
       // 1. Autenticação obrigatória com senha no Supabase Auth
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      const { ADMIN_EMAILS } = await import('../services/supabase');
+      let { data, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
+
+      // Se for e-mail de fundador e ainda não existir no Auth, cria a conta no Supabase Auth
+      if (authError && ADMIN_EMAILS.includes(cleanEmail)) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              full_name: 'Wesley Filipy (Admin)',
+              role: 'admin',
+            },
+          },
+        });
+
+        if (!signUpError && signUpData?.user) {
+          data = signUpData as any;
+          authError = null;
+        }
+      }
 
       if (authError || !data?.user) {
         setError(authError?.message || 'E-mail ou senha incorretos no Supabase. Verifique suas credenciais.');
@@ -61,9 +81,9 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         return;
       }
 
-      // 2. Verificar a role oficial do usuário logado via user_id no Supabase
+      // 2. Verificar a role oficial do usuário logado via user_id e e-mail
       const userId = data.user.id;
-      const role = await getUserRoleFromSupabase(userId);
+      const role = await getUserRoleFromSupabase(userId, cleanEmail);
 
       if (role === 'admin') {
         onLoginSuccess('admin', cleanEmail, data.user.user_metadata?.full_name || 'Administrador VIP');
