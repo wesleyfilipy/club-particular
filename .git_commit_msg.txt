@@ -1,1 +1,1 @@
-fix(auth): auto-cadastrar primeiro acesso de alunos e melhorar mensagem de erro de credenciais
+feat(ui): implementar copy ultra persuasiva e posicionamento VIP para afiliados e product owners no MemberDashboard

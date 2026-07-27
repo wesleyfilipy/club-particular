@@ -350,7 +350,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   VIP MEMBER PORTAL
                 </span>
               </div>
-              <p className="text-xs text-gray-400">Plataforma Oficial de Mídias VSL & Ofertas Exclusivas</p>
+              <p className="text-xs text-gray-400">O Centro Exclusivo para Afiliados e Product Owners de Alta Performance</p>
             </div>
           </div>
 
@@ -385,7 +385,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
         {/* NAVEGAÇÃO LATERAL */}
         <aside className="w-full md:w-64 bg-[#12141d] border border-[#282c3d] rounded-3xl p-4 space-y-3 shrink-0 h-fit shadow-2xl">
           <div className="px-3 py-2 text-xs font-extrabold text-[#f5d77f] uppercase tracking-wider">
-            Navegação do Aluno
+            Navegação VIP
           </div>
 
           <button
@@ -398,7 +398,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
           >
             <div className="flex items-center gap-3">
               <Gift className="w-5 h-5" />
-              Ofertas VIP & VSLs
+              🚀 Ofertas VIP Mineradas
             </div>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full ${
@@ -419,7 +419,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
           >
             <div className="flex items-center gap-3">
               <MessageSquare className="w-5 h-5" />
-              Chat dos Membros
+              💬 Chat dos Membros
             </div>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
           </button>
@@ -433,16 +433,16 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
             }`}
           >
             <User className="w-5 h-5" />
-            Minha Conta Supabase
+            👤 Minha Conta
           </button>
 
-          <div className="p-4 rounded-2xl bg-[#1a1d29]/60 border border-[#282c3d] mt-6 text-xs space-y-2">
+          <div className="p-4 rounded-2xl bg-[#1a1d29]/80 border border-[#d4af37]/30 mt-6 text-xs space-y-2 shadow-inner">
             <div className="flex items-center gap-2 text-[#f5d77f] font-extrabold">
-              <Sparkles className="w-4 h-4" />
-              Cloudflare R2 S3
+              <Sparkles className="w-4 h-4 text-[#d4af37]" />
+              ☁️ Cloudflare R2 Premium
             </div>
-            <p className="text-[11px] text-gray-400 leading-relaxed">
-              Vídeos VSL 4K e pacotes de mídia prontos para download com alta velocidade sem limite de dados.
+            <p className="text-[11px] text-gray-300 leading-relaxed">
+              Descarregue VSLs em 4K, vídeos para Facebook Ads, packs de criativos, ebooks e materiais exclusivos através da infraestrutura Cloudflare R2, garantindo downloads rápidos, seguros e sem limite de velocidade.
             </p>
           </div>
         </aside>
@@ -452,15 +452,65 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
           {/* TAB 1: OFERTAS VIP EM CARDS MENORES EM GRID (UMA AO LADO DA OUTRA E ABAIXO DA OUTRA) */}
           {activeTab === 'offers' && (
             <div className="space-y-6">
+              {/* HERO BANNER PERSUASIVO VIP */}
+              <div className="bg-gradient-to-br from-[#12141d] via-[#1a1d29] to-[#12141d] border border-[#d4af37]/50 p-6 md:p-8 rounded-3xl space-y-5 shadow-2xl relative overflow-hidden">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <span className="px-3 py-1 rounded-full bg-[#d4af37]/10 border border-[#d4af37] text-[10px] font-extrabold text-[#f5d77f] uppercase tracking-widest inline-flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#d4af37]" />
+                      Portal de Alta Performance
+                    </span>
+                    <h2 className="font-extrabold text-2xl md:text-3xl text-white gold-text-gradient">
+                      🚀 Ofertas VIP Mineradas
+                    </h2>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-300 leading-relaxed max-w-4xl">
+                  Aceda às melhores ofertas do mercado digital sem perder horas a pesquisar. Descubra VSLs de alta conversão, criativos profissionais, anúncios validados e uma comunidade privada para trocar estratégias e acelerar os seus resultados.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                  <div className="p-3 rounded-2xl bg-[#090a0f]/60 border border-[#282c3d] text-xs text-gray-200 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Vídeo VSL Original (Full HD / 4K)</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-[#090a0f]/60 border border-[#282c3d] text-xs text-gray-200 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Vídeos para Facebook Ads</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-[#090a0f]/60 border border-[#282c3d] text-xs text-gray-200 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Packs completos de criativos</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-[#090a0f]/60 border border-[#282c3d] text-xs text-gray-200 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Banners e imagens profissionais</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-[#090a0f]/60 border border-[#282c3d] text-xs text-gray-200 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Biblioteca Oficial de Anúncios (Ads)</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-[#090a0f]/60 border border-[#282c3d] text-xs text-gray-200 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Materiais de apoio e ficheiros R2</span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#d4af37]/10 border border-[#d4af37]/30 text-xs font-semibold text-[#f5d77f] flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-[#d4af37] shrink-0" />
+                  <span>Basta escolher a oferta, assistir à VSL online, descarregar os materiais e começar a desenvolver as suas campanhas.</span>
+                </div>
+              </div>
+
               {/* HEADER DE BUSCA E TÍTULO */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#12141d] p-6 rounded-3xl border border-[#282c3d] shadow-xl">
                 <div>
-                  <h2 className="font-extrabold text-xl text-white flex items-center gap-2">
-                    Ofertas VIP Liberadas pelo Administrador
-                    <Flame className="w-5 h-5 text-[#d4af37]" />
-                  </h2>
+                  <h3 className="font-extrabold text-xl text-white flex items-center gap-2">
+                    📈 Biblioteca de Ofertas Exclusivas
+                  </h3>
                   <p className="text-xs text-gray-400 mt-1">
-                    Visualize as ofertas em cards compactos em grade (lado a lado). Assista às VSLs e baixe os packs de criativos do Cloudflare R2.
+                    Explore uma coleção privada de ofertas previamente analisadas e organizadas para reduzir o tempo de pesquisa e ajudar na criação de campanhas mais eficientes.
                   </p>
                 </div>
 
@@ -595,13 +645,13 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <div className="w-3.5 h-3.5 rounded-full bg-emerald-400 animate-ping"></div>
                   <div>
                     <h2 className="font-extrabold text-base text-white flex items-center gap-2">
-                      Chat Privado dos Membros VIP
+                      💬 Chat Exclusivo dos Membros
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
                         Supabase DB Realtime
                       </span>
                     </h2>
                     <p className="text-xs text-gray-400">
-                      Troque experiências, copies e envie fotos ou vídeos diretamente para a comunidade.
+                      Conecte-se com afiliados e empreendedores de todo o Brasil. Partilhe estratégias, resultados, criativos, testes e faça networking com uma comunidade focada em crescimento.
                     </p>
                   </div>
                 </div>
@@ -803,19 +853,27 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
           {/* TAB 3: MINHA CONTA SUPABASE */}
           {activeTab === 'profile' && (
             <div className="bg-[#12141d] border border-[#282c3d] rounded-3xl p-8 space-y-6 shadow-2xl">
-              <div className="flex items-center gap-5 border-b border-[#282c3d] pb-6">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#f5d77f] via-[#d4af37] to-[#997d2e] p-0.5 shadow-lg">
-                  <div className="w-full h-full bg-[#090a0f] rounded-[14px] flex items-center justify-center text-[#f5d77f] font-extrabold text-xl">
-                    {userEmail.substring(0, 2).toUpperCase()}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#282c3d] pb-6">
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#f5d77f] via-[#d4af37] to-[#997d2e] p-0.5 shadow-lg">
+                    <div className="w-full h-full bg-[#090a0f] rounded-[14px] flex items-center justify-center text-[#f5d77f] font-extrabold text-xl">
+                      {userEmail.substring(0, 2).toUpperCase()}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <h2 className="font-extrabold text-xl text-white">{userName || 'Aluno VIP Club Particular'}</h2>
-                  <p className="text-xs text-gray-400 font-mono mt-0.5">{userEmail}</p>
-                  <span className="inline-flex items-center gap-1.5 mt-2 text-xs font-bold text-emerald-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                    E-mail Salvo & Autenticado no Supabase
-                  </span>
+                  <div>
+                    <h2 className="font-extrabold text-xl text-white flex items-center gap-2">
+                      👤 Minha Conta
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Gerencie a sua assinatura, atualize os seus dados e cancele a subscrição quando desejar, diretamente pelo painel.
+                    </p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-xs font-mono text-gray-300">{userEmail}</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Autenticado no Supabase
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
