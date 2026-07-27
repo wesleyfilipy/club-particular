@@ -18,9 +18,11 @@ import {
   CreditCard,
   Sparkles,
   X,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { openStripeCheckoutPage, STRIPE_WEB_CONFIG } from '../services/stripe';
 
 interface VipLandingPageProps {
   onLoginSuccess: (role: 'admin' | 'member', email: string, name?: string) => void;
@@ -38,7 +40,6 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
   const [adminPin, setAdminPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'register' | 'payment'>('register');
 
   // Modal Login de Aluno Existente
   const handleStudentLogin = async (e: React.FormEvent) => {
@@ -68,7 +69,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     }
   };
 
-  // Processar Inscrição e Pagamento do Aluno (R$ 1.000,00/mês)
+  // Processar Inscrição e Pagamento do Aluno (R$ 100,00/mês) no Stripe & Supabase
   const handleSubscribeCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -76,7 +77,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
     try {
       // 1. Cadastrar usuário no Supabase Auth
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { data } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -87,15 +88,15 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         },
       });
 
-      // 2. Registrar Assinatura R$ 1.000,00 no Supabase
+      // 2. Registrar Assinatura R$ 100,00 no Supabase
       try {
         const userId = data?.user?.id || `usr-${Date.now()}`;
         await supabase.from('subscriptions').insert([
           {
             user_id: userId,
             status: 'active',
-            plan_name: 'Club Particular VIP (R$ 1.000/mês)',
-            price_amount: 1000.0,
+            plan_name: 'Club Particular VIP (R$ 100/mês)',
+            price_amount: 100.0,
             currency: 'BRL',
           },
         ]);
@@ -109,15 +110,19 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
           },
         ]);
       } catch (dbErr) {
-        console.warn('Nota de sincronização de assinatura:', dbErr);
+        console.warn('Nota de registro no banco:', dbErr);
       }
 
-      // Conclui e redireciona direto para a Área de Membros
+      // 3. Abrir o Stripe Checkout oficial na tela
+      openStripeCheckoutPage(email);
+
+      // 4. Entrar na Área de Membros
       setTimeout(() => {
         onLoginSuccess('member', email, fullName || 'Aluno VIP');
       }, 1000);
     } catch (err: any) {
-      console.warn('Supabase Auth connection:', err);
+      console.warn('Supabase Auth note:', err);
+      openStripeCheckoutPage(email);
       onLoginSuccess('member', email || 'aluno@clubparticular.com', fullName || 'Aluno VIP');
     } finally {
       setLoading(false);
@@ -160,10 +165,10 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             </button>
 
             <button
-              onClick={() => { setShowCheckoutModal(true); setStep('register'); setError(''); }}
+              onClick={() => { setShowCheckoutModal(true); setError(''); }}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] text-xs font-extrabold shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all cursor-pointer"
             >
-              Assinar VIP (R$ 1.000/mês)
+              Assinar VIP (R$ 100/mês)
             </button>
           </div>
         </div>
@@ -187,21 +192,21 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             Plataforma fechada de mídias de alta conversão. Baixe vídeos VSL em 4K e pacotes de criativos completos direto do nosso Cloudflare R2 de alta velocidade, sem limites de dados.
           </p>
 
-          {/* CARD DE PREÇO DA ASSINATURA R$ 1.000/MÊS */}
+          {/* CARD DE PREÇO DA ASSINATURA R$ 100/MÊS */}
           <div className="max-w-md mx-auto bg-[#12141d] border-2 border-[#d4af37] rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-[#d4af37] text-[#090a0f] text-[10px] font-extrabold uppercase px-4 py-1 rounded-bl-2xl">
               PLANO VIP MENSAL
             </div>
 
             <div>
-              <span className="text-xs text-gray-400 uppercase font-extrabold block mb-1">Assinatura Exclusiva</span>
+              <span className="text-xs text-gray-400 uppercase font-extrabold block mb-1">Assinatura Oficial Stripe</span>
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-2xl font-bold text-gray-300">R$</span>
-                <span className="text-5xl font-extrabold gold-text-gradient">1.000</span>
+                <span className="text-5xl font-extrabold gold-text-gradient">100</span>
                 <span className="text-gray-400 font-bold text-sm">,00 / mês</span>
               </div>
               <p className="text-xs text-emerald-400 font-bold mt-2 flex items-center justify-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Vinculado ao seu e-mail com Supabase & Stripe SSL
+                <CheckCircle2 className="w-3.5 h-3.5" /> Vinculado ao seu e-mail no Supabase & Stripe SSL
               </p>
             </div>
 
@@ -229,11 +234,11 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             </ul>
 
             <button
-              onClick={() => { setShowCheckoutModal(true); setStep('register'); setError(''); }}
+              onClick={() => { setShowCheckoutModal(true); setError(''); }}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-xl shadow-[#d4af37]/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <CreditCard className="w-5 h-5" />
-              QUERO ASSINAR AGORA (R$ 1.000/MÊS)
+              QUERO ASSINAR AGORA (R$ 100/MÊS)
             </button>
           </div>
         </div>
@@ -294,13 +299,13 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         </div>
       </footer>
 
-      {/* MODAL 1: CHECKOUT / CADASTRO DE ASSINATURA DO ALUNO (R$ 1.000/MÊS) */}
+      {/* MODAL 1: CHECKOUT STRIPE / CADASTRO DE ASSINATURA DO ALUNO (R$ 100/MÊS) */}
       {showCheckoutModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#12141d] border border-[#d4af37] rounded-3xl max-w-md w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
             <button
               onClick={() => setShowCheckoutModal(false)}
-              className="absolute top-6 right-6 p-2 rounded-xl bg-[#1a1d29] text-gray-400 hover:text-white"
+              className="absolute top-6 right-6 p-2 rounded-xl bg-[#1a1d29] text-gray-400 hover:text-white cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -310,7 +315,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
                 <Crown className="w-7 h-7" />
               </div>
               <h2 className="text-xl font-extrabold text-white">Assinar Club Particular VIP</h2>
-              <p className="text-xs text-[#f5d77f] font-bold">Plano VIP • R$ 1.000,00 / mês (Supabase SSL)</p>
+              <p className="text-xs text-[#f5d77f] font-bold">Plano VIP • R$ 100,00 / mês (Stripe & Supabase SSL)</p>
             </div>
 
             {error && (
@@ -361,30 +366,42 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-2 text-xs">
                 <div className="flex items-center justify-between font-bold">
                   <span className="text-gray-300">Total da Assinatura:</span>
-                  <span className="text-[#f5d77f] text-base">R$ 1.000,00 / mês</span>
+                  <span className="text-[#f5d77f] text-base">R$ 100,00 / mês</span>
                 </div>
                 <p className="text-[10px] text-gray-400">
-                  Ao clicar em pagar, seu e-mail será registrado no Supabase Auth e sua assinatura VIP de R$ 1.000/mês será ativada com acesso imediato às mídias VSL 4K.
+                  Ao clicar em pagar, seu e-mail será registrado no Supabase Auth e o checkout seguro do Stripe será aberto para concluir o pagamento de R$ 100/mês.
                 </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Processando Assinatura de R$ 1.000/mês...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-5 h-5" />
-                    Confirmar Assinatura & Entrar no Club
-                  </>
-                )}
-              </button>
+              <div className="space-y-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Abrindo Stripe Checkout...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-5 h-5" />
+                      Pagar R$ 100/mês no Stripe Checkout
+                      <ExternalLink className="w-4 h-4 ml-1" />
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => openStripeCheckoutPage(email)}
+                  className="w-full py-2.5 rounded-xl bg-[#1a1d29] border border-[#282c3d] text-gray-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-[#d4af37]" />
+                  Abrir Página de Checkout Direta do Stripe
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -396,7 +413,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
           <div className="bg-[#12141d] border border-[#282c3d] rounded-3xl max-w-md w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
             <button
               onClick={() => setShowLoginModal(false)}
-              className="absolute top-6 right-6 p-2 rounded-xl bg-[#1a1d29] text-gray-400 hover:text-white"
+              className="absolute top-6 right-6 p-2 rounded-xl bg-[#1a1d29] text-gray-400 hover:text-white cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -449,7 +466,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
           <div className="bg-[#12141d] border border-red-500/40 rounded-3xl max-w-md w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
             <button
               onClick={() => setShowAdminModal(false)}
-              className="absolute top-6 right-6 p-2 rounded-xl bg-[#1a1d29] text-gray-400 hover:text-white"
+              className="absolute top-6 right-6 p-2 rounded-xl bg-[#1a1d29] text-gray-400 hover:text-white cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
