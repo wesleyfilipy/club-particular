@@ -261,7 +261,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
   return (
     <div className="min-h-screen bg-[#090a0f] text-white flex flex-col font-sans selection:bg-[#d4af37] selection:text-[#090a0f]">
       {/* HEADER DA LANDING PAGE PÚBLICA */}
-      <header className="bg-[#12141d]/80 backdrop-blur-md border-b border-[#282c3d] px-6 py-4 sticky top-0 z-40">
+      <header className="bg-[#12141d]/90 backdrop-blur-md border-b border-[#282c3d] px-6 py-4 sticky top-0 z-40 shadow-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#f5d77f] via-[#d4af37] to-[#997d2e] p-0.5 shadow-lg shadow-[#d4af37]/20">
@@ -271,14 +271,14 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             </div>
             <div>
               <span className="font-extrabold text-base tracking-wider gold-text-gradient block">CLUB PARTICULAR</span>
-              <span className="text-[10px] text-gray-400 block font-mono">PORTAL DE MÍDIAS & OFERTAS VIP</span>
+              <span className="text-[10px] text-[#f5d77f] block font-mono font-bold tracking-widest uppercase">PORTAL DE MÍDIAS & OFERTAS VIP</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => { setShowLoginModal(true); setError(''); }}
-              className="px-4 py-2 rounded-xl bg-[#1a1d29] border border-[#282c3d] text-xs font-bold text-gray-200 hover:text-white hover:border-[#d4af37] transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-[#1a1d29] border border-[#282c3d] text-xs font-bold text-gray-200 hover:text-white hover:border-[#d4af37] transition-all cursor-pointer shadow-md"
             >
               Já sou Aluno (Entrar)
             </button>
@@ -295,7 +295,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
       {/* HERO SECTION DE APRESENTAÇÃO DO CLUB PARTICULAR */}
       <section className="relative pt-16 pb-20 px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#d4af37]/5 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#d4af37]/10 via-transparent to-transparent pointer-events-none" />
 
         <div className="max-w-5xl mx-auto text-center space-y-8 relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#d4af37]/10 border border-[#d4af37] text-xs font-extrabold text-[#f5d77f] uppercase tracking-widest shadow-lg">
@@ -329,26 +329,26 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               </p>
             </div>
 
-            <ul className="text-xs text-left space-y-2.5 border-t border-b border-[#282c3d] py-4 text-gray-300">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0" />
-                Player de Vídeos VSL em 4K Ultra HD & 1080p
+            <ul className="text-xs text-left space-y-3 border-t border-b border-[#282c3d] py-5 text-gray-200 font-medium">
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0 mt-0.5" />
+                <span>Player de Vídeos VSL em 4K Ultra HD & 1080p sem travamentos</span>
               </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0" />
-                Download ilimitado de Packs de Anúncios no Cloudflare R2
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0 mt-0.5" />
+                <span>Download ilimitado de Packs de Anúncios no Cloudflare R2</span>
               </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0" />
-                Comissões VIP de 70% a 85% por venda realizada
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0 mt-0.5" />
+                <span>Comissões VIP de 70% a 85% por venda realizada</span>
               </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0" />
-                Chat Privado com envio de Fotos e Vídeos em tempo real
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0 mt-0.5" />
+                <span>Chat Privado com envio de Fotos e Vídeos em tempo real</span>
               </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0" />
-                Cancele sua assinatura a qualquer momento no seu painel
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0 mt-0.5" />
+                <span>Cancele sua assinatura a qualquer momento no seu painel</span>
               </li>
             </ul>
 
@@ -364,34 +364,34 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
       </section>
 
       {/* RECURSOS EM DESTAQUE */}
-      <section className="py-16 px-6 bg-[#12141d]/50 border-t border-b border-[#282c3d]">
+      <section className="py-16 px-6 bg-[#12141d]/60 border-t border-b border-[#282c3d]">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="p-6 rounded-3xl bg-[#12141d] border border-[#282c3d] space-y-3 shadow-xl">
+          <div className="p-6 rounded-3xl bg-[#12141d] border border-[#282c3d] hover:border-[#d4af37]/40 transition-all space-y-3 shadow-xl">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <Film className="w-6 h-6" />
             </div>
             <h3 className="font-extrabold text-lg text-white">Vídeos VSL 4K de Alta Retenção</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-300 leading-relaxed">
               Vídeos cinematográficos produzidos para escalar ofertas nos nichos mais lucrativos do mercado digital.
             </p>
           </div>
 
-          <div className="p-6 rounded-3xl bg-[#12141d] border border-[#282c3d] space-y-3 shadow-xl">
+          <div className="p-6 rounded-3xl bg-[#12141d] border border-[#282c3d] hover:border-[#d4af37]/40 transition-all space-y-3 shadow-xl">
             <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
               <Package className="w-6 h-6" />
             </div>
             <h3 className="font-extrabold text-lg text-white">Cloudflare R2 Storage S3</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-300 leading-relaxed">
               Todos os packs de anúncios e criativos são hospedados em servidores de altíssima velocidade sem limites de download.
             </p>
           </div>
 
-          <div className="p-6 rounded-3xl bg-[#12141d] border border-[#282c3d] space-y-3 shadow-xl">
+          <div className="p-6 rounded-3xl bg-[#12141d] border border-[#282c3d] hover:border-[#d4af37]/40 transition-all space-y-3 shadow-xl">
             <div className="w-12 h-12 rounded-2xl bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center text-[#f5d77f]">
               <MessageSquare className="w-6 h-6" />
             </div>
             <h3 className="font-extrabold text-lg text-white">Chat dos Membros com Mídia</h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-300 leading-relaxed">
               Troque métricas, testes de copies e envie fotos ou vídeos diretamente para a comunidade VIP com registro no Supabase.
             </p>
           </div>

@@ -1,1 +1,1 @@
-feat(ui): implementar copy ultra persuasiva e posicionamento VIP para afiliados e product owners no MemberDashboard
+feat(ui): aprimorar copy persuasiva e design da Landing Page VipLandingPage.tsx
