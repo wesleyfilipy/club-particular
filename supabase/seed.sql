@@ -17,7 +17,7 @@ INSERT INTO public.offers (
     official_site_url, landing_page_url, facebook_ads_library_url, is_featured
 ) VALUES
 (
-    'o1000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
     'Fórmula Seca Barriga Natural 3.0',
     'Oferta Black de altíssima conversão no nicho de emagrecimento com ticket R$ 197 e taxa de aprovação acima de 85% no cartão e PIX.',
     'c1000000-0000-0000-0000-000000000001',
@@ -30,7 +30,7 @@ INSERT INTO public.offers (
     true
 ),
 (
-    'o2000000-0000-0000-0000-000000000002',
+    '20000000-0000-0000-0000-000000000002',
     'Método Milionário com IA (MMIA)',
     'O treinamento mais vendido de automações e vendas com inteligência artificial. VSL cinematográfica com robô 3D e prova social de alunos fazendo R$ 10k/mês.',
     'c2000000-0000-0000-0000-000000000002',
@@ -43,7 +43,7 @@ INSERT INTO public.offers (
     true
 ),
 (
-    'o3000000-0000-0000-0000-000000000003',
+    '30000000-0000-0000-0000-000000000003',
     'Código Secreto da Sedução Suprema',
     'Nicho de relacionamentos masculinos com pitch validado nos EUA e adaptado ao mercado brasileiro. Conversão monstruosa para tráfego direto no Facebook e TikTok.',
     'c4000000-0000-0000-0000-000000000004',
@@ -60,8 +60,8 @@ ON CONFLICT (id) DO NOTHING;
 -- 3. Insert VSL Records
 INSERT INTO public.vsl (id, offer_id, title, description, thumbnail_url, video_url, resolution, file_size, duration) VALUES
 (
-    'v1000000-0000-0000-0000-000000000001',
-    'o1000000-0000-0000-0000-000000000001',
+    'b1000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
     'VSL Principal 4K - O Ritual Matinal de 3 Minutos',
     'Vídeo de vendas oficial de alta retenção. Pitch revelado aos 14:20. Formato MP4 sem marca d''água pronto para anunciar.',
     'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=600',
@@ -71,8 +71,8 @@ INSERT INTO public.vsl (id, offer_id, title, description, thumbnail_url, video_u
     '18:45'
 ),
 (
-    'v2000000-0000-0000-0000-000000000002',
-    'o2000000-0000-0000-0000-000000000002',
+    'b2000000-0000-0000-0000-000000000002',
+    '20000000-0000-0000-0000-000000000002',
     'VSL Renda com IA 1080p Full HD',
     'Vídeo com animações 3D e narração profissional de voz neural super persuasiva. CTR de VSL acima de 8.4%.',
     'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
@@ -87,7 +87,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.facebook_ads (id, offer_id, title, video_url, thumbnail_url, file_size) VALUES
 (
     'f1000000-0000-0000-0000-000000000001',
-    'o1000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
     'Criativo 01 - Antes & Depois (UGC Depoimento)',
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
     'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=300',
@@ -95,7 +95,7 @@ INSERT INTO public.facebook_ads (id, offer_id, title, video_url, thumbnail_url, 
 ),
 (
     'f2000000-0000-0000-0000-000000000002',
-    'o2000000-0000-0000-0000-000000000002',
+    '20000000-0000-0000-0000-000000000002',
     'Criativo Bot Celular - Notificação do Banco',
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
     'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=300',
@@ -106,16 +106,16 @@ ON CONFLICT (id) DO NOTHING;
 -- 5. Insert Creatives Downloads
 INSERT INTO public.creatives (id, offer_id, title, file_type, file_url, file_size) VALUES
 (
-    'cr100000-0000-0000-0000-000000000001',
-    'o1000000-0000-0000-0000-000000000001',
+    'a1000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
     'Pack Completo de Imagens HD & Banners Canva.zip',
     'zip',
     'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     '145 MB'
 ),
 (
-    'cr200000-0000-0000-0000-000000000002',
-    'o2000000-0000-0000-0000-000000000002',
+    'a2000000-0000-0000-0000-000000000002',
+    '20000000-0000-0000-0000-000000000002',
     'Guia de Nicho & Script de Vendas no WhatsApp.pdf',
     'pdf',
     'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
@@ -129,8 +129,8 @@ INSERT INTO public.copies (
     target_age, target_gender, target_country, target_interests
 ) VALUES
 (
-    'cp10000-0000-0000-0000-000000000001',
-    'o1000000-0000-0000-0000-000000000001',
+    'd1000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
     '🚨 Descubra o Ritual de 3 Minutos antes de Dormir que Desinflama a Barriga',
     'Médicos revelam o segredo caseiro usado por milhares de brasileiras para eliminar retenção sem dietas malucas.',
     '▶ ASSISTIR VÍDEO GRATUITO',
@@ -141,7 +141,8 @@ INSERT INTO public.copies (
     'Emagrecimento, Receitas Low Carb, Saúde da Mulher, Vida Saudável'
 ),
 (
-    'cp20000-0000-0000-0000-000000000002',
+    'd2000000-0000-0000-0000-000000000002',
+    '20000000-0000-0000-0000-000000000002',
     '🤖 Robô de Inteligência Artificial Vende no Automático Enquanto Você Dorme',
     'Ferramenta americana recém-chegada ao Brasil permite automatizar vendas diárias sem precisar aparecer.',
     '📲 CLIQUE E VEJA COMO FUNCIONA',
