@@ -6,11 +6,11 @@ import { OffersManager } from './pages/OffersManager';
 import { MediaUploader } from './pages/MediaUploader';
 import { NotificationsManager } from './pages/NotificationsManager';
 import { MemberDashboard } from './pages/MemberDashboard';
-import { Login } from './pages/Login';
+import { VipLandingPage } from './pages/VipLandingPage';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'member'>('admin');
+  const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -24,16 +24,17 @@ export default function App() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setUserRole('admin');
+    setUserRole('member');
     setUserEmail('');
     setUserName('');
   };
 
+  // VISITANTES E NOVOS ALUNOS VÊEM A LANDING PAGE VIP (COM VENDAS R$ 1.000/MÊS E LOGIN DE ALUNOS)
   if (!isAuthenticated) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
+    return <VipLandingPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // PAINEL EXCLUSIVO DO ALUNO / MEMBRO
+  // PAINEL EXCLUSIVO DO ALUNO / MEMBRO ASSINANTE (R$ 1.000/MÊS)
   if (userRole === 'member') {
     return (
       <MemberDashboard
@@ -44,9 +45,9 @@ export default function App() {
     );
   }
 
-  // PAINEL ADMINISTRATIVO VIP
+  // PAINEL ADMINISTRATIVO VIP EXCLUSIVO (APENAS VOCÊ LOGADO COMO ADMIN)
   return (
-    <div className="flex min-h-screen bg-[#090a0f] text-white">
+    <div className="flex min-h-screen bg-[#090a0f] text-white selection:bg-[#d4af37] selection:text-[#090a0f]">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -66,4 +67,3 @@ export default function App() {
     </div>
   );
 }
-
