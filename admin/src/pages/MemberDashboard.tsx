@@ -28,6 +28,7 @@ import {
   CheckCheck
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { getR2PresignedDownloadUrl } from '../services/r2';
 
 interface MemberDashboardProps {
   userEmail: string;
@@ -302,6 +303,23 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
     }
   };
 
+  const handleR2Download = async (fileUrl: string, fileName: string) => {
+    if (!fileUrl) return;
+
+    if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+      window.open(fileUrl, '_blank');
+      return;
+    }
+
+    try {
+      const signedUrl = await getR2PresignedDownloadUrl(fileUrl, 3600);
+      window.open(signedUrl, '_blank');
+    } catch (err) {
+      console.warn('Erro ao gerar URL assinada do R2:', err);
+      alert(`Iniciando download seguro do R2: ${fileName}`);
+    }
+  };
+
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -518,30 +536,23 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                     {/* BOTÕES DE AÇÃO E DOWNLOADS COMPACTOS */}
                     <div className="p-4 pt-0 space-y-2.5 border-t border-[#282c3d]/50 mt-2">
                       <div className="grid grid-cols-2 gap-2">
-                        {/* BAixar VSL */}
-                        <a
-                          href={offer.vslVideoUrl}
-                          download={offer.vslFileName}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-[11px] flex items-center justify-center gap-1.5 shadow-md hover:opacity-95 transition-all text-center"
+                        {/* Baixar VSL */}
+                        <button
+                          onClick={() => handleR2Download(offer.vslVideoUrl, offer.vslFileName)}
+                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-[11px] flex items-center justify-center gap-1.5 shadow-md hover:opacity-95 transition-all text-center cursor-pointer"
                         >
                           <Download className="w-3.5 h-3.5" />
                           Baixar VSL
-                        </a>
+                        </button>
 
                         {/* Baixar Pack */}
-                        <a
-                          href={`#download-${offer.id}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            alert(`Iniciando download seguro do R2: ${offer.creativeFileName}`);
-                          }}
-                          className="px-3 py-2 rounded-xl bg-[#1a1d29] border border-[#d4af37]/40 text-[#f5d77f] hover:bg-[#222736] font-extrabold text-[11px] flex items-center justify-center gap-1.5 shadow-md transition-all text-center"
+                        <button
+                          onClick={() => handleR2Download(offer.creativeFileName, offer.creativeFileName)}
+                          className="px-3 py-2 rounded-xl bg-[#1a1d29] border border-[#d4af37]/40 text-[#f5d77f] hover:bg-[#222736] font-extrabold text-[11px] flex items-center justify-center gap-1.5 shadow-md transition-all text-center cursor-pointer"
                         >
                           <Package className="w-3.5 h-3.5 text-purple-400" />
                           Pack R2
-                        </a>
+                        </button>
                       </div>
 
                       <div className="flex items-center justify-between gap-1.5 pt-1">
@@ -917,15 +928,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                 <span className="font-extrabold text-lg text-[#f5d77f]">{selectedOfferModal.commission}</span>
               </div>
 
-              <a
-                href={selectedOfferModal.vslVideoUrl}
-                download={selectedOfferModal.vslFileName}
-                target="_blank"
-                rel="noreferrer"
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-xs flex items-center gap-1.5 shadow-lg"
+              <button
+                onClick={() => handleR2Download(selectedOfferModal.vslVideoUrl, selectedOfferModal.vslFileName)}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-xs flex items-center gap-1.5 shadow-lg cursor-pointer"
               >
                 <Download className="w-4 h-4" /> Baixar VSL (4K/1080p)
-              </a>
+              </button>
             </div>
 
             <p className="text-sm text-gray-300 leading-relaxed">{selectedOfferModal.description}</p>
