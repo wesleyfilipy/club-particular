@@ -1,26 +1,55 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Video, Globe, FileText, CheckCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Video, Globe, FileText, UploadCloud, Film, Package, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { uploadToR2, R2_BUCKET } from '../services/r2';
+
+interface OfferItem {
+  id: string;
+  name: string;
+  category: string;
+  commission: string;
+  description?: string;
+  siteUrl?: string;
+  landingPageUrl?: string;
+  adsLibraryUrl?: string;
+  vslFileUrl?: string;
+  vslFileName?: string;
+  creativeFileUrl?: string;
+  creativeFileName?: string;
+}
 
 export const OffersManager: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
-  const [offersList, setOffersList] = useState([
+  const [uploadingVsl, setUploadingVsl] = useState(false);
+  const [uploadingCreative, setUploadingCreative] = useState(false);
+  const [vslProgress, setVslProgress] = useState(0);
+  const [creativeProgress, setCreativeProgress] = useState(0);
+
+  const [offersList, setOffersList] = useState<OfferItem[]>([
     {
-      id: 'o1',
+      id: 'oferta-001',
       name: 'Fórmula Seca Barriga Natural 3.0',
       category: 'Saúde & Emagrecimento',
       commission: '80% (R$ 157,60)',
       siteUrl: 'https://formulaseca.com.br',
       landingPageUrl: 'https://formulaseca.com.br/pv-oficial',
       adsLibraryUrl: 'https://facebook.com/ads/library',
+      vslFileName: 'vsl_formula_seca_4k.mp4',
+      vslFileUrl: 'offers/oferta-001/vsl/vsl_formula_seca_4k.mp4',
+      creativeFileName: 'pack_anuncios_criativos.zip',
+      creativeFileUrl: 'offers/oferta-001/creatives/pack_anuncios_criativos.zip',
     },
     {
-      id: 'o2',
+      id: 'oferta-002',
       name: 'Método Milionário com IA (MMIA)',
       category: 'Renda Extra & Finanças',
       commission: '75% (R$ 222,75)',
       siteUrl: 'https://metodomilionarioia.com',
       landingPageUrl: 'https://metodomilionarioia.com/vsl-full',
       adsLibraryUrl: 'https://facebook.com/ads/library',
+      vslFileName: 'vsl_mmia_master.mp4',
+      vslFileUrl: 'offers/oferta-002/vsl/vsl_mmia_master.mp4',
+      creativeFileName: 'video_ad_facebook_01.mp4',
+      creativeFileUrl: 'offers/oferta-002/creatives/video_ad_facebook_01.mp4',
     },
   ]);
 
@@ -32,26 +61,97 @@ export const OffersManager: React.FC = () => {
     siteUrl: '',
     landingPageUrl: '',
     adsLibraryUrl: '',
-    vslTitle: '',
-    vslUrl: '',
-    headline: '',
-    targetAge: '',
-    targetGender: '',
+    vslFileUrl: '',
+    vslFileName: '',
+    creativeFileUrl: '',
+    creativeFileName: '',
   });
+
+  const handleVslUpload = async (file: File) => {
+    setUploadingVsl(true);
+    setVslProgress(15);
+    const offerCode = formData.name ? formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : `oferta-${Date.now()}`;
+    const keyPath = `offers/${offerCode}/vsl/${file.name}`;
+
+    try {
+      const interval = setInterval(() => {
+        setVslProgress((prev) => (prev < 90 ? prev + 20 : prev));
+      }, 250);
+
+      await uploadToR2(file, keyPath, file.type || 'video/mp4');
+      clearInterval(interval);
+      setVslProgress(100);
+
+      setFormData((prev) => ({
+        ...prev,
+        vslFileUrl: keyPath,
+        vslFileName: file.name,
+      }));
+    } catch (err) {
+      console.error('Erro no upload da VSL para o R2:', err);
+    } finally {
+      setTimeout(() => setUploadingVsl(false), 1000);
+    }
+  };
+
+  const handleCreativeUpload = async (file: File) => {
+    setUploadingCreative(true);
+    setCreativeProgress(15);
+    const offerCode = formData.name ? formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : `oferta-${Date.now()}`;
+    const keyPath = `offers/${offerCode}/creatives/${file.name}`;
+
+    try {
+      const interval = setInterval(() => {
+        setCreativeProgress((prev) => (prev < 90 ? prev + 20 : prev));
+      }, 250);
+
+      await uploadToR2(file, keyPath, file.type || 'video/mp4');
+      clearInterval(interval);
+      setCreativeProgress(100);
+
+      setFormData((prev) => ({
+        ...prev,
+        creativeFileUrl: keyPath,
+        creativeFileName: file.name,
+      }));
+    } catch (err) {
+      console.error('Erro no upload dos Criativos para o R2:', err);
+    } finally {
+      setTimeout(() => setUploadingCreative(false), 1000);
+    }
+  };
 
   const handleCreateOffer = (e: React.FormEvent) => {
     e.preventDefault();
-    const newOffer = {
-      id: `o-${Date.now()}`,
+    const newOffer: OfferItem = {
+      id: `oferta-${Date.now()}`,
       name: formData.name || 'Nova Oferta VIP',
       category: formData.category,
-      commission: formData.commission || '80% (R$ 150,00)',
+      commission: formData.commission || '80% (R$ 180,00)',
+      description: formData.description,
       siteUrl: formData.siteUrl,
       landingPageUrl: formData.landingPageUrl,
       adsLibraryUrl: formData.adsLibraryUrl,
+      vslFileUrl: formData.vslFileUrl,
+      vslFileName: formData.vslFileName,
+      creativeFileUrl: formData.creativeFileUrl,
+      creativeFileName: formData.creativeFileName,
     };
-    setOffersList([...offersList, newOffer]);
+    setOffersList([newOffer, ...offersList]);
     setShowModal(false);
+    setFormData({
+      name: '',
+      category: 'Saúde & Emagrecimento',
+      commission: '',
+      description: '',
+      siteUrl: '',
+      landingPageUrl: '',
+      adsLibraryUrl: '',
+      vslFileUrl: '',
+      vslFileName: '',
+      creativeFileUrl: '',
+      creativeFileName: '',
+    });
   };
 
   const handleDelete = (id: string) => {
@@ -62,8 +162,8 @@ export const OffersManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-white">Gerenciamento de Ofertas</h2>
-          <p className="text-sm text-gray-400">Adicione, edite ou remova ofertas e mídias sem alterar nenhum código.</p>
+          <h2 className="text-2xl font-extrabold text-white">Gerenciamento de Ofertas VIP</h2>
+          <p className="text-sm text-gray-400">Adicione ofertas com upload direto de vídeos de VSL e anúncios no Cloudflare R2.</p>
         </div>
 
         <button
@@ -71,7 +171,7 @@ export const OffersManager: React.FC = () => {
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold text-sm shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all"
         >
           <Plus className="w-5 h-5" />
-          Adicionar Nova Oferta
+          Cadastrar Nova Oferta VIP
         </button>
       </div>
 
@@ -83,7 +183,8 @@ export const OffersManager: React.FC = () => {
               <th className="p-4">Nome da Oferta</th>
               <th className="p-4">Categoria</th>
               <th className="p-4">Comissão</th>
-              <th className="p-4">Links Configurados</th>
+              <th className="p-4">Vídeo VSL (R2)</th>
+              <th className="p-4">Vídeo Anúncios / Criativos</th>
               <th className="p-4 text-right">Ações</th>
             </tr>
           </thead>
@@ -98,17 +199,24 @@ export const OffersManager: React.FC = () => {
                 </td>
                 <td className="p-4 font-bold text-[#d4af37]">{offer.commission}</td>
                 <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <span title="Site Configurado" className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-                      <Globe className="w-4 h-4" />
+                  {offer.vslFileName ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+                      <Film className="w-3.5 h-3.5" />
+                      {offer.vslFileName}
                     </span>
-                    <span title="Landing Page" className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
-                      <FileText className="w-4 h-4" />
+                  ) : (
+                    <span className="text-xs text-gray-500">Sem VSL anexada</span>
+                  )}
+                </td>
+                <td className="p-4">
+                  {offer.creativeFileName ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-semibold">
+                      <Package className="w-3.5 h-3.5" />
+                      {offer.creativeFileName}
                     </span>
-                    <span title="FB Ads Library" className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
-                      <Video className="w-4 h-4" />
-                    </span>
-                  </div>
+                  ) : (
+                    <span className="text-xs text-gray-500">Sem criativos anexados</span>
+                  )}
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -132,15 +240,20 @@ export const OffersManager: React.FC = () => {
       {/* Add / Edit Offer Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6 overflow-y-auto">
-          <div className="bg-[#12141d] border border-[#d4af37] w-full max-w-2xl rounded-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#12141d] border border-[#d4af37] w-full max-w-3xl rounded-2xl p-6 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#282c3d] pb-4">
-              <h3 className="text-xl font-bold text-white">Cadastrar Nova Oferta VIP</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white">✕</button>
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                Cadastrar Nova Oferta VIP
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#d4af37]/10 text-[#f5d77f] border border-[#d4af37]">
+                  Bucket: {R2_BUCKET}
+                </span>
+              </h3>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white font-bold text-lg">✕</button>
             </div>
 
-            <form onSubmit={handleCreateOffer} className="space-y-4 text-sm">
+            <form onSubmit={handleCreateOffer} className="space-y-5 text-sm">
               <div>
-                <label className="block text-gray-400 mb-1 font-semibold">Nome da Oferta</label>
+                <label className="block text-gray-300 mb-1 font-semibold">Nome da Oferta</label>
                 <input
                   type="text"
                   required
@@ -153,7 +266,7 @@ export const OffersManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">Categoria</label>
+                  <label className="block text-gray-300 mb-1 font-semibold">Categoria</label>
                   <select
                     className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
                     value={formData.category}
@@ -166,7 +279,7 @@ export const OffersManager: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">Comissão</label>
+                  <label className="block text-gray-300 mb-1 font-semibold">Comissão</label>
                   <input
                     type="text"
                     required
@@ -179,9 +292,9 @@ export const OffersManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-gray-400 mb-1 font-semibold">Descrição do Produto</label>
+                <label className="block text-gray-300 mb-1 font-semibold">Descrição do Produto</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="Resumo da oferta..."
                   className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
                   value={formData.description}
@@ -189,33 +302,105 @@ export const OffersManager: React.FC = () => {
                 />
               </div>
 
+              {/* MÍDIAS DA OFERTA (VSL & ANÚNCIOS R2) */}
+              <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-4">
+                <h4 className="font-extrabold text-[#f5d77f] flex items-center gap-2 text-sm uppercase tracking-wider">
+                  <Film className="w-4 h-4" />
+                  Mídias da Oferta (Cloudflare R2 Direct Upload)
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* UPLOAD VSL */}
+                  <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
+                    <label className="block font-bold text-xs text-gray-300">
+                      🎥 Vídeo de VSL (Original 4K/1080p)
+                    </label>
+                    <input
+                      type="file"
+                      id="vsl-upload-input"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleVslUpload(e.target.files[0])}
+                    />
+                    <label
+                      htmlFor="vsl-upload-input"
+                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                    >
+                      <UploadCloud className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <span className="text-xs font-semibold text-gray-300 block">
+                        {uploadingVsl ? `Enviando VSL... ${vslProgress}%` : 'Selecionar Vídeo de VSL para R2'}
+                      </span>
+                      <span className="text-[10px] text-gray-500 block">Salva em /vsl/[nome-do-arquivo]</span>
+                    </label>
+
+                    {formData.vslFileName && (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{formData.vslFileName}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* UPLOAD CRIATIVOS E VÍDEOS DE ANÚNCIOS */}
+                  <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
+                    <label className="block font-bold text-xs text-gray-300">
+                      🎬 Vídeos de Anúncios / Criativos (Pack Canva / ZIP)
+                    </label>
+                    <input
+                      type="file"
+                      id="creative-upload-input"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleCreativeUpload(e.target.files[0])}
+                    />
+                    <label
+                      htmlFor="creative-upload-input"
+                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                    >
+                      <UploadCloud className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <span className="text-xs font-semibold text-gray-300 block">
+                        {uploadingCreative ? `Enviando Criativos... ${creativeProgress}%` : 'Selecionar Anúncios / Pack para R2'}
+                      </span>
+                      <span className="text-[10px] text-gray-500 block">Salva em /creatives/[nome-do-arquivo]</span>
+                    </label>
+
+                    {formData.creativeFileName && (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-semibold">
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{formData.creativeFileName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* URLS DA OFERTA */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">URL Site Oficial</label>
+                  <label className="block text-gray-300 mb-1 font-semibold text-xs">URL Site Oficial</label>
                   <input
                     type="url"
                     placeholder="https://..."
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none"
+                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
                     value={formData.siteUrl}
                     onChange={(e) => setFormData({ ...formData, siteUrl: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">URL Landing Page</label>
+                  <label className="block text-gray-300 mb-1 font-semibold text-xs">URL Landing Page</label>
                   <input
                     type="url"
                     placeholder="https://..."
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none"
+                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
                     value={formData.landingPageUrl}
                     onChange={(e) => setFormData({ ...formData, landingPageUrl: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">URL Ads Library</label>
+                  <label className="block text-gray-300 mb-1 font-semibold text-xs">URL Ads Library</label>
                   <input
                     type="url"
                     placeholder="https://facebook.com/ads..."
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none"
+                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
                     value={formData.adsLibraryUrl}
                     onChange={(e) => setFormData({ ...formData, adsLibraryUrl: e.target.value })}
                   />
@@ -244,3 +429,4 @@ export const OffersManager: React.FC = () => {
     </div>
   );
 };
+
