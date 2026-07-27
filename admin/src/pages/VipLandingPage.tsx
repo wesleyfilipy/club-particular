@@ -58,37 +58,47 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
       // Se o aluno está tentando o primeiro acesso e a conta ainda não existe no Auth, faz o cadastro automático no Supabase
       if (authError) {
-        if (ADMIN_EMAILS.includes(cleanEmail)) {
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: cleanEmail,
-            password,
-            options: {
-              data: {
-                full_name: 'Wesley Filipy (Admin)',
-                role: 'admin',
-              },
-            },
-          });
+        const errMsg = authError.message?.toLowerCase() || '';
 
-          if (!signUpError && signUpData?.user) {
-            data = signUpData as any;
-            authError = null;
-          }
-        } else if (authError.message?.toLowerCase().includes('invalid login credentials')) {
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: cleanEmail,
-            password,
-            options: {
-              data: {
-                full_name: cleanEmail.split('@')[0],
-                role: 'member',
-              },
-            },
-          });
+        if (errMsg.includes('email not confirmed')) {
+          setError('E-mail cadastrado no Supabase, mas pendente de confirmação. Verifique sua caixa de entrada/spam ou confirme o e-mail no Supabase.');
+          setLoading(false);
+          return;
+        }
 
-          if (!signUpError && signUpData?.user) {
-            data = signUpData as any;
-            authError = null;
+        if (errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) {
+          if (ADMIN_EMAILS.includes(cleanEmail)) {
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+              email: cleanEmail,
+              password,
+              options: {
+                data: {
+                  full_name: 'Wesley Filipy (Admin)',
+                  role: 'admin',
+                },
+              },
+            });
+
+            if (!signUpError && signUpData?.user) {
+              data = signUpData as any;
+              authError = null;
+            }
+          } else {
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+              email: cleanEmail,
+              password,
+              options: {
+                data: {
+                  full_name: cleanEmail.split('@')[0],
+                  role: 'member',
+                },
+              },
+            });
+
+            if (!signUpError && signUpData?.user) {
+              data = signUpData as any;
+              authError = null;
+            }
           }
         }
       }
@@ -219,26 +229,37 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         password,
       });
 
-      // Se for e-mail de fundador autorizados e ainda não existir no Auth, cria a conta no Supabase Auth
-      if (authError && ADMIN_EMAILS.includes(cleanEmail)) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: {
-            data: {
-              full_name: 'Wesley Filipy (Admin)',
-              role: 'admin',
-            },
-          },
-        });
+      // Se for e-mail de fundador autorizado e ainda não existir no Auth, cria a conta no Supabase Auth
+      if (authError) {
+        const errMsg = authError.message?.toLowerCase() || '';
 
-        if (!signUpError && signUpData?.user) {
-          data = signUpData as any;
-          authError = null;
+        if (errMsg.includes('email not confirmed')) {
+          throw new Error('E-mail de administrador cadastrado no Supabase, mas pendente de confirmação. Execute o comando SQL no Supabase para confirmar o e-mail instantaneamente.');
+        }
+
+        if ((errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) && ADMIN_EMAILS.includes(cleanEmail)) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                full_name: 'Wesley Filipy (Admin)',
+                role: 'admin',
+              },
+            },
+          });
+
+          if (!signUpError && signUpData?.user) {
+            data = signUpData as any;
+            authError = null;
+          }
         }
       }
 
       if (authError || !data?.user) {
+        if (authError?.message?.toLowerCase().includes('email not confirmed')) {
+          throw new Error('E-mail de administrador cadastrado no Supabase, mas pendente de confirmação. Execute o comando SQL no Supabase para confirmar o e-mail instantaneamente.');
+        }
         throw new Error(authError?.message || 'Senha ou e-mail de administrador incorretos no Supabase.');
       }
 

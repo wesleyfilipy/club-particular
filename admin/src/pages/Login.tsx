@@ -70,40 +70,51 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       // Se a conta de admin ou novo aluno ainda não existir no Supabase Auth, tenta criar a conta
       if (authError) {
-        if (loginMode === 'admin' && ADMIN_EMAILS.includes(cleanEmail)) {
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: cleanEmail,
-            password,
-            options: {
-              data: {
-                full_name: fullName || 'Wesley Filipy (Admin)',
-                role: 'admin',
-              },
-            },
-          });
+        const errMsg = authError.message?.toLowerCase() || '';
 
-          if (!signUpError && signUpData?.user) {
-            data = signUpData as any;
-            authError = null;
-          }
-        } else if (loginMode === 'member' && authError.message?.toLowerCase().includes('invalid login credentials')) {
-          // Se for um novo aluno tentando o primeiro acesso, realiza o cadastro automático no Supabase Auth
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: cleanEmail,
-            password,
-            options: {
-              data: {
-                full_name: fullName || cleanEmail.split('@')[0],
-                role: 'member',
-              },
-            },
-          });
+        // Tratar "Email not confirmed" de forma direta e sem disparar signUp em loop (evita erro 429)
+        if (errMsg.includes('email not confirmed')) {
+          throw new Error('E-mail cadastrado no Supabase Auth, porém pendente de confirmação. Verifique sua caixa de e-mail ou confirme o e-mail no SQL Editor do Supabase.');
+        }
 
-          if (!signUpError && signUpData?.user) {
-            data = signUpData as any;
-            authError = null;
-          } else if (signUpError?.message?.toLowerCase().includes('already registered')) {
-            throw new Error('E-mail já cadastrado, porém a senha digitada está incorreta. Verifique sua senha.');
+        // Tentar auto-registro APENAS se as credenciais forem inválidas porque o usuário ainda não existe
+        if (errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) {
+          if (loginMode === 'admin' && ADMIN_EMAILS.includes(cleanEmail)) {
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+              email: cleanEmail,
+              password,
+              options: {
+                data: {
+                  full_name: fullName || 'Wesley Filipy (Admin)',
+                  role: 'admin',
+                },
+              },
+            });
+
+            if (!signUpError && signUpData?.user) {
+              data = signUpData as any;
+              authError = null;
+            } else if (signUpError?.message?.toLowerCase().includes('already registered')) {
+              throw new Error('E-mail de administrador já cadastrado, porém a senha digitada está incorreta.');
+            }
+          } else if (loginMode === 'member') {
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+              email: cleanEmail,
+              password,
+              options: {
+                data: {
+                  full_name: fullName || cleanEmail.split('@')[0],
+                  role: 'member',
+                },
+              },
+            });
+
+            if (!signUpError && signUpData?.user) {
+              data = signUpData as any;
+              authError = null;
+            } else if (signUpError?.message?.toLowerCase().includes('already registered')) {
+              throw new Error('E-mail já cadastrado, porém a senha digitada está incorreta. Verifique sua senha.');
+            }
           }
         }
       }

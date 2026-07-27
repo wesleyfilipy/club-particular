@@ -532,3 +532,13 @@ INSERT INTO public.offers (
     true
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- 7. AUTO-CONFIRMAR E-MAILS DE ADMINISTRADORES NO SUPABASE AUTH (Elimina erro "Email not confirmed")
+UPDATE auth.users
+SET email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+    confirmed_at = COALESCE(confirmed_at, NOW())
+WHERE LOWER(email) IN (
+    'inteligenciaartificial558@gmail.com',
+    'wesleyfilipy454@gmail.com',
+    'admin@clubparticular.com'
+);

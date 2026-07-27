@@ -1,1 +1,1 @@
-feat(ui): aprimorar copy persuasiva e design da Landing Page VipLandingPage.tsx
+fix(auth): tratar Email not confirmed no frontend e adicionar script de confirmacao automatica no Supabase SQL
