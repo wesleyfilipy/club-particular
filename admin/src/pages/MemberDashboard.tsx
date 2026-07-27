@@ -822,7 +822,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <div className="p-5 rounded-2xl bg-[#1a1d29] border border-[#282c3d] shadow-md">
                     <span className="text-xs text-gray-400 block mb-1">Valor da Assinatura</span>
                     <span className="font-bold text-[#f5d77f] text-sm flex items-center gap-2">
-                      R$ 100,00 / mês
+                      R$ 1.000,00 / mês
                     </span>
                   </div>
 
@@ -841,7 +841,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                     <div>
                       <h4 className="font-extrabold text-base text-white">Gerenciar Assinatura Stripe & Supabase</h4>
                       <p className="text-xs text-gray-400 mt-1">
-                        Sua assinatura mensal de R$ 100,00 garante acesso ilimitado aos vídeos VSL 4K, packs R2 e chat VIP.
+                        Sua assinatura mensal de R$ 1.000,00 garante acesso ilimitado aos vídeos VSL 4K, packs R2 e chat VIP.
                       </p>
                     </div>
 
@@ -858,7 +858,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
                       <button
                         onClick={async () => {
-                          if (confirm('Deseja realmente cancelar sua assinatura VIP de R$ 100/mês?')) {
+                          if (confirm('Deseja realmente cancelar sua assinatura VIP de R$ 1.000/mês?')) {
                             try {
                               await supabase
                                 .from('subscriptions')
@@ -867,7 +867,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                             } catch {
                               // Ignore
                             }
-                            alert('Sua assinatura de R$ 100/mês foi marcada como cancelada no Supabase e não será renovada no próximo ciclo.');
+                            alert('Sua assinatura de R$ 1.000/mês foi marcada como cancelada no Supabase e não será renovada no próximo ciclo.');
                           }
                         }}
                         className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs hover:bg-red-500/20 transition-all cursor-pointer shrink-0"

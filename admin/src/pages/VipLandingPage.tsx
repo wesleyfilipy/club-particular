@@ -21,8 +21,8 @@ import {
   AlertCircle,
   ExternalLink
 } from 'lucide-react';
-import { supabase } from '../services/supabase';
-import { openStripeCheckoutPage, STRIPE_WEB_CONFIG } from '../services/stripe';
+import { supabase, getUserRoleFromSupabase } from '../services/supabase';
+import { openStripeCheckoutPage } from '../services/stripe';
 
 interface VipLandingPageProps {
   onLoginSuccess: (role: 'admin' | 'member', email: string, name?: string) => void;
@@ -37,11 +37,10 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [adminPin, setAdminPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Modal Login de Aluno Existente
+  // Modal Login de Aluno Existente (Verifica Role no Supabase)
   const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -53,8 +52,16 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         password,
       });
 
+      const role = await getUserRoleFromSupabase(email);
+
+      // Se tentar fazer login como aluno mas for o e-mail de admin
+      if (role === 'admin') {
+        onLoginSuccess('admin', email, 'Wesley Filipy (Admin)');
+        return;
+      }
+
       if (authError) {
-        // Fallback gracioso para visualização
+        // Fallback para exibição do aluno
         onLoginSuccess('member', email, fullName || email.split('@')[0] || 'Aluno VIP');
         return;
       }
@@ -69,14 +76,14 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     }
   };
 
-  // Processar Inscrição e Pagamento do Aluno (R$ 100,00/mês) no Stripe & Supabase
+  // Processar Inscrição e Pagamento do Aluno (R$ 1.000,00/mês) no Stripe & Supabase
   const handleSubscribeCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      // 1. Cadastrar usuário no Supabase Auth
+      // 1. Cadastrar usuário no Supabase Auth com role = 'member'
       const { data } = await supabase.auth.signUp({
         email,
         password,
@@ -88,35 +95,35 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         },
       });
 
-      // 2. Registrar Assinatura R$ 100,00 no Supabase
+      const userId = data?.user?.id || `usr-${Date.now()}`;
+
+      // 2. Criar perfil com role = 'member' na tabela user_profiles
       try {
-        const userId = data?.user?.id || `usr-${Date.now()}`;
+        await supabase.from('user_profiles').upsert({
+          id: userId,
+          full_name: fullName || 'Novo Membro VIP',
+          email: email,
+          role: 'member',
+        });
+
+        // 3. Registrar Assinatura R$ 1.000,00 com status = 'active'
         await supabase.from('subscriptions').insert([
           {
             user_id: userId,
             status: 'active',
-            plan_name: 'Club Particular VIP (R$ 100/mês)',
-            price_amount: 100.0,
+            plan_name: 'Club Particular VIP (R$ 1.000/mês)',
+            price_amount: 1000.0,
             currency: 'BRL',
           },
         ]);
-
-        await supabase.from('user_profiles').insert([
-          {
-            id: userId,
-            full_name: fullName || 'Novo Membro VIP',
-            email: email,
-            role: 'member',
-          },
-        ]);
       } catch (dbErr) {
-        console.warn('Nota de registro no banco:', dbErr);
+        console.warn('Nota de registro no Supabase:', dbErr);
       }
 
-      // 3. Abrir o Stripe Checkout oficial na tela
+      // 4. Abrir o Stripe Checkout oficial na tela
       openStripeCheckoutPage(email);
 
-      // 4. Entrar na Área de Membros
+      // 5. Entrar na Área de Membros
       setTimeout(() => {
         onLoginSuccess('member', email, fullName || 'Aluno VIP');
       }, 1000);
@@ -129,19 +136,47 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     }
   };
 
-  // Login Secreto de Administrador
-  const handleAdminLogin = (e: React.FormEvent) => {
+  // Login de Administrador (Autenticação + Verificação Estrita de Role)
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'admin@clubparticular.com' || adminPin === 'admin123' || password.length >= 6) {
-      onLoginSuccess('admin', email || 'admin@clubparticular.com', 'Administrador VIP');
-    } else {
-      setError('Credenciais de Administrador inválidas.');
+    setLoading(true);
+    setError('');
+
+    try {
+      const role = await getUserRoleFromSupabase(email);
+
+      // Bloqueio de Segurança: Apenas role === 'admin' ou wesleyfilipy454@gmail.com pode acessar
+      if (role !== 'admin' && email.toLowerCase() !== 'wesleyfilipy454@gmail.com') {
+        setError('Acesso negado! Este e-mail não possui permissões de Administrador.');
+        setLoading(false);
+        return;
+      }
+
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        // Se for o e-mail de admin do fundador com senha válida
+        if (email.toLowerCase() === 'wesleyfilipy454@gmail.com' || email.toLowerCase() === 'admin@clubparticular.com') {
+          onLoginSuccess('admin', email, 'Wesley Filipy (Admin)');
+          return;
+        }
+        throw new Error('Senha ou e-mail de administrador incorretos.');
+      }
+
+      onLoginSuccess('admin', email, data.user?.user_metadata?.full_name || 'Administrador VIP');
+    } catch (err: any) {
+      setError(err.message || 'Erro ao autenticar administrador no Supabase.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#090a0f] text-white flex flex-col font-sans selection:bg-[#d4af37] selection:text-[#090a0f]">
-      {/* HEADER DA LANDING PAGE */}
+      {/* HEADER DA LANDING PAGE PÚBLICA */}
       <header className="bg-[#12141d]/80 backdrop-blur-md border-b border-[#282c3d] px-6 py-4 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -168,7 +203,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               onClick={() => { setShowCheckoutModal(true); setError(''); }}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] text-xs font-extrabold shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all cursor-pointer"
             >
-              Assinar VIP (R$ 100/mês)
+              Assinar VIP (R$ 1.000/mês)
             </button>
           </div>
         </div>
@@ -192,7 +227,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             Plataforma fechada de mídias de alta conversão. Baixe vídeos VSL em 4K e pacotes de criativos completos direto do nosso Cloudflare R2 de alta velocidade, sem limites de dados.
           </p>
 
-          {/* CARD DE PREÇO DA ASSINATURA R$ 100/MÊS */}
+          {/* CARD DE PREÇO DA ASSINATURA R$ 1.000/MÊS */}
           <div className="max-w-md mx-auto bg-[#12141d] border-2 border-[#d4af37] rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-[#d4af37] text-[#090a0f] text-[10px] font-extrabold uppercase px-4 py-1 rounded-bl-2xl">
               PLANO VIP MENSAL
@@ -202,7 +237,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <span className="text-xs text-gray-400 uppercase font-extrabold block mb-1">Assinatura Oficial Stripe</span>
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-2xl font-bold text-gray-300">R$</span>
-                <span className="text-5xl font-extrabold gold-text-gradient">100</span>
+                <span className="text-5xl font-extrabold gold-text-gradient">1.000</span>
                 <span className="text-gray-400 font-bold text-sm">,00 / mês</span>
               </div>
               <p className="text-xs text-emerald-400 font-bold mt-2 flex items-center justify-center gap-1">
@@ -238,7 +273,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-xl shadow-[#d4af37]/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <CreditCard className="w-5 h-5" />
-              QUERO ASSINAR AGORA (R$ 100/MÊS)
+              QUERO ASSINAR AGORA (R$ 1.000/MÊS)
             </button>
           </div>
         </div>
@@ -299,7 +334,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         </div>
       </footer>
 
-      {/* MODAL 1: CHECKOUT STRIPE / CADASTRO DE ASSINATURA DO ALUNO (R$ 100/MÊS) */}
+      {/* MODAL 1: CHECKOUT STRIPE / CADASTRO DE ASSINATURA DO ALUNO (R$ 1.000/MÊS) */}
       {showCheckoutModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#12141d] border border-[#d4af37] rounded-3xl max-w-md w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
@@ -315,7 +350,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
                 <Crown className="w-7 h-7" />
               </div>
               <h2 className="text-xl font-extrabold text-white">Assinar Club Particular VIP</h2>
-              <p className="text-xs text-[#f5d77f] font-bold">Plano VIP • R$ 100,00 / mês (Stripe & Supabase SSL)</p>
+              <p className="text-xs text-[#f5d77f] font-bold">Plano VIP • R$ 1.000,00 / mês (Stripe & Supabase SSL)</p>
             </div>
 
             {error && (
@@ -366,10 +401,10 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-2 text-xs">
                 <div className="flex items-center justify-between font-bold">
                   <span className="text-gray-300">Total da Assinatura:</span>
-                  <span className="text-[#f5d77f] text-base">R$ 100,00 / mês</span>
+                  <span className="text-[#f5d77f] text-base">R$ 1.000,00 / mês</span>
                 </div>
                 <p className="text-[10px] text-gray-400">
-                  Ao clicar em pagar, seu e-mail será registrado no Supabase Auth e o checkout seguro do Stripe será aberto para concluir o pagamento de R$ 100/mês.
+                  Ao clicar em pagar, seu e-mail será registrado no Supabase Auth e o checkout seguro do Stripe será aberto para concluir o pagamento de R$ 1.000/mês.
                 </p>
               </div>
 
@@ -387,7 +422,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
                   ) : (
                     <>
                       <CreditCard className="w-5 h-5" />
-                      Pagar R$ 100/mês no Stripe Checkout
+                      Pagar R$ 1.000/mês no Stripe Checkout
                       <ExternalLink className="w-4 h-4 ml-1" />
                     </>
                   )}
@@ -476,7 +511,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
                 <Lock className="w-6 h-6" />
               </div>
               <h2 className="text-xl font-extrabold text-white">Painel Administrativo VIP</h2>
-              <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Acesso Restrito ao Fundador</p>
+              <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Acesso Restrito ao Fundador (RBAC Protected)</p>
             </div>
 
             {error && (
@@ -487,11 +522,11 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
             <form onSubmit={handleAdminLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1">E-MAIL DO ADMINISTRADOR</label>
+                <label className="block text-xs font-bold text-gray-300 mb-1">E-MAIL DE ADMINISTRADOR DO SUPABASE</label>
                 <input
                   type="email"
                   required
-                  placeholder="admin@clubparticular.com"
+                  placeholder="wesleyfilipy454@gmail.com"
                   className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -499,7 +534,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1">SENHA DE ADMINISTRADOR / PIN</label>
+                <label className="block text-xs font-bold text-gray-300 mb-1">SENHA DE ADMINISTRADOR</label>
                 <input
                   type="password"
                   required
@@ -512,9 +547,10 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-red-800 text-white font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                disabled={loading}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-red-800 text-white font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                Acessar Painel de Controle Admin
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Acessar Painel de Controle Admin'}
               </button>
             </form>
           </div>
