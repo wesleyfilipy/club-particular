@@ -1,1 +1,1 @@
-fix(auth): tratar validacao de e-mail e UUID sem lancar erro 22P02 no Supabase Postgres
+fix(auth): auto-cadastrar primeiro acesso de alunos e melhorar mensagem de erro de credenciais

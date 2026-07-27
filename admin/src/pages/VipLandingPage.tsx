@@ -56,27 +56,49 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         password,
       });
 
-      // Se for e-mail de fundador e ainda não existir no Auth, cria a conta no Supabase Auth
-      if (authError && ADMIN_EMAILS.includes(cleanEmail)) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: {
-            data: {
-              full_name: 'Wesley Filipy (Admin)',
-              role: 'admin',
+      // Se o aluno está tentando o primeiro acesso e a conta ainda não existe no Auth, faz o cadastro automático no Supabase
+      if (authError) {
+        if (ADMIN_EMAILS.includes(cleanEmail)) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                full_name: 'Wesley Filipy (Admin)',
+                role: 'admin',
+              },
             },
-          },
-        });
+          });
 
-        if (!signUpError && signUpData?.user) {
-          data = signUpData as any;
-          authError = null;
+          if (!signUpError && signUpData?.user) {
+            data = signUpData as any;
+            authError = null;
+          }
+        } else if (authError.message?.toLowerCase().includes('invalid login credentials')) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                full_name: cleanEmail.split('@')[0],
+                role: 'member',
+              },
+            },
+          });
+
+          if (!signUpError && signUpData?.user) {
+            data = signUpData as any;
+            authError = null;
+          }
         }
       }
 
       if (authError || !data?.user) {
-        setError(authError?.message || 'E-mail ou senha incorretos no Supabase. Verifique suas credenciais.');
+        if (authError?.message?.toLowerCase().includes('invalid login credentials')) {
+          setError('E-mail não encontrado ou senha incorreta. Caso seja seu primeiro acesso, crie sua conta e assine o plano VIP.');
+        } else {
+          setError(authError?.message || 'E-mail ou senha incorretos no Supabase. Verifique suas credenciais.');
+        }
         setLoading(false);
         return;
       }

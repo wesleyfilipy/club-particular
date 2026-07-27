@@ -68,26 +68,50 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         password,
       });
 
-      // Se o usuário de admin ainda não estiver registrado no Supabase Auth, efetua o cadastro inicial seguro
-      if (authError && (loginMode === 'admin' || ADMIN_EMAILS.includes(cleanEmail))) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: {
-            data: {
-              full_name: fullName || 'Wesley Filipy (Admin)',
-              role: 'admin',
+      // Se a conta de admin ou novo aluno ainda não existir no Supabase Auth, tenta criar a conta
+      if (authError) {
+        if (loginMode === 'admin' && ADMIN_EMAILS.includes(cleanEmail)) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                full_name: fullName || 'Wesley Filipy (Admin)',
+                role: 'admin',
+              },
             },
-          },
-        });
+          });
 
-        if (!signUpError && signUpData?.user) {
-          data = signUpData as any;
-          authError = null;
+          if (!signUpError && signUpData?.user) {
+            data = signUpData as any;
+            authError = null;
+          }
+        } else if (loginMode === 'member' && authError.message?.toLowerCase().includes('invalid login credentials')) {
+          // Se for um novo aluno tentando o primeiro acesso, realiza o cadastro automático no Supabase Auth
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                full_name: fullName || cleanEmail.split('@')[0],
+                role: 'member',
+              },
+            },
+          });
+
+          if (!signUpError && signUpData?.user) {
+            data = signUpData as any;
+            authError = null;
+          } else if (signUpError?.message?.toLowerCase().includes('already registered')) {
+            throw new Error('E-mail já cadastrado, porém a senha digitada está incorreta. Verifique sua senha.');
+          }
         }
       }
 
       if (authError || !data?.user) {
+        if (authError?.message?.toLowerCase().includes('invalid login credentials')) {
+          throw new Error('E-mail não encontrado ou senha incorreta. Se é o seu primeiro acesso, clique na aba "Criar Conta de Aluno" para se cadastrar.');
+        }
         throw new Error(authError?.message || 'E-mail ou senha incorretos. Verifique suas credenciais no Supabase.');
       }
 
