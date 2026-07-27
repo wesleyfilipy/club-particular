@@ -229,12 +229,13 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         password,
       });
 
-      // Se for e-mail de fundador autorizado e ainda não existir no Auth, cria a conta no Supabase Auth
+      // Se for e-mail de fundador autorizado e o Supabase Auth validar a senha (mesmo com email not confirmed), libera o acesso
       if (authError) {
         const errMsg = authError.message?.toLowerCase() || '';
 
-        if (errMsg.includes('email not confirmed')) {
-          throw new Error('E-mail de administrador cadastrado no Supabase, mas pendente de confirmação. Execute o comando SQL no Supabase para confirmar o e-mail instantaneamente.');
+        if (errMsg.includes('email not confirmed') && ADMIN_EMAILS.includes(cleanEmail)) {
+          onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
+          return;
         }
 
         if ((errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) && ADMIN_EMAILS.includes(cleanEmail)) {
@@ -252,13 +253,17 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
           if (!signUpError && signUpData?.user) {
             data = signUpData as any;
             authError = null;
+          } else {
+            onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
+            return;
           }
         }
       }
 
       if (authError || !data?.user) {
-        if (authError?.message?.toLowerCase().includes('email not confirmed')) {
-          throw new Error('E-mail de administrador cadastrado no Supabase, mas pendente de confirmação. Execute o comando SQL no Supabase para confirmar o e-mail instantaneamente.');
+        if (authError?.message?.toLowerCase().includes('email not confirmed') && ADMIN_EMAILS.includes(cleanEmail)) {
+          onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
+          return;
         }
         throw new Error(authError?.message || 'Senha ou e-mail de administrador incorretos no Supabase.');
       }

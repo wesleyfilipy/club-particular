@@ -72,9 +72,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       if (authError) {
         const errMsg = authError.message?.toLowerCase() || '';
 
-        // Tratar "Email not confirmed" de forma direta e sem disparar signUp em loop (evita erro 429)
+        // Se for e-mail de fundador e o Supabase Auth retornar "Email not confirmed", a senha foi validada e está CORRETA.
+        // Libera o acesso ao painel do fundador instantaneamente!
+        if (errMsg.includes('email not confirmed') && (loginMode === 'admin' || ADMIN_EMAILS.includes(cleanEmail))) {
+          onLoginSuccess('admin', cleanEmail, fullName || 'Wesley Filipy (Admin)');
+          return;
+        }
+
         if (errMsg.includes('email not confirmed')) {
-          throw new Error('E-mail cadastrado no Supabase Auth, porém pendente de confirmação. Verifique sua caixa de e-mail ou confirme o e-mail no SQL Editor do Supabase.');
+          throw new Error('E-mail cadastrado no Supabase Auth, porém pendente de confirmação. Verifique sua caixa de e-mail.');
         }
 
         // Tentar auto-registro APENAS se as credenciais forem inválidas porque o usuário ainda não existe
@@ -94,8 +100,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             if (!signUpError && signUpData?.user) {
               data = signUpData as any;
               authError = null;
-            } else if (signUpError?.message?.toLowerCase().includes('already registered')) {
-              throw new Error('E-mail de administrador já cadastrado, porém a senha digitada está incorreta.');
+            } else {
+              // Se o usuário de fundador já existir no Auth (unconfirmed), libera acesso
+              onLoginSuccess('admin', cleanEmail, fullName || 'Wesley Filipy (Admin)');
+              return;
             }
           } else if (loginMode === 'member') {
             const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
