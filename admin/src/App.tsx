@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
@@ -7,6 +7,7 @@ import { MediaUploader } from './pages/MediaUploader';
 import { NotificationsManager } from './pages/NotificationsManager';
 import { MemberDashboard } from './pages/MemberDashboard';
 import { VipLandingPage } from './pages/VipLandingPage';
+import { supabase, getUserRoleFromSupabase } from './services/supabase';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -14,6 +15,53 @@ export default function App() {
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 1. Validar sessão JWT ativa no carregamento
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const role = await getUserRoleFromSupabase(session.user.id);
+          setUserRole(role);
+          setUserEmail(session.user.email || '');
+          setUserName(session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '');
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        console.error('Erro ao verificar sessão Supabase:', err);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+
+    // 2. Escutar eventos do Supabase Auth em tempo real
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const role = await getUserRoleFromSupabase(session.user.id);
+        setUserRole(role);
+        setUserEmail(session.user.email || '');
+        setUserName(session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '');
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+        setUserRole('member');
+        setUserEmail('');
+        setUserName('');
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleLoginSuccess = (role: 'admin' | 'member', email: string, name?: string) => {
     setUserRole(role);
@@ -22,14 +70,23 @@ export default function App() {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setIsAuthenticated(false);
     setUserRole('member');
     setUserEmail('');
     setUserName('');
   };
 
-  // VISITANTES E NOVOS ALUNOS VÊEM A LANDING PAGE VIP (COM VENDAS R$ 1.000/MÊS E LOGIN DE ALUNOS)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#090a0f] flex items-center justify-center text-[#d4af37] font-bold text-sm">
+        Carregando sessão segura do Club Particular...
+      </div>
+    );
+  }
+
+  // VISITANTES E NOVOS ALUNOS VÊEM A LANDING PAGE VIP (COM VENDAS E LOGIN DE ALUNOS)
   if (!isAuthenticated) {
     return <VipLandingPage onLoginSuccess={handleLoginSuccess} />;
   }

@@ -27,8 +27,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
   isLoading: true,
-  isSubscribed: true, // Default to true for demo preview
-  subscriptionStatus: 'active',
+  isSubscribed: false,
+  subscriptionStatus: 'expired',
 
   initializeAuth: async () => {
     try {
@@ -47,28 +47,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           id: session.user.id,
           email: session.user.email || '',
           full_name: session.user.user_metadata?.full_name || 'Membro VIP',
-          role: session.user.user_metadata?.role || 'member',
+          role: 'member',
           avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
         };
 
         set({ user: userProfile, session });
         await get().verifySubscription();
       } else {
-        // Mock default demo user if no Supabase connection yet
         set({
-          user: {
-            id: 'demo-user-123',
-            full_name: 'Gabriel Siqueira',
-            email: 'membro@clubparticular.com',
-            role: 'member',
-            avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-          },
-          isSubscribed: true,
-          subscriptionStatus: 'active',
+          user: null,
+          session: null,
+          isSubscribed: false,
+          subscriptionStatus: 'expired',
         });
       }
     } catch (err) {
       console.error('Auth initialization error:', err);
+      set({ user: null, session: null, isSubscribed: false, subscriptionStatus: 'expired' });
     } finally {
       set({ isLoading: false });
     }

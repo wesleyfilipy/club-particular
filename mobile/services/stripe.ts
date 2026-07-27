@@ -47,14 +47,14 @@ export async function checkSubscriptionStatus(userId: string): Promise<boolean> 
       .eq('user_id', userId)
       .single();
 
-    if (error) {
-      console.warn('Subscription fetch notice (defaulting to active for preview):', error.message);
-      return true; // Graceful fallback for local dev preview
+    if (error || !data) {
+      console.warn('Subscription fetch notice:', error?.message);
+      return false;
     }
 
-    return data?.status === 'active';
+    return data.status === 'active';
   } catch (err) {
     console.error('Error checking subscription status:', err);
-    return true;
+    return false;
   }
 }

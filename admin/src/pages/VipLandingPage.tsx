@@ -49,45 +49,42 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-      // 1. Verificar se é e-mail de Administrador
-      const role = await getUserRoleFromSupabase(cleanEmail);
-      if (role === 'admin') {
-        onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
-        return;
-      }
-
-      // 2. Autenticar no Supabase Auth
+      // 1. Autenticação obrigatória com senha no Supabase Auth
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
 
-      const isRateLimit = authError?.message?.toLowerCase().includes('rate limit') || authError?.status === 429;
-
-      if (authError && !isRateLimit) {
-        setError('E-mail ou senha não encontrados no Supabase. Por favor crie sua conta e assine o plano VIP.');
+      if (authError || !data?.user) {
+        setError(authError?.message || 'E-mail ou senha incorretos no Supabase. Verifique suas credenciais.');
         setLoading(false);
         return;
       }
 
-      // 3. Validar se possui assinatura ativa na tabela subscriptions do Supabase
-      const userId = data?.user?.id;
-      if (userId && !isRateLimit) {
-        const { data: subData } = await supabase
-          .from('subscriptions')
-          .select('status')
-          .eq('user_id', userId)
-          .single();
+      // 2. Verificar a role oficial do usuário logado via user_id no Supabase
+      const userId = data.user.id;
+      const role = await getUserRoleFromSupabase(userId);
 
-        if (subData && subData.status !== 'active') {
-          setError('Sua assinatura de R$ 100/mês não está ativa. Por favor assine a área VIP para liberar seu acesso.');
-          setLoading(false);
-          return;
-        }
+      if (role === 'admin') {
+        onLoginSuccess('admin', cleanEmail, data.user.user_metadata?.full_name || 'Administrador VIP');
+        return;
+      }
+
+      // 3. Validar se o aluno possui assinatura ativa
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('status')
+        .eq('user_id', userId)
+        .single();
+
+      if (!subData || subData.status !== 'active') {
+        setError('Sua assinatura de R$ 100/mês não está ativa. Por favor assine a área VIP para liberar seu acesso.');
+        setLoading(false);
+        return;
       }
 
       // 4. Sucesso -> Libera área VIP do Aluno
-      onLoginSuccess('member', cleanEmail, data?.user?.user_metadata?.full_name || cleanEmail.split('@')[0]);
+      onLoginSuccess('member', cleanEmail, data.user.user_metadata?.full_name || cleanEmail.split('@')[0]);
     } catch (err: any) {
       setError(err.message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
     } finally {

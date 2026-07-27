@@ -65,36 +65,25 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         password,
       });
 
-      if (authError) {
-        if (loginMode === 'admin') {
-          if (email.length > 3 && password.length >= 6) {
-            onLoginSuccess('admin', email, 'Administrador VIP');
-            return;
-          }
-          throw new Error('E-mail ou senha incorretos. Verifique seu cadastro no Supabase.');
-        } else {
-          // Permite entrada do membro com seu email cadastrado
-          onLoginSuccess('member', email, fullName || email.split('@')[0]);
-          return;
-        }
+      if (authError || !data?.user) {
+        throw new Error(authError?.message || 'E-mail ou senha incorretos. Verifique suas credenciais.');
       }
 
-      if (data?.session || data?.user) {
-        const role = loginMode === 'admin' ? 'admin' : 'member';
-        onLoginSuccess(role, email, data.user?.user_metadata?.full_name || fullName || email.split('@')[0]);
+      // Verificar role oficial no Supabase DB
+      const { getUserRoleFromSupabase } = await import('../services/supabase');
+      const userRole = await getUserRoleFromSupabase(data.user.id);
+
+      if (loginMode === 'admin' && userRole !== 'admin') {
+        throw new Error('Acesso negado: Este usuário não possui permissões administrativas.');
       }
+
+      onLoginSuccess(
+        userRole,
+        email,
+        data.user?.user_metadata?.full_name || fullName || email.split('@')[0]
+      );
     } catch (err: any) {
-      console.warn('Supabase Auth connection note:', err);
-      // Se houver erro de rede/URL não resolvida (ex: ERR_NAME_NOT_RESOLVED do domínio placeholder),
-      // permite a entrada direta no painel do aluno ou admin sem travar o usuário
-      if (loginMode === 'member') {
-        setSuccessMessage('Entrando na Área de Membros VIP...');
-        setTimeout(() => {
-          onLoginSuccess('member', email || 'aluno@clubparticular.com', fullName || 'Aluno VIP');
-        }, 800);
-      } else {
-        onLoginSuccess('admin', email || 'admin@clubparticular.com', 'Administrador VIP');
-      }
+      setError(err.message || 'Falha ao realizar autenticação. Verifique seu e-mail e senha.');
     } finally {
       setLoading(false);
     }

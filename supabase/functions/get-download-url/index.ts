@@ -3,9 +3,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.0';
 import { S3Client, GetObjectCommand } from 'https://esm.sh/@aws-sdk/client-s3@3.587.0';
 import { getSignedUrl } from 'https://esm.sh/@aws-sdk/s3-request-presigner@3.587.0';
 
-const r2Endpoint = Deno.env.get('R2_ENDPOINT') || 'https://8ddb172434dd7aec1d56e202103365e5.r2.cloudflarestorage.com';
-const r2AccessKey = Deno.env.get('R2_ACCESS_KEY_ID') || '6e3142da49e7fce423aa335cb39d27a9';
-const r2SecretKey = Deno.env.get('R2_SECRET_ACCESS_KEY') || 'd92ea3497cfdf3dcfeb246ef6bf77e8b489cc2a772ab1a8e729c65a1c2e8707a';
+const r2Endpoint = Deno.env.get('R2_ENDPOINT') || '';
+const r2AccessKey = Deno.env.get('R2_ACCESS_KEY_ID') || '';
+const r2SecretKey = Deno.env.get('R2_SECRET_ACCESS_KEY') || '';
 const r2Bucket = Deno.env.get('R2_BUCKET') || 'club-particular';
 
 const r2 = new S3Client({
@@ -50,7 +50,15 @@ serve(async (req) => {
       );
     }
 
-    // 1. Verify Active Stripe Subscription in Supabase
+    // 1. Verify if user is Admin / Moderator or has Active Stripe Subscription
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const isAdminOrMod = profile?.role === 'admin' || profile?.role === 'moderator';
+
     const { data: subscription } = await supabase
       .from('subscriptions')
       .select('status')
@@ -59,7 +67,7 @@ serve(async (req) => {
 
     const isSubscribed = subscription?.status === 'active';
 
-    if (!isSubscribed) {
+    if (!isAdminOrMod && !isSubscribed) {
       return new Response(
         JSON.stringify({ error: 'Acesso Negado (HTTP 403): Sua assinatura Stripe está inativa ou expirada.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

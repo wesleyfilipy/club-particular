@@ -13,35 +13,35 @@ export interface UserProfile {
   avatar_url?: string;
 }
 
-// Lista de e-mails com permissão de Administrador
-export const ADMIN_EMAILS = [
-  'wesleyfilipy454@gmail.com',
-  'admin@clubparticular.com'
-];
-
 /**
- * Consulta a role do usuário no Supabase user_profiles
+ * Consulta a role oficial do usuário autenticado no Supabase user_profiles
  */
-export async function getUserRoleFromSupabase(email: string): Promise<'admin' | 'member'> {
-  const cleanEmail = email.toLowerCase().trim();
-
-  // Verificação direta para e-mails de fundador
-  if (ADMIN_EMAILS.includes(cleanEmail)) {
-    return 'admin';
-  }
-
+export async function getUserRoleFromSupabase(userId?: string): Promise<'admin' | 'member'> {
   try {
+    let targetId = userId;
+    if (!targetId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      targetId = session?.user?.id;
+    }
+
+    if (!targetId) return 'member';
+
     const { data, error } = await supabase
       .from('user_profiles')
       .select('role')
-      .eq('email', cleanEmail)
+      .eq('id', targetId)
       .single();
 
-    if (data && data.role) {
-      return data.role === 'admin' ? 'admin' : 'member';
+    if (error) {
+      console.warn('Erro ao consultar role do usuário:', error.message);
+      return 'member';
+    }
+
+    if (data && data.role === 'admin') {
+      return 'admin';
     }
   } catch (err) {
-    console.warn('Consulta de role no banco Supabase:', err);
+    console.warn('Consulta de role no Supabase:', err);
   }
 
   return 'member';

@@ -41,12 +41,11 @@ export async function getSignedDownloadUrl(bucket: string, keyPath: string): Pro
       if (json.url) return json.url;
     }
 
-    // Fallback: R2 direct endpoint
-    const r2Endpoint = 'https://8ddb172434dd7aec1d56e202103365e5.r2.cloudflarestorage.com';
-    return `${r2Endpoint}/${bucket}/${keyPath}`;
-  } catch (err) {
-    console.warn('Fallback generating Cloudflare R2 URL:', err);
-    return keyPath;
+    const errJson = await response.json().catch(() => ({}));
+    throw new Error(errJson.error || 'Acesso negado: Falha ao obter URL de download segura.');
+  } catch (err: any) {
+    console.error('Erro ao obter Signed URL:', err);
+    throw new Error(err.message || 'Não foi possível autorizar o download do arquivo.');
   }
 }
 
