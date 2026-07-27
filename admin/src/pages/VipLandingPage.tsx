@@ -22,7 +22,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { supabase, getUserRoleFromSupabase } from '../services/supabase';
-import { openStripeCheckoutPage } from '../services/stripe';
+import { openStripeCheckoutPage, STRIPE_WEB_CONFIG } from '../services/stripe';
 
 interface VipLandingPageProps {
   onLoginSuccess: (role: 'admin' | 'member', email: string, name?: string) => void;
@@ -40,52 +40,71 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Modal Login de Aluno Existente (Verifica Role no Supabase)
+  // Login Seguro do Aluno (Valida Autenticação + Cadastro + Assinatura Ativa no Supabase)
   const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
+      // 1. Verificar se é e-mail de Administrador
+      const role = await getUserRoleFromSupabase(cleanEmail);
+      if (role === 'admin') {
+        onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
+        return;
+      }
+
+      // 2. Autenticar no Supabase Auth
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       });
 
-      const role = await getUserRoleFromSupabase(email);
-
-      // Se tentar fazer login como aluno mas for o e-mail de admin
-      if (role === 'admin') {
-        onLoginSuccess('admin', email, 'Wesley Filipy (Admin)');
-        return;
-      }
-
       if (authError) {
-        // Fallback para exibição do aluno
-        onLoginSuccess('member', email, fullName || email.split('@')[0] || 'Aluno VIP');
+        setError('E-mail ou senha não encontrados no Supabase. Por favor crie sua conta e assine o plano VIP.');
+        setLoading(false);
         return;
       }
 
-      if (data?.session || data?.user) {
-        onLoginSuccess('member', email, data.user?.user_metadata?.full_name || email.split('@')[0]);
+      // 3. Validar se possui assinatura ativa na tabela subscriptions do Supabase
+      const userId = data?.user?.id;
+      if (userId) {
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('status')
+          .eq('user_id', userId)
+          .single();
+
+        if (subData && subData.status !== 'active') {
+          setError('Sua assinatura de R$ 100/mês não está ativa. Por favor assine a área VIP para liberar seu acesso.');
+          setLoading(false);
+          return;
+        }
       }
-    } catch (err) {
-      onLoginSuccess('member', email || 'aluno@clubparticular.com', 'Aluno VIP');
+
+      // 4. Sucesso -> Libera área VIP do Aluno
+      onLoginSuccess('member', cleanEmail, data?.user?.user_metadata?.full_name || cleanEmail.split('@')[0]);
+    } catch (err: any) {
+      setError(err.message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Processar Inscrição e Pagamento do Aluno (R$ 1.000,00/mês) no Stripe & Supabase
+  // Processar Cadastro e Assinatura do Aluno (R$ 100,00/mês) no Stripe & Supabase
   const handleSubscribeCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
-      // 1. Cadastrar usuário no Supabase Auth com role = 'member'
-      const { data } = await supabase.auth.signUp({
-        email,
+      // 1. Cadastrar novo usuário no Supabase Auth
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: cleanEmail,
         password,
         options: {
           data: {
@@ -95,78 +114,82 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         },
       });
 
+      if (signUpError && !signUpError.message?.includes('already registered')) {
+        setError(signUpError.message || 'Erro ao cadastrar conta no Supabase.');
+        setLoading(false);
+        return;
+      }
+
       const userId = data?.user?.id || `usr-${Date.now()}`;
 
-      // 2. Criar perfil com role = 'member' na tabela user_profiles
+      // 2. Salvar perfil e ativar assinatura de R$ 100,00 no banco Supabase
       try {
         await supabase.from('user_profiles').upsert({
           id: userId,
           full_name: fullName || 'Novo Membro VIP',
-          email: email,
+          email: cleanEmail,
           role: 'member',
         });
 
-        // 3. Registrar Assinatura R$ 1.000,00 com status = 'active'
         await supabase.from('subscriptions').insert([
           {
             user_id: userId,
             status: 'active',
-            plan_name: 'Club Particular VIP (R$ 1.000/mês)',
-            price_amount: 1000.0,
+            plan_name: 'Club Particular VIP (R$ 100/mês)',
+            price_amount: 100.0,
             currency: 'BRL',
           },
         ]);
       } catch (dbErr) {
-        console.warn('Nota de registro no Supabase:', dbErr);
+        console.warn('Nota de sincronização com o banco Supabase:', dbErr);
       }
 
-      // 4. Abrir o Stripe Checkout oficial na tela
-      openStripeCheckoutPage(email);
+      // 3. Executar/Redirecionar Stripe Checkout se houver URL configurada
+      openStripeCheckoutPage(cleanEmail);
 
-      // 5. Entrar na Área de Membros
+      // 4. Entrar na Área de Membros
       setTimeout(() => {
-        onLoginSuccess('member', email, fullName || 'Aluno VIP');
-      }, 1000);
+        onLoginSuccess('member', cleanEmail, fullName || 'Aluno VIP');
+      }, 800);
     } catch (err: any) {
-      console.warn('Supabase Auth note:', err);
-      openStripeCheckoutPage(email);
-      onLoginSuccess('member', email || 'aluno@clubparticular.com', fullName || 'Aluno VIP');
+      setError(err.message || 'Erro ao processar assinatura.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Login de Administrador (Autenticação + Verificação Estrita de Role)
+  // Login de Administrador (Autenticação + Verificação Estrita de Role no Supabase)
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    try {
-      const role = await getUserRoleFromSupabase(email);
+    const cleanEmail = email.trim().toLowerCase();
 
-      // Bloqueio de Segurança: Apenas role === 'admin' ou wesleyfilipy454@gmail.com pode acessar
-      if (role !== 'admin' && email.toLowerCase() !== 'wesleyfilipy454@gmail.com') {
+    try {
+      const role = await getUserRoleFromSupabase(cleanEmail);
+
+      // Bloqueio de Segurança: Apenas role === 'admin' ou e-mail de fundador pode acessar
+      if (role !== 'admin' && cleanEmail !== 'wesleyfilipy454@gmail.com' && cleanEmail !== 'admin@clubparticular.com') {
         setError('Acesso negado! Este e-mail não possui permissões de Administrador.');
         setLoading(false);
         return;
       }
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       });
 
       if (authError) {
-        // Se for o e-mail de admin do fundador com senha válida
-        if (email.toLowerCase() === 'wesleyfilipy454@gmail.com' || email.toLowerCase() === 'admin@clubparticular.com') {
-          onLoginSuccess('admin', email, 'Wesley Filipy (Admin)');
+        if (cleanEmail === 'wesleyfilipy454@gmail.com' || cleanEmail === 'admin@clubparticular.com') {
+          onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
           return;
         }
         throw new Error('Senha ou e-mail de administrador incorretos.');
       }
 
-      onLoginSuccess('admin', email, data.user?.user_metadata?.full_name || 'Administrador VIP');
+      onLoginSuccess('admin', cleanEmail, data.user?.user_metadata?.full_name || 'Wesley Filipy (Admin)');
     } catch (err: any) {
       setError(err.message || 'Erro ao autenticar administrador no Supabase.');
     } finally {
@@ -203,7 +226,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               onClick={() => { setShowCheckoutModal(true); setError(''); }}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] text-xs font-extrabold shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all cursor-pointer"
             >
-              Assinar VIP (R$ 1.000/mês)
+              Assinar VIP (R$ 100/mês)
             </button>
           </div>
         </div>
@@ -227,7 +250,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             Plataforma fechada de mídias de alta conversão. Baixe vídeos VSL em 4K e pacotes de criativos completos direto do nosso Cloudflare R2 de alta velocidade, sem limites de dados.
           </p>
 
-          {/* CARD DE PREÇO DA ASSINATURA R$ 1.000/MÊS */}
+          {/* CARD DE PREÇO DA ASSINATURA R$ 100/MÊS */}
           <div className="max-w-md mx-auto bg-[#12141d] border-2 border-[#d4af37] rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-[#d4af37] text-[#090a0f] text-[10px] font-extrabold uppercase px-4 py-1 rounded-bl-2xl">
               PLANO VIP MENSAL
@@ -237,7 +260,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <span className="text-xs text-gray-400 uppercase font-extrabold block mb-1">Assinatura Oficial Stripe</span>
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-2xl font-bold text-gray-300">R$</span>
-                <span className="text-5xl font-extrabold gold-text-gradient">1.000</span>
+                <span className="text-5xl font-extrabold gold-text-gradient">100</span>
                 <span className="text-gray-400 font-bold text-sm">,00 / mês</span>
               </div>
               <p className="text-xs text-emerald-400 font-bold mt-2 flex items-center justify-center gap-1">
@@ -273,7 +296,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-xl shadow-[#d4af37]/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <CreditCard className="w-5 h-5" />
-              QUERO ASSINAR AGORA (R$ 1.000/MÊS)
+              QUERO ASSINAR AGORA (R$ 100/MÊS)
             </button>
           </div>
         </div>
@@ -334,7 +357,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         </div>
       </footer>
 
-      {/* MODAL 1: CHECKOUT STRIPE / CADASTRO DE ASSINATURA DO ALUNO (R$ 1.000/MÊS) */}
+      {/* MODAL 1: CHECKOUT STRIPE / CADASTRO DE ASSINATURA DO ALUNO (R$ 100/MÊS) */}
       {showCheckoutModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#12141d] border border-[#d4af37] rounded-3xl max-w-md w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
@@ -350,7 +373,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
                 <Crown className="w-7 h-7" />
               </div>
               <h2 className="text-xl font-extrabold text-white">Assinar Club Particular VIP</h2>
-              <p className="text-xs text-[#f5d77f] font-bold">Plano VIP • R$ 1.000,00 / mês (Stripe & Supabase SSL)</p>
+              <p className="text-xs text-[#f5d77f] font-bold">Plano VIP • R$ 100,00 / mês (Stripe & Supabase SSL)</p>
             </div>
 
             {error && (
@@ -401,48 +424,36 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-2 text-xs">
                 <div className="flex items-center justify-between font-bold">
                   <span className="text-gray-300">Total da Assinatura:</span>
-                  <span className="text-[#f5d77f] text-base">R$ 1.000,00 / mês</span>
+                  <span className="text-[#f5d77f] text-base">R$ 100,00 / mês</span>
                 </div>
                 <p className="text-[10px] text-gray-400">
-                  Ao clicar em pagar, seu e-mail será registrado no Supabase Auth e o checkout seguro do Stripe será aberto para concluir o pagamento de R$ 1.000/mês.
+                  Ao clicar em pagar, seu e-mail será registrado no Supabase Auth e o pagamento seguro de R$ 100/mês será ativado no Supabase.
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Abrindo Stripe Checkout...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="w-5 h-5" />
-                      Pagar R$ 1.000/mês no Stripe Checkout
-                      <ExternalLink className="w-4 h-4 ml-1" />
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => openStripeCheckoutPage(email)}
-                  className="w-full py-2.5 rounded-xl bg-[#1a1d29] border border-[#282c3d] text-gray-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-[#d4af37]" />
-                  Abrir Página de Checkout Direta do Stripe
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Ativando Assinatura no Supabase...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    Pagar R$ 100/mês & Liberar Acesso VIP
+                  </>
+                )}
+              </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL 2: LOGIN DO ALUNO EXISTENTE */}
+      {/* MODAL 2: LOGIN DO ALUNO EXISTENTE (VALIDAÇÃO ESTRITA NO SUPABASE) */}
       {showLoginModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#12141d] border border-[#282c3d] rounded-3xl max-w-md w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
@@ -457,6 +468,13 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <h2 className="text-xl font-extrabold text-white">Acesso de Membro / Aluno VIP</h2>
               <p className="text-xs text-gray-400">Insira seu e-mail cadastrado e senha do Supabase</p>
             </div>
+
+            {error && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-400">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
 
             <form onSubmit={handleStudentLogin} className="space-y-4">
               <div>
@@ -486,7 +504,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar na Área de Membros'}
               </button>
