@@ -13,19 +13,26 @@ export interface UserProfile {
   avatar_url?: string;
 }
 
+export const ADMIN_EMAILS = [
+  'inteligenciaartificial558@gmail.com',
+  'wesleyfilipy454@gmail.com',
+  'admin@clubparticular.com'
+];
+
 /**
  * Consulta a role oficial do usuário autenticado no Supabase user_profiles
  */
 export async function getUserRoleFromSupabase(userId?: string): Promise<'admin' | 'member'> {
   try {
-    let targetId = userId;
-    if (!targetId) {
-      const { data: { session } } = await supabase.auth.getSession();
-      targetId = session?.user?.id;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return 'member';
+
+    const userEmail = session.user.email?.toLowerCase().trim();
+    if (userEmail && ADMIN_EMAILS.includes(userEmail)) {
+      return 'admin';
     }
 
-    if (!targetId) return 'member';
-
+    let targetId = userId || session.user.id;
     const { data, error } = await supabase
       .from('user_profiles')
       .select('role')
@@ -34,7 +41,6 @@ export async function getUserRoleFromSupabase(userId?: string): Promise<'admin' 
 
     if (error) {
       console.warn('Erro ao consultar role do usuário:', error.message);
-      return 'member';
     }
 
     if (data && data.role === 'admin') {

@@ -1,0 +1,1 @@
+fix(auth): adicionar e-mail de fundador inteligenciaartificial558@gmail.com com permissões de administrador
