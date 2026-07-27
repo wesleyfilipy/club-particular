@@ -156,12 +156,19 @@ CREATE TABLE IF NOT EXISTS public.downloads (
 -- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.chat_messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES public.user_profiles(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE,
+    user_email TEXT,
+    user_name TEXT,
     content TEXT NOT NULL,
     media_url TEXT,
+    media_type TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
+
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS user_email TEXT;
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS user_name TEXT;
+ALTER TABLE public.chat_messages ADD COLUMN IF NOT EXISTS media_type TEXT;
 
 -- Enable Realtime for chat_messages
 ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
