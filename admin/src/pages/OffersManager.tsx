@@ -1,21 +1,8 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Video, Globe, FileText, UploadCloud, Film, Package, CheckCircle2, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, Globe, FileText, UploadCloud, Film, Package, CheckCircle2, ShieldCheck, ExternalLink } from 'lucide-react';
 import { uploadToR2, R2_BUCKET } from '../services/r2';
-
-interface OfferItem {
-  id: string;
-  name: string;
-  category: string;
-  commission: string;
-  description?: string;
-  siteUrl?: string;
-  landingPageUrl?: string;
-  adsLibraryUrl?: string;
-  vslFileUrl?: string;
-  vslFileName?: string;
-  creativeFileUrl?: string;
-  creativeFileName?: string;
-}
+import { OfferItem, getStoredOffers, saveStoredOffers, fetchOffersFromSupabase } from '../services/offersService';
+import { supabase } from '../services/supabase';
 
 export const OffersManager: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -24,34 +11,18 @@ export const OffersManager: React.FC = () => {
   const [vslProgress, setVslProgress] = useState(0);
   const [creativeProgress, setCreativeProgress] = useState(0);
 
-  const [offersList, setOffersList] = useState<OfferItem[]>([
-    {
-      id: 'oferta-001',
-      name: 'Fórmula Seca Barriga Natural 3.0',
-      category: 'Saúde & Emagrecimento',
-      commission: '80% (R$ 157,60)',
-      siteUrl: 'https://formulaseca.com.br',
-      landingPageUrl: 'https://formulaseca.com.br/pv-oficial',
-      adsLibraryUrl: 'https://facebook.com/ads/library',
-      vslFileName: 'vsl_formula_seca_4k.mp4',
-      vslFileUrl: 'offers/oferta-001/vsl/vsl_formula_seca_4k.mp4',
-      creativeFileName: 'pack_anuncios_criativos.zip',
-      creativeFileUrl: 'offers/oferta-001/creatives/pack_anuncios_criativos.zip',
-    },
-    {
-      id: 'oferta-002',
-      name: 'Método Milionário com IA (MMIA)',
-      category: 'Renda Extra & Finanças',
-      commission: '75% (R$ 222,75)',
-      siteUrl: 'https://metodomilionarioia.com',
-      landingPageUrl: 'https://metodomilionarioia.com/vsl-full',
-      adsLibraryUrl: 'https://facebook.com/ads/library',
-      vslFileName: 'vsl_mmia_master.mp4',
-      vslFileUrl: 'offers/oferta-002/vsl/vsl_mmia_master.mp4',
-      creativeFileName: 'video_ad_facebook_01.mp4',
-      creativeFileUrl: 'offers/oferta-002/creatives/video_ad_facebook_01.mp4',
-    },
-  ]);
+  const [offersList, setOffersList] = useState<OfferItem[]>(() => getStoredOffers());
+
+  // Carrega ofertas do Supabase / LocalStorage
+  useEffect(() => {
+    const loadOffers = async () => {
+      const data = await fetchOffersFromSupabase();
+      if (data && data.length > 0) {
+        setOffersList(data);
+      }
+    };
+    loadOffers();
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -121,23 +92,51 @@ export const OffersManager: React.FC = () => {
     }
   };
 
-  const handleCreateOffer = (e: React.FormEvent) => {
+  const handleCreateOffer = async (e: React.FormEvent) => {
     e.preventDefault();
     const newOffer: OfferItem = {
       id: `oferta-${Date.now()}`,
       name: formData.name || 'Nova Oferta VIP',
       category: formData.category,
-      commission: formData.commission || '80% (R$ 180,00)',
-      description: formData.description,
-      siteUrl: formData.siteUrl,
-      landingPageUrl: formData.landingPageUrl,
-      adsLibraryUrl: formData.adsLibraryUrl,
-      vslFileUrl: formData.vslFileUrl,
-      vslFileName: formData.vslFileName,
-      creativeFileUrl: formData.creativeFileUrl,
-      creativeFileName: formData.creativeFileName,
+      commission: formData.commission || '80% (R$ 180,00 por venda)',
+      description: formData.description || 'Oferta exclusiva adicionada pelo administrador com material completo no R2.',
+      vslVideoUrl: formData.vslFileUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      vslPoster: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=600',
+      vslFileName: formData.vslFileName || 'vsl_video_oficial_4k.mp4',
+      vslResolution: '4K Ultra HD',
+      creativeFileName: formData.creativeFileName || 'pack_anuncios_criativos.zip',
+      creativeFileSize: '180 MB',
+      siteUrl: formData.siteUrl || 'https://clubparticular.com',
+      landingPageUrl: formData.landingPageUrl || 'https://clubparticular.com',
+      adsLibraryUrl: formData.adsLibraryUrl || 'https://facebook.com/ads/library',
+      conversionRate: '8.7%',
+      viewsCount: '1.200',
     };
-    setOffersList([newOffer, ...offersList]);
+
+    const updated = [newOffer, ...offersList];
+    setOffersList(updated);
+    saveStoredOffers(updated);
+
+    // Grava também no Supabase
+    try {
+      await supabase.from('offers').insert([
+        {
+          id: newOffer.id,
+          name: newOffer.name,
+          category: newOffer.category,
+          commission: newOffer.commission,
+          description: newOffer.description,
+          image_url: newOffer.vslVideoUrl,
+          logo_url: newOffer.vslPoster,
+          official_site_url: newOffer.siteUrl,
+          landing_page_url: newOffer.landingPageUrl,
+          facebook_ads_library_url: newOffer.adsLibraryUrl,
+        },
+      ]);
+    } catch (err) {
+      console.warn('Erro ao inserir no Supabase, salvo localmente:', err);
+    }
+
     setShowModal(false);
     setFormData({
       name: '',
@@ -154,8 +153,16 @@ export const OffersManager: React.FC = () => {
     });
   };
 
-  const handleDelete = (id: string) => {
-    setOffersList(offersList.filter((o) => o.id !== id));
+  const handleDelete = async (id: string) => {
+    const updated = offersList.filter((o) => o.id !== id);
+    setOffersList(updated);
+    saveStoredOffers(updated);
+
+    try {
+      await supabase.from('offers').delete().eq('id', id);
+    } catch {
+      // Ignore
+    }
   };
 
   return (
@@ -163,12 +170,14 @@ export const OffersManager: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-extrabold text-white">Gerenciamento de Ofertas VIP</h2>
-          <p className="text-sm text-gray-400">Adicione ofertas com upload direto de vídeos de VSL e anúncios no Cloudflare R2.</p>
+          <p className="text-sm text-gray-400">
+            Adicione ofertas com upload direto de vídeos de VSL e anúncios no Cloudflare R2. Todas as ofertas aqui ficam visíveis no menu do Aluno!
+          </p>
         </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold text-sm shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold text-sm shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all cursor-pointer"
         >
           <Plus className="w-5 h-5" />
           Cadastrar Nova Oferta VIP
@@ -176,15 +185,15 @@ export const OffersManager: React.FC = () => {
       </div>
 
       {/* Offers Table */}
-      <div className="bg-[#12141d] rounded-2xl border border-[#282c3d] overflow-hidden">
+      <div className="bg-[#12141d] rounded-2xl border border-[#282c3d] overflow-hidden shadow-2xl">
         <table className="w-full text-left text-sm text-gray-300">
           <thead className="bg-[#1a1d29] text-xs font-bold text-[#f5d77f] uppercase border-b border-[#282c3d]">
             <tr>
               <th className="p-4">Nome da Oferta</th>
               <th className="p-4">Categoria</th>
-              <th className="p-4">Comissão</th>
+              <th className="p-4">Comissão VIP</th>
               <th className="p-4">Vídeo VSL (R2)</th>
-              <th className="p-4">Vídeo Anúncios / Criativos</th>
+              <th className="p-4">Anúncios / Pack R2</th>
               <th className="p-4 text-right">Ações</th>
             </tr>
           </thead>
@@ -220,12 +229,10 @@ export const OffersManager: React.FC = () => {
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button className="p-2 rounded-lg bg-[#1a1d29] text-gray-300 hover:text-[#d4af37] transition-all">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
                     <button
                       onClick={() => handleDelete(offer.id)}
-                      className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
+                      className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all cursor-pointer"
+                      title="Excluir Oferta"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -248,7 +255,9 @@ export const OffersManager: React.FC = () => {
                   Bucket: {R2_BUCKET}
                 </span>
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white font-bold text-lg">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white font-bold text-lg cursor-pointer">
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleCreateOffer} className="space-y-5 text-sm">
@@ -276,6 +285,8 @@ export const OffersManager: React.FC = () => {
                     <option>Renda Extra & Finanças</option>
                     <option>Desenvolvimento Pessoal</option>
                     <option>Relacionamento & Conquista</option>
+                    <option>Investimentos & Cripto</option>
+                    <option>E-commerce & Dropshipping</option>
                   </select>
                 </div>
                 <div>
@@ -411,13 +422,13 @@ export const OffersManager: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-5 py-2.5 rounded-xl text-gray-400 hover:text-white font-semibold"
+                  className="px-5 py-2.5 rounded-xl text-gray-400 hover:text-white font-semibold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold shadow-lg"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold shadow-lg cursor-pointer"
                 >
                   Salvar Oferta no Supabase
                 </button>
@@ -429,4 +440,3 @@ export const OffersManager: React.FC = () => {
     </div>
   );
 };
-

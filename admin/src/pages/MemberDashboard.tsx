@@ -48,24 +48,7 @@ interface ChatMessage {
   created_at?: string;
 }
 
-interface OfferItem {
-  id: string;
-  name: string;
-  category: string;
-  commission: string;
-  description: string;
-  vslVideoUrl: string;
-  vslPoster: string;
-  vslFileName: string;
-  vslResolution: string;
-  creativeFileName: string;
-  creativeFileSize: string;
-  siteUrl: string;
-  landingPageUrl: string;
-  adsLibraryUrl: string;
-  conversionRate: string;
-  viewsCount: string;
-}
+import { OfferItem, getStoredOffers, fetchOffersFromSupabase } from '../services/offersService';
 
 const STORAGE_CHAT_KEY = 'club_particular_vip_chat_v2';
 
@@ -88,117 +71,18 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
   const videoInputRef = useRef<HTMLInputElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // Lista de Ofertas VIP
-  const [offers] = useState<OfferItem[]>([
-    {
-      id: 'oferta-001',
-      name: 'Fórmula Seca Barriga Natural 3.0',
-      category: 'Saúde & Emagrecimento',
-      commission: '80% (R$ 157,60/venda)',
-      description: 'Oferta Black campeã de vendas no nicho de emagrecimento. Inclui VSL de alta retenção gravada em 4K e pack completo de anúncios prontos para rodar no Facebook, Instagram e TikTok Ads.',
-      vslVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      vslPoster: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=600',
-      vslFileName: 'vsl_formula_seca_barriga_4k.mp4',
-      vslResolution: '4K Ultra HD',
-      creativeFileName: 'pack_criativos_anuncios_canva_hd.zip',
-      creativeFileSize: '145 MB',
-      siteUrl: 'https://formulaseca.com.br',
-      landingPageUrl: 'https://formulaseca.com.br/pv-oficial',
-      adsLibraryUrl: 'https://facebook.com/ads/library',
-      conversionRate: '8.4%',
-      viewsCount: '12.450',
-    },
-    {
-      id: 'oferta-002',
-      name: 'Método Milionário com IA (MMIA)',
-      category: 'Renda Extra & Finanças',
-      commission: '75% (R$ 222,75/venda)',
-      description: 'O treinamento mais vendido de automação e vendas com inteligência artificial. VSL cinematográfica com robô 3D, prova social de alunos faturando em dólar e scripts de vendas automática.',
-      vslVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      vslPoster: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
-      vslFileName: 'vsl_metodo_milionario_ia_master.mp4',
-      vslResolution: '1080p Full HD',
-      creativeFileName: 'video_ads_tiktok_facebook_pack.zip',
-      creativeFileSize: '320 MB',
-      siteUrl: 'https://metodomilionarioia.com',
-      landingPageUrl: 'https://metodomilionarioia.com/vsl-full',
-      adsLibraryUrl: 'https://facebook.com/ads/library',
-      conversionRate: '9.1%',
-      viewsCount: '18.900',
-    },
-    {
-      id: 'oferta-003',
-      name: 'Código Secreto da Sedução Suprema',
-      category: 'Relacionamento & Conquista',
-      commission: '85% (R$ 167,45/venda)',
-      description: 'Ebook + Áudios Guia sobre desenvolvimento pessoal e atração masculina. Pitch validado nos EUA adaptado para o público brasileiro com retenção monstruosa.',
-      vslVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      vslPoster: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=600',
-      vslFileName: 'vsl_codigo_seduicao_suprema.mp4',
-      vslResolution: '1080p Full HD',
-      creativeFileName: 'pack_banners_copy_criativos.zip',
-      creativeFileSize: '98 MB',
-      siteUrl: 'https://seducaosuprema.com.br',
-      landingPageUrl: 'https://seducaosuprema.com.br/pv-membros',
-      adsLibraryUrl: 'https://facebook.com/ads/library',
-      conversionRate: '7.8%',
-      viewsCount: '8.720',
-    },
-    {
-      id: 'oferta-004',
-      name: 'Manual do Cripto Trader Elite',
-      category: 'Investimentos & Cripto',
-      commission: '80% (R$ 197,00/venda)',
-      description: 'Estratégias avançadas de scalping e arbitragem em criptomoedas. VSL com demonstração ao vivo de lucros em dólar.',
-      vslVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-      vslPoster: 'https://images.unsplash.com/photo-1621416894569-0f39ed31d247?auto=format&fit=crop&q=80&w=600',
-      vslFileName: 'vsl_cripto_trader_elite.mp4',
-      vslResolution: '4K Ultra HD',
-      creativeFileName: 'pack_criativos_cripto.zip',
-      creativeFileSize: '210 MB',
-      siteUrl: 'https://criptotraderelite.com',
-      landingPageUrl: 'https://criptotraderelite.com/pv',
-      adsLibraryUrl: 'https://facebook.com/ads/library',
-      conversionRate: '9.4%',
-      viewsCount: '21.300',
-    },
-    {
-      id: 'oferta-005',
-      name: 'Inglês Fluente em 90 Dias',
-      category: 'Educação & Idiomas',
-      commission: '70% (R$ 137,90/venda)',
-      description: 'Método neurocientífico de imersão acelerada em inglês sem regras gramaticais chatas. VSL em formato de mini-aula explicativa.',
-      vslVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
-      vslPoster: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&q=80&w=600',
-      vslFileName: 'vsl_ingles_fluente_90dias.mp4',
-      vslResolution: '1080p Full HD',
-      creativeFileName: 'pack_anuncios_ingles.zip',
-      creativeFileSize: '115 MB',
-      siteUrl: 'https://inglesfluente90.com',
-      landingPageUrl: 'https://inglesfluente90.com/oferta',
-      adsLibraryUrl: 'https://facebook.com/ads/library',
-      conversionRate: '8.1%',
-      viewsCount: '14.100',
-    },
-    {
-      id: 'oferta-006',
-      name: 'Drop Sem Estoque 5.0',
-      category: 'E-commerce & Dropshipping',
-      commission: '80% (R$ 180,00/venda)',
-      description: 'Treinamento prático de Dropshipping nacional e internacional com minerador automático de produtos vencedores.',
-      vslVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubtleMovement.mp4',
-      vslPoster: 'https://images.unsplash.com/photo-1556742049-0a67daf40955?auto=format&fit=crop&q=80&w=600',
-      vslFileName: 'vsl_drop_sem_estoque.mp4',
-      vslResolution: '1080p Full HD',
-      creativeFileName: 'pack_banners_drop.zip',
-      creativeFileSize: '280 MB',
-      siteUrl: 'https://dropsemestoque.com',
-      landingPageUrl: 'https://dropsemestoque.com/pv',
-      adsLibraryUrl: 'https://facebook.com/ads/library',
-      conversionRate: '8.9%',
-      viewsCount: '16.800',
-    },
-  ]);
+  // Lista de Ofertas VIP Sincronizadas com o Administrador
+  const [offers, setOffers] = useState<OfferItem[]>(() => getStoredOffers());
+
+  useEffect(() => {
+    const loadOffers = async () => {
+      const data = await fetchOffersFromSupabase();
+      if (data && data.length > 0) {
+        setOffers(data);
+      }
+    };
+    loadOffers();
+  }, []);
 
   // Mensagens do Chat com persistência no Supabase e LocalStorage
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
