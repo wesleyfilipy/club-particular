@@ -40,7 +40,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Login Seguro do Aluno (Valida Autenticação + Cadastro + Assinatura Ativa no Supabase)
+  // Login Seguro do Aluno (Valida Autenticação + Assinatura Ativa no Supabase)
   const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -49,81 +49,30 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-      // 1. Autenticação obrigatória com senha no Supabase Auth
-      const { ADMIN_EMAILS } = await import('../services/supabase');
-      let { data, error: authError } = await supabase.auth.signInWithPassword({
+      // 1. Tentar autenticação estrita com e-mail e senha no Supabase Auth
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
 
-      // Se o aluno está tentando o primeiro acesso e a conta ainda não existe no Auth, faz o cadastro automático no Supabase
-      if (authError) {
-        const errMsg = authError.message?.toLowerCase() || '';
-
-        if (errMsg.includes('email not confirmed')) {
-          // Allow login for members bypassing email confirmation
-          onLoginSuccess('member', cleanEmail, cleanEmail.split('@')[0]);
-          setLoading(false);
-          return;
-        }
-
-        if (errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) {
-          if (ADMIN_EMAILS.includes(cleanEmail)) {
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-              email: cleanEmail,
-              password,
-              options: {
-                data: {
-                  full_name: 'Wesley Filipy (Admin)',
-                  role: 'admin',
-                },
-              },
-            });
-
-            if (!signUpError && signUpData?.user) {
-              data = signUpData as any;
-              authError = null;
-            }
-          } else {
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-              email: cleanEmail,
-              password,
-              options: {
-                data: {
-                  full_name: cleanEmail.split('@')[0],
-                  role: 'member',
-                },
-              },
-            });
-
-            if (!signUpError && signUpData?.user) {
-              data = signUpData as any;
-              authError = null;
-            }
-          }
-        }
-      }
-
       if (authError || !data?.user) {
-        if (authError?.message?.toLowerCase().includes('invalid login credentials')) {
-          setError('E-mail não encontrado ou senha incorreta no Supabase.');
-        } else {
-          setError(authError?.message || 'E-mail ou senha incorretos no Supabase.');
-        }
+        setError('E-mail ou senha incorretos. Caso ainda não possua uma assinatura VIP, assine o plano para liberar seu acesso.');
         setLoading(false);
         return;
       }
 
-      // 2. Validar obrigatoriamente no Supabase se o aluno possui assinatura ativa
       const userId = data.user.id;
+
+      // 2. Validar estritamente no Supabase se este usuário possui assinatura ATIVA
       const { data: subData } = await supabase
         .from('subscriptions')
         .select('status')
-        .or(`user_id.eq.${userId},user_id.eq.${cleanEmail}`)
-        .single();
+        .or(`user_id.eq.${userId},stripe_customer_id.eq.${cleanEmail}`)
+        .eq('status', 'active')
+        .maybeSingle();
 
-      if (!subData || subData.status !== 'active') {
-        setError('Acesso negado! Sua assinatura VIP não foi encontrada ou está inativa no Supabase. Por favor assine o plano VIP.');
+      if (!subData) {
+        setError('Acesso negado! Nenhuma assinatura ativa foi encontrada para este e-mail no Supabase. Por favor assine o plano VIP.');
         setLoading(false);
         return;
       }
@@ -131,7 +80,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
       // 3. Sucesso -> Libera Área VIP do Aluno Assinante
       onLoginSuccess('member', cleanEmail, data.user.user_metadata?.full_name || cleanEmail.split('@')[0]);
     } catch (err: any) {
-      setError(err.message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
+      setError(err.message || 'Erro ao validar credenciais no Supabase.');
     } finally {
       setLoading(false);
     }
