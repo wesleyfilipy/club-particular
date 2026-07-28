@@ -4,7 +4,7 @@ export const STRIPE_WEB_CONFIG = {
   priceFormatted: 'R$ 0,01 / mês',
   priceAmount: 0.01,
   // Link Oficial de Checkout do Stripe para o Club Particular
-  checkoutUrl: import.meta.env.VITE_STRIPE_CHECKOUT_URL || 'https://buy.stripe.com/00w5kCa8DbLm7Z17oF2Fa01',
+  checkoutUrl: import.meta.env.VITE_STRIPE_CHECKOUT_URL || 'https://buy.stripe.com/eVq14m1C75mY4MPdN32Fa02',
   portalUrl: import.meta.env.VITE_STRIPE_PORTAL_URL || 'https://billing.stripe.com/p/login/test_clubparticular_portal',
 };
 

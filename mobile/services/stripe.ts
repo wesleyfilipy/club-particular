@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 
 export const STRIPE_CONFIG = {
   monthlyPriceId: 'price_1TyFw2Ayx4jZ2C2QeQsqRJWO',
-  checkoutUrl: 'https://billing.stripe.com/p/login/test_clubparticular_checkout',
+  checkoutUrl: 'https://buy.stripe.com/eVq14m1C75mY4MPdN32Fa02',
   customerPortalUrl: 'https://billing.stripe.com/p/login/test_clubparticular_portal',
   monthlyPriceFormatted: 'R$ 0,01/mês',
 };
