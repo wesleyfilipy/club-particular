@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Gift, UploadCloud, Bell, LogOut, Crown } from 'lucide-react';
+import { LayoutDashboard, Gift, Bell, LogOut, Crown } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -11,7 +11,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
   const menuItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
     { id: 'offers', label: 'Gerenciar Ofertas', icon: Gift },
-    { id: 'media', label: 'Upload de Mídia (até 10GB)', icon: UploadCloud },
     { id: 'notifications', label: 'Disparo de Notificações', icon: Bell },
   ];
 

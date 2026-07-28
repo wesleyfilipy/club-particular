@@ -3,7 +3,6 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
 import { OffersManager } from './pages/OffersManager';
-import { MediaUploader } from './pages/MediaUploader';
 import { NotificationsManager } from './pages/NotificationsManager';
 import { MemberDashboard } from './pages/MemberDashboard';
 import { VipLandingPage } from './pages/VipLandingPage';
@@ -117,7 +116,6 @@ export default function App() {
         <main className="p-8 flex-1 overflow-y-auto">
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'offers' && <OffersManager />}
-          {activeTab === 'media' && <MediaUploader />}
           {activeTab === 'notifications' && <NotificationsManager />}
         </main>
       </div>
