@@ -35,6 +35,41 @@ export async function openStripeCheckout() {
 }
 
 /**
+ * Cancel Stripe & Supabase Subscription in 1-Click
+ */
+export async function cancelStripeSubscriptionMobile(userId: string, email?: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+      body: { userId, email },
+    });
+
+    if (!error && data?.success) {
+      return {
+        success: true,
+        message: data.message || 'Assinatura cancelada com sucesso no Stripe e no aplicativo.',
+      };
+    }
+
+    // Fallback: update subscriptions table in Supabase
+    await supabase
+      .from('subscriptions')
+      .update({ status: 'canceled', cancel_at_period_end: false, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+
+    return {
+      success: true,
+      message: 'Sua assinatura foi marcada como cancelada no sistema.',
+    };
+  } catch (err: any) {
+    console.error('Error canceling subscription:', err);
+    return {
+      success: false,
+      message: err.message || 'Não foi possível cancelar a assinatura.',
+    };
+  }
+}
+
+/**
  * Check if the user has an active Stripe subscription in Supabase
  */
 export async function checkSubscriptionStatus(userId: string): Promise<boolean> {

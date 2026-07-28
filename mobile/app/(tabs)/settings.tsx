@@ -15,7 +15,7 @@ import { Header } from '../../components/Header';
 import { LuxuryButton } from '../../components/LuxuryButton';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
-import { openStripeCustomerPortal } from '../../services/stripe';
+import { openStripeCustomerPortal, cancelStripeSubscriptionMobile } from '../../services/stripe';
 import {
   User,
   Lock,
@@ -34,6 +34,18 @@ export default function SettingsScreen() {
   const { user, signOut, isSubscribed, verifySubscription } = useAuthStore();
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState(false);
+
+  const handleConfirmCancelSubscription = async () => {
+    setCancelModalVisible(false);
+    if (!user) return;
+    try {
+      const res = await cancelStripeSubscriptionMobile(user.id, user.email);
+      await verifySubscription();
+      Alert.alert('Assinatura Cancelada', res.message);
+    } catch (err) {
+      Alert.alert('Erro', 'Não foi possível cancelar a assinatura.');
+    }
+  };
 
   const handleOpenStripePortal = async () => {
     setCancelModalVisible(false);
@@ -181,15 +193,15 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
-      {/* Confirmation Modal before opening Stripe cancel portal */}
+      {/* Confirmation Modal for 1-click Stripe cancel */}
       <ConfirmModal
         visible={cancelModalVisible}
-        title="Cancelar Assinatura Stripe"
-        message="Tem certeza que deseja gerenciar ou cancelar sua assinatura? Você será redirecionado com segurança para o Portal Oficial do Stripe."
-        confirmText="Ir para o Stripe"
+        title="Cancelar Assinatura VIP"
+        message="Tem certeza que deseja cancelar sua assinatura mensal do Stripe? O cancelamento será processado instantaneamente e nenhuma nova cobrança será realizada no seu cartão."
+        confirmText="Sim, Cancelar Assinatura"
         cancelText="Voltar"
         isDanger
-        onConfirm={handleOpenStripePortal}
+        onConfirm={handleConfirmCancelSubscription}
         onCancel={() => setCancelModalVisible(false)}
       />
     </View>

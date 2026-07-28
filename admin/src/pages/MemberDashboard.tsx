@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { getR2PresignedDownloadUrl } from '../services/r2';
+import { openStripeCustomerPortalPage, cancelStripeSubscriptionApi } from '../services/stripe';
 
 interface MemberDashboardProps {
   userEmail: string;
@@ -907,7 +908,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => {
-                          window.open(import.meta.env.VITE_STRIPE_PORTAL_URL || 'https://billing.stripe.com/p/login/test_clubparticular_portal', '_blank');
+                          openStripeCustomerPortalPage(userEmail);
                         }}
                         className="px-4 py-2.5 rounded-xl bg-[#1a1d29] border border-[#282c3d] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                       >
@@ -917,16 +918,9 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
                       <button
                         onClick={async () => {
-                          if (confirm(`Deseja realmente cancelar a sua assinatura VIP individual (${userEmail}) de R$ 0,01/mês?`)) {
-                            try {
-                              await supabase
-                                .from('subscriptions')
-                                .update({ status: 'canceled' })
-                                .eq('user_id', userEmail);
-                            } catch {
-                              // Ignore
-                            }
-                            alert('Sua assinatura individual de R$ 0,01/mês foi marcada como cancelada no Supabase e não afetará nenhum outro aluno.');
+                          if (confirm(`Tem certeza que deseja cancelar sua assinatura VIP (${userEmail}) de R$ 0,01/mês?\n\nO cancelamento será processado instantaneamente no Stripe e no sistema.`)) {
+                            const res = await cancelStripeSubscriptionApi(userEmail);
+                            alert(res.message);
                           }
                         }}
                         className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs hover:bg-red-500/20 transition-all cursor-pointer shrink-0"

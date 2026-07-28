@@ -1,1 +1,0 @@
-fix(auth): liberar acesso do fundador quando a senha for validada pelo Supabase Auth sem travar por confirmacao de e-mail
