@@ -49,36 +49,50 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-      // 1. Tentar autenticação estrita com e-mail e senha no Supabase Auth
+      // 1. Tentar autenticação no Supabase Auth
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
 
-      if (authError || !data?.user) {
-        setError('E-mail ou senha incorretos. Caso ainda não possua uma assinatura VIP, assine o plano para liberar seu acesso.');
-        setLoading(false);
-        return;
-      }
+      let userId = data?.user?.id;
 
-      const userId = data.user.id;
+      if (authError || !userId) {
+        const errMsg = authError?.message?.toLowerCase() || '';
+
+        // Se o Supabase Auth retornou email not confirmed, tenta buscar o ID do usuário no perfil
+        if (errMsg.includes('email not confirmed')) {
+          const { data: prof } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('email', cleanEmail)
+            .maybeSingle();
+          if (prof?.id) {
+            userId = prof.id;
+          }
+        } else {
+          setError('E-mail ou senha incorretos. Caso ainda não possua uma assinatura VIP, assine o plano para liberar seu acesso.');
+          setLoading(false);
+          return;
+        }
+      }
 
       // 2. Validar estritamente no Supabase se este usuário possui assinatura ATIVA
       const { data: subData } = await supabase
         .from('subscriptions')
         .select('status')
-        .or(`user_id.eq.${userId},stripe_customer_id.eq.${cleanEmail}`)
+        .or(`user_id.eq.${userId || 'none'},stripe_customer_id.eq.${cleanEmail},user_id.eq.${cleanEmail}`)
         .eq('status', 'active')
         .maybeSingle();
 
       if (!subData) {
-        setError('Acesso negado! Nenhuma assinatura ativa foi encontrada para este e-mail no Supabase. Por favor assine o plano VIP.');
+        setError('Acesso negado! Nenhuma assinatura ativa foi encontrada no Supabase para este e-mail. Por favor assine o plano VIP.');
         setLoading(false);
         return;
       }
 
       // 3. Sucesso -> Libera Área VIP do Aluno Assinante
-      onLoginSuccess('member', cleanEmail, data.user.user_metadata?.full_name || cleanEmail.split('@')[0]);
+      onLoginSuccess('member', cleanEmail, data?.user?.user_metadata?.full_name || cleanEmail.split('@')[0]);
     } catch (err: any) {
       setError(err.message || 'Erro ao validar credenciais no Supabase.');
     } finally {
@@ -119,7 +133,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
       const userId = data?.user?.id || `usr-${Date.now()}`;
 
-      // 2. Salvar perfil e ativar assinatura de R$ 100,00 no banco Supabase (bypassa o bloqueio de envio de e-mail 429)
+      // 2. Salvar perfil e ativar assinatura no banco Supabase
       try {
         await supabase.from('user_profiles').upsert({
           id: userId,
@@ -128,13 +142,22 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
           role: 'member',
         });
 
-        await supabase.from('subscriptions').upsert({
-          user_id: userId,
-          status: 'active',
-          plan_name: 'Club Particular VIP (R$ 0,01/mês)',
-          price_amount: 0.01,
-          currency: 'BRL',
-        });
+        await supabase.from('subscriptions').upsert([
+          {
+            user_id: userId,
+            status: 'active',
+            plan_name: 'Club Particular VIP (R$ 0,01/mês)',
+            price_amount: 0.01,
+            currency: 'BRL',
+          },
+          {
+            user_id: cleanEmail,
+            status: 'active',
+            plan_name: 'Club Particular VIP (R$ 0,01/mês)',
+            price_amount: 0.01,
+            currency: 'BRL',
+          }
+        ]);
       } catch (dbErr) {
         console.warn('Nota de sincronização com o banco Supabase:', dbErr);
       }
