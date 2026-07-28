@@ -16,6 +16,7 @@ export interface UserProfile {
 export const ADMIN_EMAILS = [
   'inteligenciaartificial558@gmail.com',
   'wesleyfilipy454@gmail.com',
+  'wesleyfilipy21@gmail.com',
   'admin@clubparticular.com'
 ];
 

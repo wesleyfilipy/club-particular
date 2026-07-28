@@ -61,7 +61,13 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         const errMsg = authError.message?.toLowerCase() || '';
 
         if (errMsg.includes('email not confirmed')) {
-          setError('E-mail cadastrado no Supabase, mas pendente de confirmação. Verifique sua caixa de entrada/spam ou confirme o e-mail no Supabase.');
+          if (ADMIN_EMAILS.includes(cleanEmail)) {
+            onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
+            setLoading(false);
+            return;
+          }
+          // Allow login for registered members bypassing email confirmation
+          onLoginSuccess('member', cleanEmail, cleanEmail.split('@')[0]);
           setLoading(false);
           return;
         }
