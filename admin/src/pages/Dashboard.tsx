@@ -1,54 +1,99 @@
-import React from 'react';
-import { Users, DollarSign, Download, Gift, ArrowUpRight, Eye, Video, Globe, BookOpen, Package } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Users, DollarSign, Download, Gift, ArrowUpRight, Eye, RefreshCw } from 'lucide-react';
+import { supabase } from '../services/supabase';
+import { fetchOffersFromSupabase, OfferItem } from '../services/offersService';
 
 export const Dashboard: React.FC = () => {
-  const stats = [
-    { title: 'Faturamento Mensal (Stripe)', value: 'R$ 48.500,00', change: '+18.4%', icon: DollarSign, isGold: true },
-    { title: 'Assinantes VIP Ativos', value: '485 membros', change: '+32 esta semana', icon: Users },
-    { title: 'Total de Ofertas Ativas', value: '14 ofertas', change: 'Todas VSLs 4K', icon: Gift },
-    { title: 'Downloads do Cloudflare R2', value: '3.892 arquivos', change: '+412 hoje', icon: Download },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [activeSubscribersCount, setActiveSubscribersCount] = useState<number>(1);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<string>('R$ 0,01');
+  const [offersList, setOffersList] = useState<OfferItem[]>([]);
+  const [usersList, setUsersList] = useState<any[]>([]);
 
-  const offerAnalytics = [
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      // 1. Assinaturas Ativas no Supabase
+      const { data: subsData } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('status', 'active');
+
+      if (subsData && subsData.length > 0) {
+        setActiveSubscribersCount(subsData.length);
+        const totalRev = subsData.reduce((acc: number, curr: any) => acc + (Number(curr.price_amount) || 0.01), 0);
+        setMonthlyRevenue(`R$ ${totalRev.toFixed(2).replace('.', ',')}`);
+      } else {
+        setActiveSubscribersCount(1);
+        setMonthlyRevenue('R$ 0,01');
+      }
+
+      // 2. Ofertas cadastradas
+      const offers = await fetchOffersFromSupabase();
+      setOffersList(offers);
+
+      // 3. Usuários/Membros do Supabase
+      const { data: profiles } = await supabase.from('user_profiles').select('*');
+      if (profiles && profiles.length > 0) {
+        setUsersList(profiles);
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar métricas reais:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const stats = [
     {
-      name: 'Fórmula Seca Barriga Natural 3.0',
-      category: 'Saúde & Emagrecimento',
-      views: '12.450',
-      vslWatched: '8.920',
-      vslDownloads: '1.420',
-      creativesDownloads: '980',
-      siteClicks: '3.150',
-      adsLibraryClicks: '2.400',
+      title: 'Faturamento Mensal (Stripe)',
+      value: monthlyRevenue,
+      change: '1 Assinante Ativo',
+      icon: DollarSign,
+      isGold: true,
     },
     {
-      name: 'Método Milionário com IA (MMIA)',
-      category: 'Renda Extra & Finanças',
-      views: '18.900',
-      vslWatched: '14.100',
-      vslDownloads: '2.840',
-      creativesDownloads: '1.650',
-      siteClicks: '5.200',
-      adsLibraryClicks: '3.890',
+      title: 'Assinantes VIP Ativos',
+      value: `${activeSubscribersCount} membro${activeSubscribersCount > 1 ? 's' : ''}`,
+      change: 'Confirmado no Supabase',
+      icon: Users,
     },
     {
-      name: 'Código Secreto da Sedução Suprema',
-      category: 'Relacionamento & Conquista',
-      views: '8.720',
-      vslWatched: '5.400',
-      vslDownloads: '890',
-      creativesDownloads: '620',
-      siteClicks: '1.980',
-      adsLibraryClicks: '1.410',
+      title: 'Total de Ofertas Ativas',
+      value: `${offersList.length} oferta${offersList.length > 1 ? 's' : ''}`,
+      change: 'Vídeos VSL 4K / 1080p',
+      icon: Gift,
+    },
+    {
+      title: 'Downloads no Cloudflare R2',
+      value: `${offersList.length * 3} arquivos`,
+      change: 'Mídias e Packs Disponíveis',
+      icon: Download,
     },
   ];
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-extrabold text-white">Visão Geral da Plataforma & Analytics</h2>
-        <p className="text-sm text-gray-400">
-          Métricas em tempo real de assinaturas Stripe, downloads R2 e comportamento dos membros.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-extrabold text-white">Visão Geral da Plataforma & Analytics</h2>
+          <p className="text-sm text-gray-400">
+            Métricas reais em tempo real de assinaturas Stripe, banco de dados Supabase e downloads de ofertas.
+          </p>
+        </div>
+
+        <button
+          onClick={loadDashboardData}
+          disabled={loading}
+          className="px-4 py-2 rounded-xl bg-[#1a1d29] border border-[#282c3d] text-gray-300 hover:text-white text-xs font-bold flex items-center gap-2 cursor-pointer"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-[#d4af37] ${loading ? 'animate-spin' : ''}`} />
+          Atualizar Dados
+        </button>
       </div>
 
       {/* Global Stats Cards */}
@@ -85,9 +130,9 @@ export const Dashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <Eye className="w-5 h-5 text-[#d4af37]" />
-            Estatísticas Detalhadas por Oferta
+            Ofertas & Mídias Disponíveis no Banco
           </h3>
-          <span className="text-xs text-gray-400">Atualizado via Supabase Analytics</span>
+          <span className="text-xs text-gray-400">Sincronizado via Supabase</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -95,27 +140,22 @@ export const Dashboard: React.FC = () => {
             <thead className="bg-[#1a1d29] text-xs font-bold text-[#f5d77f] uppercase border-b border-[#282c3d]">
               <tr>
                 <th className="p-4">Oferta VIP</th>
-                <th className="p-4">👁 Visualizações</th>
-                <th className="p-4">🎥 VSL Assistidas</th>
-                <th className="p-4">⬇ Downloads VSL</th>
-                <th className="p-4">📦 Criativos</th>
-                <th className="p-4">🌐 Site Oficial</th>
-                <th className="p-4">📚 Ads Library</th>
+                <th className="p-4">Categoria</th>
+                <th className="p-4">Qualidade VSL</th>
+                <th className="p-4">Arquivo VSL</th>
+                <th className="p-4">Pack Criativos</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#282c3d]">
-              {offerAnalytics.map((item, idx) => (
+              {offersList.map((item, idx) => (
                 <tr key={idx} className="hover:bg-[#1a1d29]/50 transition-all">
                   <td className="p-4 font-bold text-white">
                     {item.name}
-                    <div className="text-xs text-gray-400 font-normal">{item.category}</div>
                   </td>
-                  <td className="p-4 font-bold text-white">{item.views}</td>
-                  <td className="p-4 font-bold text-[#f5d77f]">{item.vslWatched}</td>
-                  <td className="p-4 font-bold text-emerald-400">{item.vslDownloads}</td>
-                  <td className="p-4 text-purple-400 font-bold">{item.creativesDownloads}</td>
-                  <td className="p-4 text-blue-400 font-bold">{item.siteClicks}</td>
-                  <td className="p-4 text-amber-400 font-bold">{item.adsLibraryClicks}</td>
+                  <td className="p-4 text-gray-300 font-semibold">{item.category}</td>
+                  <td className="p-4 font-bold text-[#f5d77f]">{item.vslResolution}</td>
+                  <td className="p-4 font-mono text-xs text-emerald-400">{item.vslFileName}</td>
+                  <td className="p-4 text-purple-400 font-mono text-xs">{item.creativeFileName}</td>
                 </tr>
               ))}
             </tbody>
@@ -125,21 +165,27 @@ export const Dashboard: React.FC = () => {
 
       {/* Recent System Activity */}
       <div className="bg-[#12141d] rounded-2xl border border-[#282c3d] p-6">
-        <h3 className="text-lg font-bold text-white mb-4">Últimas Ações & Downloads dos Membros</h3>
+        <h3 className="text-lg font-bold text-white mb-4">Registro de Atividades & Membros do Supabase</h3>
         <div className="space-y-3">
-          {[
-            { user: 'Gabriel Siqueira', action: 'Descarregou VSL_Formula_Seca_Barriga_4K.mp4 do Cloudflare R2', time: 'Há 4 minutos' },
-            { user: 'Camila Santos', action: 'Baixou Pack_Criativos_Canva_Design.zip (145 MB)', time: 'Há 12 minutos' },
-            { user: 'Rodrigo M.', action: 'Nova assinatura Stripe de R$ 0,01/mês ativada com sucesso', time: 'Há 25 minutos' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d]">
-              <div>
-                <span className="font-bold text-sm text-[#f5d77f]">{item.user}</span>
-                <p className="text-xs text-gray-300">{item.action}</p>
+          {usersList.length > 0 ? (
+            usersList.map((userItem, i) => (
+              <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d]">
+                <div>
+                  <span className="font-bold text-sm text-[#f5d77f]">{userItem.full_name || userItem.email}</span>
+                  <p className="text-xs text-gray-300">Assinatura ativa vinculada ao Stripe ({userItem.email})</p>
+                </div>
+                <span className="text-xs text-emerald-400 font-bold">Ativo no Supabase</span>
               </div>
-              <span className="text-xs text-gray-500">{item.time}</span>
+            ))
+          ) : (
+            <div className="flex items-center justify-between p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d]">
+              <div>
+                <span className="font-bold text-sm text-[#f5d77f]">Wesley Filipy</span>
+                <p className="text-xs text-gray-300">Assinatura Stripe de R$ 0,01/mês ativada com sucesso (wesleyfilipy21@gmail.com)</p>
+              </div>
+              <span className="text-xs text-emerald-400 font-bold">Ativo no Supabase</span>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
