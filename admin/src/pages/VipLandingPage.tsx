@@ -106,15 +106,29 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
       if (authError || !data?.user) {
         if (authError?.message?.toLowerCase().includes('invalid login credentials')) {
-          setError('E-mail não encontrado ou senha incorreta. Caso seja seu primeiro acesso, crie sua conta e assine o plano VIP.');
+          setError('E-mail não encontrado ou senha incorreta no Supabase.');
         } else {
-          setError(authError?.message || 'E-mail ou senha incorretos no Supabase. Verifique suas credenciais.');
+          setError(authError?.message || 'E-mail ou senha incorretos no Supabase.');
         }
         setLoading(false);
         return;
       }
 
-      // 2. Sucesso -> Libera Área VIP do Aluno / Membro Assinante
+      // 2. Validar obrigatoriamente no Supabase se o aluno possui assinatura ativa
+      const userId = data.user.id;
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('status')
+        .or(`user_id.eq.${userId},user_id.eq.${cleanEmail}`)
+        .single();
+
+      if (!subData || subData.status !== 'active') {
+        setError('Acesso negado! Sua assinatura VIP não foi encontrada ou está inativa no Supabase. Por favor assine o plano VIP.');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Sucesso -> Libera Área VIP do Aluno Assinante
       onLoginSuccess('member', cleanEmail, data.user.user_metadata?.full_name || cleanEmail.split('@')[0]);
     } catch (err: any) {
       setError(err.message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
@@ -192,7 +206,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     }
   };
 
-  // Login de Administrador (Autenticação + Verificação Estrita de Role no Supabase)
+  // Login de Administrador (Autenticação + Verificação Estrita no Supabase)
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -201,9 +215,9 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     const cleanEmail = email.trim().toLowerCase();
     const { ADMIN_EMAILS } = await import('../services/supabase');
 
-    // 1. Bloqueio estrito de e-mails que não sejam administradores autorizados
+    // 1. Bloqueio estrito de e-mails que não sejam a conta oficial de administrador
     if (!ADMIN_EMAILS.includes(cleanEmail)) {
-      setError('Acesso negado! Este e-mail não possui permissões de Administrador.');
+      setError('Acesso negado! Este e-mail não é o Administrador do sistema.');
       setLoading(false);
       return;
     }
@@ -224,7 +238,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             password,
             options: {
               data: {
-                full_name: 'Wesley Filipy (Admin)',
+                full_name: 'Administrador VIP',
                 role: 'admin',
               },
             },
@@ -234,11 +248,12 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             data = signUpData as any;
             authError = null;
           } else {
-            onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
+            setError('Senha de Administrador incorreta no Supabase.');
+            setLoading(false);
             return;
           }
         } else if (errMsg.includes('email not confirmed')) {
-          onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
+          onLoginSuccess('admin', cleanEmail, 'Administrador VIP');
           return;
         }
       }
@@ -249,7 +264,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         return;
       }
 
-      onLoginSuccess('admin', cleanEmail, data?.user?.user_metadata?.full_name || 'Wesley Filipy (Admin)');
+      onLoginSuccess('admin', cleanEmail, data?.user?.user_metadata?.full_name || 'Administrador VIP');
     } catch (err: any) {
       setError(err.message || 'Erro ao autenticar administrador no Supabase.');
     } finally {
