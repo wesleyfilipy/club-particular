@@ -350,7 +350,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   VIP MEMBER PORTAL
                 </span>
               </div>
-              <p className="text-xs text-gray-400">O Centro Exclusivo para Afiliados e Product Owners de Alta Performance</p>
+              <p className="text-xs text-gray-400">O Centro Exclusivo de Mídias, VSLs 4K e Recursos VIP</p>
             </div>
           </div>
 
@@ -641,7 +641,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                       </span>
                     </h2>
                     <p className="text-xs text-gray-400">
-                      Conecte-se com afiliados e empreendedores de todo o Brasil. Partilhe estratégias, resultados, criativos, testes e faça networking com uma comunidade focada em crescimento.
+                      Conecte-se com membros e empreendedores de todo o Brasil. Partilhe estratégias, resultados, criativos, testes e faça networking com uma comunidade focada em crescimento.
                     </p>
                   </div>
                 </div>

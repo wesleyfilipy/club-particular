@@ -266,7 +266,7 @@ export const OffersManager: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Método Afiliado Master 4K"
+                  placeholder="Ex: Oferta Especial VSL 4K"
                   className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}

@@ -326,7 +326,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         <div className="max-w-5xl mx-auto text-center space-y-8 relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#d4af37]/10 border border-[#d4af37] text-xs font-extrabold text-[#f5d77f] uppercase tracking-widest shadow-lg">
             <Sparkles className="w-4 h-4 text-[#d4af37]" />
-            Acesso Exclusivo para Afiliados & Product Owners Elite
+            Acesso Exclusivo para Membros VIP & Criadores
           </div>
 
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
@@ -366,7 +366,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               </li>
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0 mt-0.5" />
-                <span>Comissões VIP de 70% a 85% por venda realizada</span>
+                <span>Download Ilimitado de Mídias & Copys de Alta Conversão</span>
               </li>
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#d4af37] shrink-0 mt-0.5" />
