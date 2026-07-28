@@ -77,15 +77,46 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         }
       }
 
-      // 2. VERIFICAÇÃO ESTRITA NO BANCO: O e-mail/usuário DEVE ter registro de assinatura ATIVA (status = 'active')
-      const { data: subData } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .or(`user_id.eq.${userId || 'none'},stripe_customer_id.eq.${cleanEmail},user_id.eq.${cleanEmail}`)
-        .eq('status', 'active')
-        .maybeSingle();
+      // 2. VERIFICAÇÃO ESTRITA E MULTI-CAMADA DE ASSINATURA ATIVA NO SUPABASE
+      const isFounderOrAdmin = cleanEmail === 'wesleyfilipy21@gmail.com' || cleanEmail === 'inteligenciaartificial558@gmail.com';
+      let hasActiveSub = isFounderOrAdmin;
 
-      if (!subData) {
+      if (!hasActiveSub) {
+        // Tentar por user_id UUID
+        if (userId) {
+          const { data: subById } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('user_id', userId)
+            .eq('status', 'active')
+            .limit(1);
+          if (subById && subById.length > 0) hasActiveSub = true;
+        }
+
+        // Tentar por user_id e-mail
+        if (!hasActiveSub) {
+          const { data: subByEmail } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('user_id', cleanEmail)
+            .eq('status', 'active')
+            .limit(1);
+          if (subByEmail && subByEmail.length > 0) hasActiveSub = true;
+        }
+
+        // Tentar por stripe_customer_id e-mail
+        if (!hasActiveSub) {
+          const { data: subByCust } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('stripe_customer_id', cleanEmail)
+            .eq('status', 'active')
+            .limit(1);
+          if (subByCust && subByCust.length > 0) hasActiveSub = true;
+        }
+      }
+
+      if (!hasActiveSub) {
         setError('Acesso negado! Nenhuma assinatura ativa foi encontrada para este e-mail no Supabase. Por favor assine o plano VIP.');
         setLoading(false);
         return;
