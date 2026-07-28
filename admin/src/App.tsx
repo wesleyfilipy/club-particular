@@ -91,7 +91,7 @@ export default function App() {
     return <VipLandingPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // PAINEL EXCLUSIVO DO ALUNO / MEMBRO ASSINANTE (R$ 1.000/MÊS)
+  // PAINEL EXCLUSIVO DO ALUNO / MEMBRO ASSINANTE (R$ 100/MÊS)
   if (userRole === 'member') {
     return (
       <MemberDashboard

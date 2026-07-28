@@ -435,16 +435,6 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
             <User className="w-5 h-5" />
             👤 Minha Conta
           </button>
-
-          <div className="p-4 rounded-2xl bg-[#1a1d29]/80 border border-[#d4af37]/30 mt-6 text-xs space-y-2 shadow-inner">
-            <div className="flex items-center gap-2 text-[#f5d77f] font-extrabold">
-              <Sparkles className="w-4 h-4 text-[#d4af37]" />
-              ☁️ Cloudflare R2 Premium
-            </div>
-            <p className="text-[11px] text-gray-300 leading-relaxed">
-              Descarregue VSLs em 4K, vídeos para Facebook Ads, packs de criativos, ebooks e materiais exclusivos através da infraestrutura Cloudflare R2, garantindo downloads rápidos, seguros e sem limite de velocidade.
-            </p>
-          </div>
         </aside>
 
         {/* CONTEÚDO PRINCIPAL DA ABA */}
@@ -891,7 +881,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <div className="p-5 rounded-2xl bg-[#1a1d29] border border-[#282c3d] shadow-md">
                     <span className="text-xs text-gray-400 block mb-1">Valor da Assinatura</span>
                     <span className="font-bold text-[#f5d77f] text-sm flex items-center gap-2">
-                      R$ 1.000,00 / mês
+                      R$ 100,00 / mês
                     </span>
                   </div>
 
