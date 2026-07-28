@@ -6,7 +6,7 @@ import { OffersManager } from './pages/OffersManager';
 import { NotificationsManager } from './pages/NotificationsManager';
 import { MemberDashboard } from './pages/MemberDashboard';
 import { VipLandingPage } from './pages/VipLandingPage';
-import { supabase, getUserRoleFromSupabase } from './services/supabase';
+import { supabase, ADMIN_EMAILS } from './services/supabase';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,10 +22,14 @@ export default function App() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          const role = await getUserRoleFromSupabase(session.user.id);
+          const email = (session.user.email || '').toLowerCase().trim();
+          const storedRole = sessionStorage.getItem('preferred_role');
+          const isAllowedAdmin = ADMIN_EMAILS.includes(email);
+          
+          const role = (storedRole === 'admin' && isAllowedAdmin) ? 'admin' : 'member';
           setUserRole(role);
-          setUserEmail(session.user.email || '');
-          setUserName(session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '');
+          setUserEmail(email);
+          setUserName(session.user.user_metadata?.full_name || email.split('@')[0] || '');
           setIsAuthenticated(true);
         } else {
           setIsAuthenticated(false);
@@ -43,16 +47,21 @@ export default function App() {
     // 2. Escutar eventos do Supabase Auth em tempo real
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const role = await getUserRoleFromSupabase(session.user.id);
+        const email = (session.user.email || '').toLowerCase().trim();
+        const storedRole = sessionStorage.getItem('preferred_role');
+        const isAllowedAdmin = ADMIN_EMAILS.includes(email);
+
+        const role = (storedRole === 'admin' && isAllowedAdmin) ? 'admin' : 'member';
         setUserRole(role);
-        setUserEmail(session.user.email || '');
-        setUserName(session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '');
+        setUserEmail(email);
+        setUserName(session.user.user_metadata?.full_name || email.split('@')[0] || '');
         setIsAuthenticated(true);
       } else {
         setIsAuthenticated(false);
         setUserRole('member');
         setUserEmail('');
         setUserName('');
+        sessionStorage.removeItem('preferred_role');
       }
       setLoading(false);
     });
@@ -63,13 +72,19 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = (role: 'admin' | 'member', email: string, name?: string) => {
-    setUserRole(role);
-    setUserEmail(email);
+    const cleanEmail = (email || '').toLowerCase().trim();
+    const isAllowedAdmin = ADMIN_EMAILS.includes(cleanEmail);
+    const finalRole = (role === 'admin' && isAllowedAdmin) ? 'admin' : 'member';
+
+    sessionStorage.setItem('preferred_role', finalRole);
+    setUserRole(finalRole);
+    setUserEmail(cleanEmail);
     setUserName(name || '');
     setIsAuthenticated(true);
   };
 
   const handleLogout = async () => {
+    sessionStorage.removeItem('preferred_role');
     await supabase.auth.signOut();
     setIsAuthenticated(false);
     setUserRole('member');
@@ -90,8 +105,10 @@ export default function App() {
     return <VipLandingPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // PAINEL EXCLUSIVO DO ALUNO / MEMBRO ASSINANTE (R$ 100/MÊS)
-  if (userRole === 'member') {
+  // APENAS SE FOR E-MAIL DE ADMINISTRADOR AUTORIZADO E TIVER SELECIONADO LOGIN ADMIN
+  const isAdminSession = userRole === 'admin' && ADMIN_EMAILS.includes(userEmail.toLowerCase().trim());
+
+  if (!isAdminSession) {
     return (
       <MemberDashboard
         userEmail={userEmail || 'aluno@clubparticular.com'}
