@@ -41,18 +41,41 @@ export async function checkSubscriptionStatus(userId: string): Promise<boolean> 
   try {
     if (!userId) return false;
 
-    const { data, error } = await supabase
+    // 1. Check user profile for Admin or Founder privileges
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role, email')
+      .eq('id', userId)
+      .single();
+
+    if (profile && (profile.role === 'admin' || profile.role === 'moderator')) {
+      return true;
+    }
+
+    // 2. Check subscriptions table by user_id
+    const { data } = await supabase
       .from('subscriptions')
       .select('status')
       .eq('user_id', userId)
       .single();
 
-    if (error || !data) {
-      console.warn('Subscription fetch notice:', error?.message);
-      return false;
+    if (data && data.status === 'active') {
+      return true;
     }
 
-    return data.status === 'active';
+    // 3. Fallback check by email if available
+    if (profile?.email) {
+      const { data: subByEmail } = await supabase
+        .from('subscriptions')
+        .select('status')
+        .eq('user_id', profile.email)
+        .single();
+      if (subByEmail && subByEmail.status === 'active') {
+        return true;
+      }
+    }
+
+    return false;
   } catch (err) {
     console.error('Error checking subscription status:', err);
     return false;
