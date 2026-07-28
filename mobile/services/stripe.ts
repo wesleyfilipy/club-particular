@@ -5,7 +5,7 @@ export const STRIPE_CONFIG = {
   monthlyPriceId: 'price_1TyFw2Ayx4jZ2C2QeQsqRJWO',
   checkoutUrl: 'https://billing.stripe.com/p/login/test_clubparticular_checkout',
   customerPortalUrl: 'https://billing.stripe.com/p/login/test_clubparticular_portal',
-  monthlyPriceFormatted: 'R$ 100,00/mês',
+  monthlyPriceFormatted: 'R$ 0,01/mês',
 };
 
 /**

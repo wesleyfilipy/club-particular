@@ -910,7 +910,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                     <div>
                       <h4 className="font-extrabold text-base text-white">Gerenciar Assinatura Stripe & Supabase</h4>
                       <p className="text-xs text-gray-400 mt-1">
-                        Sua assinatura mensal individual de R$ 100,00 garante acesso exclusivo aos vídeos VSL 4K, packs R2 e chat VIP.
+                        Sua assinatura mensal individual de R$ 0,01 garante acesso exclusivo aos vídeos VSL 4K, packs R2 e chat VIP.
                       </p>
                     </div>
 
@@ -927,7 +927,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
                       <button
                         onClick={async () => {
-                          if (confirm(`Deseja realmente cancelar a sua assinatura VIP individual (${userEmail}) de R$ 100/mês?`)) {
+                          if (confirm(`Deseja realmente cancelar a sua assinatura VIP individual (${userEmail}) de R$ 0,01/mês?`)) {
                             try {
                               await supabase
                                 .from('subscriptions')
@@ -936,7 +936,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                             } catch {
                               // Ignore
                             }
-                            alert('Sua assinatura individual de R$ 100/mês foi marcada como cancelada no Supabase e não afetará nenhum outro aluno.');
+                            alert('Sua assinatura individual de R$ 0,01/mês foi marcada como cancelada no Supabase e não afetará nenhum outro aluno.');
                           }
                         }}
                         className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs hover:bg-red-500/20 transition-all cursor-pointer shrink-0"

@@ -1,9 +1,9 @@
 import { supabase } from './supabase';
 
 export const STRIPE_WEB_CONFIG = {
-  priceFormatted: 'R$ 100,00 / mês',
-  priceAmount: 100.0,
-  // Link Oficial de Checkout do Stripe para o Club Particular (R$ 100,00/mês)
+  priceFormatted: 'R$ 0,01 / mês',
+  priceAmount: 0.01,
+  // Link Oficial de Checkout do Stripe para o Club Particular
   checkoutUrl: import.meta.env.VITE_STRIPE_CHECKOUT_URL || 'https://buy.stripe.com/00w5kCa8DbLm7Z17oF2Fa01',
   portalUrl: import.meta.env.VITE_STRIPE_PORTAL_URL || 'https://billing.stripe.com/p/login/test_clubparticular_portal',
 };

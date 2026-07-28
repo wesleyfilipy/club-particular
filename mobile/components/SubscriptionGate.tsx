@@ -30,7 +30,7 @@ export const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) 
         </View>
 
         <Text style={styles.description}>
-          Sua assinatura do <Text style={{ color: COLORS.gold }}>Club Particular (R$ 100/mês)</Text> está inativa ou expirada.
+          Sua assinatura do <Text style={{ color: COLORS.gold }}>Club Particular (R$ 0,01/mês)</Text> está inativa ou expirada.
         </Text>
 
         <Text style={styles.subtext}>
@@ -38,7 +38,7 @@ export const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) 
         </Text>
 
         <View style={styles.priceTag}>
-          <Text style={styles.priceText}>R$ 100,00</Text>
+          <Text style={styles.priceText}>R$ 0,01</Text>
           <Text style={styles.pricePeriod}> / mês</Text>
         </View>
 

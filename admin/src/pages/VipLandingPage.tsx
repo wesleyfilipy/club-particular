@@ -130,7 +130,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         .single();
 
       if (!subData || subData.status !== 'active') {
-        setError('Sua assinatura de R$ 100/mês não está ativa. Por favor assine a área VIP para liberar seu acesso.');
+        setError('Sua assinatura de R$ 0,01/mês não está ativa. Por favor assine a área VIP para liberar seu acesso.');
         setLoading(false);
         return;
       }
@@ -189,8 +189,8 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         await supabase.from('subscriptions').upsert({
           user_id: userId,
           status: 'active',
-          plan_name: 'Club Particular VIP (R$ 100/mês)',
-          price_amount: 100.0,
+          plan_name: 'Club Particular VIP (R$ 0,01/mês)',
+          price_amount: 0.01,
           currency: 'BRL',
         });
       } catch (dbErr) {
@@ -313,7 +313,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               onClick={() => { setShowCheckoutModal(true); setError(''); }}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] text-xs font-extrabold shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all cursor-pointer"
             >
-              Assinar VIP (R$ 100/mês)
+              Assinar VIP (R$ 0,01/mês)
             </button>
           </div>
         </div>
@@ -337,7 +337,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             Plataforma fechada de mídias de alta conversão. Baixe vídeos VSL em 4K e pacotes de criativos completos direto do nosso Cloudflare R2 de alta velocidade, sem limites de dados.
           </p>
 
-          {/* CARD DE PREÇO DA ASSINATURA R$ 100/MÊS */}
+          {/* CARD DE PREÇO DA ASSINATURA R$ 0,01/MÊS */}
           <div className="max-w-md mx-auto bg-[#12141d] border-2 border-[#d4af37] rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-[#d4af37] text-[#090a0f] text-[10px] font-extrabold uppercase px-4 py-1 rounded-bl-2xl">
               PLANO VIP MENSAL
@@ -347,8 +347,8 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <span className="text-xs text-gray-400 uppercase font-extrabold block mb-1">Assinatura Oficial Stripe</span>
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-2xl font-bold text-gray-300">R$</span>
-                <span className="text-5xl font-extrabold gold-text-gradient">100</span>
-                <span className="text-gray-400 font-bold text-sm">,00 / mês</span>
+                <span className="text-5xl font-extrabold gold-text-gradient">0,01</span>
+                <span className="text-gray-400 font-bold text-sm"> / mês</span>
               </div>
               <p className="text-xs text-emerald-400 font-bold mt-2 flex items-center justify-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Vinculado ao seu e-mail no Supabase & Stripe SSL
@@ -383,7 +383,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-xl shadow-[#d4af37]/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <CreditCard className="w-5 h-5" />
-              QUERO ASSINAR AGORA (R$ 100/MÊS)
+              QUERO ASSINAR AGORA (R$ 0,01/MÊS)
             </button>
           </div>
         </div>
@@ -460,7 +460,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
                 <Crown className="w-7 h-7" />
               </div>
               <h2 className="text-xl font-extrabold text-white">Assinar Club Particular VIP</h2>
-              <p className="text-xs text-[#f5d77f] font-bold">Plano VIP • R$ 100,00 / mês (Stripe & Supabase SSL)</p>
+              <p className="text-xs text-[#f5d77f] font-bold">Plano VIP • R$ 0,01 / mês (Stripe & Supabase SSL)</p>
             </div>
 
             {error && (
@@ -511,10 +511,10 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-2 text-xs">
                 <div className="flex items-center justify-between font-bold">
                   <span className="text-gray-300">Total da Assinatura:</span>
-                  <span className="text-[#f5d77f] text-base">R$ 100,00 / mês</span>
+                  <span className="text-[#f5d77f] text-base">R$ 0,01 / mês</span>
                 </div>
                 <p className="text-[10px] text-gray-400">
-                  Ao clicar em pagar, seu e-mail será registrado no Supabase Auth e o pagamento seguro de R$ 100/mês será ativado no Supabase.
+                  Ao clicar em pagar, seu e-mail será registrado no Supabase Auth e o pagamento seguro de R$ 0,01/mês será ativado no Supabase.
                 </p>
               </div>
 
@@ -531,7 +531,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
                 ) : (
                   <>
                     <CreditCard className="w-5 h-5" />
-                    Pagar R$ 100/mês & Liberar Acesso VIP
+                    Pagar R$ 0,01/mês & Liberar Acesso VIP
                   </>
                 )}
               </button>

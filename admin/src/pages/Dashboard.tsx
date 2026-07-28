@@ -130,7 +130,7 @@ export const Dashboard: React.FC = () => {
           {[
             { user: 'Gabriel Siqueira', action: 'Descarregou VSL_Formula_Seca_Barriga_4K.mp4 do Cloudflare R2', time: 'Há 4 minutos' },
             { user: 'Camila Santos', action: 'Baixou Pack_Criativos_Canva_Design.zip (145 MB)', time: 'Há 12 minutos' },
-            { user: 'Rodrigo M.', action: 'Nova assinatura Stripe de R$ 100,00/mês ativada com sucesso', time: 'Há 25 minutos' },
+            { user: 'Rodrigo M.', action: 'Nova assinatura Stripe de R$ 0,01/mês ativada com sucesso', time: 'Há 25 minutos' },
           ].map((item, i) => (
             <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d]">
               <div>

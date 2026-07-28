@@ -36,7 +36,7 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
             status: 'active',
-            plan_name: 'Club Particular VIP (R$100/mês)',
+            plan_name: 'Club Particular VIP (R$0,01/mês)',
             updated_at: new Date().toISOString(),
           });
         }
