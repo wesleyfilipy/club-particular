@@ -201,23 +201,24 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     const cleanEmail = email.trim().toLowerCase();
     const { ADMIN_EMAILS } = await import('../services/supabase');
 
+    // 1. Bloqueio estrito de e-mails que não sejam administradores autorizados
+    if (!ADMIN_EMAILS.includes(cleanEmail)) {
+      setError('Acesso negado! Este e-mail não possui permissões de Administrador.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 1. Tentar login no Supabase Auth com a senha digitada
+      // 2. Autenticar com a senha do Administrador no Supabase Auth
       let { data, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
 
-      // Se for e-mail de fundador autorizado e o Supabase Auth validar a senha (mesmo com email not confirmed), libera o acesso
       if (authError) {
         const errMsg = authError.message?.toLowerCase() || '';
 
-        if (errMsg.includes('email not confirmed') && ADMIN_EMAILS.includes(cleanEmail)) {
-          onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
-          return;
-        }
-
-        if ((errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) && ADMIN_EMAILS.includes(cleanEmail)) {
+        if (errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) {
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: cleanEmail,
             password,
@@ -236,26 +237,19 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
             return;
           }
-        }
-      }
-
-      if (authError || !data?.user) {
-        if (authError?.message?.toLowerCase().includes('email not confirmed') && ADMIN_EMAILS.includes(cleanEmail)) {
+        } else if (errMsg.includes('email not confirmed')) {
           onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
           return;
         }
-        throw new Error(authError?.message || 'Senha ou e-mail de administrador incorretos no Supabase.');
       }
 
-      const role = await getUserRoleFromSupabase(data.user.id, cleanEmail);
-
-      if (role !== 'admin' && !ADMIN_EMAILS.includes(cleanEmail)) {
-        setError('Acesso negado! Este e-mail não possui permissões de Administrador.');
+      if (authError && !authError.message?.toLowerCase().includes('email not confirmed')) {
+        setError('E-mail ou senha de Administrador incorretos no Supabase.');
         setLoading(false);
         return;
       }
 
-      onLoginSuccess('admin', cleanEmail, data.user?.user_metadata?.full_name || 'Wesley Filipy (Admin)');
+      onLoginSuccess('admin', cleanEmail, data?.user?.user_metadata?.full_name || 'Wesley Filipy (Admin)');
     } catch (err: any) {
       setError(err.message || 'Erro ao autenticar administrador no Supabase.');
     } finally {
