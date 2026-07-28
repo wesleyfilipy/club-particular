@@ -61,12 +61,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         const errMsg = authError.message?.toLowerCase() || '';
 
         if (errMsg.includes('email not confirmed')) {
-          if (ADMIN_EMAILS.includes(cleanEmail)) {
-            onLoginSuccess('admin', cleanEmail, 'Wesley Filipy (Admin)');
-            setLoading(false);
-            return;
-          }
-          // Allow login for registered members bypassing email confirmation
+          // Allow login for members bypassing email confirmation
           onLoginSuccess('member', cleanEmail, cleanEmail.split('@')[0]);
           setLoading(false);
           return;
@@ -119,29 +114,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
         return;
       }
 
-      // 2. Verificar a role oficial do usuário logado via user_id e e-mail
-      const userId = data.user.id;
-      const role = await getUserRoleFromSupabase(userId, cleanEmail);
-
-      if (role === 'admin') {
-        onLoginSuccess('admin', cleanEmail, data.user.user_metadata?.full_name || 'Administrador VIP');
-        return;
-      }
-
-      // 3. Validar se o aluno possui assinatura ativa
-      const { data: subData } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .eq('user_id', userId)
-        .single();
-
-      if (!subData || subData.status !== 'active') {
-        setError('Sua assinatura de R$ 0,01/mês não está ativa. Por favor assine a área VIP para liberar seu acesso.');
-        setLoading(false);
-        return;
-      }
-
-      // 4. Sucesso -> Libera área VIP do Aluno
+      // 2. Sucesso -> Libera Área VIP do Aluno / Membro Assinante
       onLoginSuccess('member', cleanEmail, data.user.user_metadata?.full_name || cleanEmail.split('@')[0]);
     } catch (err: any) {
       setError(err.message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
