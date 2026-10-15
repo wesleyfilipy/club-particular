@@ -1,10 +1,10 @@
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from './supabase';
 
+// Pagamento pela Lastlink: o acesso é liberado para o e-mail usado na compra
 export const STRIPE_CONFIG = {
-  monthlyPriceId: 'price_1TyFw2Ayx4jZ2C2QeQsqRJWO',
-  checkoutUrl: 'https://buy.stripe.com/eVq14m1C75mY4MPdN32Fa02',
-  customerPortalUrl: 'https://billing.stripe.com/p/login/test_clubparticular_portal',
+  checkoutUrl: 'https://lastlink.com/p/CB91A400B/checkout-payment/',
+  customerPortalUrl: 'https://lastlink.com/',
   monthlyPriceFormatted: 'R$ 0,01/mês',
 };
 
@@ -22,14 +22,11 @@ export async function openStripeCustomerPortal() {
 }
 
 /**
- * Abre o checkout do Stripe vinculado à conta: o webhook libera exatamente este usuário (client_reference_id)
+ * Abre o checkout da Lastlink (o membro deve pagar com o mesmo e-mail da conta)
  */
-export async function openStripeCheckout(userId: string, email: string) {
+export async function openStripeCheckout(_userId: string, _email: string) {
   try {
-    const url =
-      `${STRIPE_CONFIG.checkoutUrl}?client_reference_id=${encodeURIComponent(userId)}` +
-      `&prefilled_email=${encodeURIComponent(email)}`;
-    const result = await WebBrowser.openBrowserAsync(url);
+    const result = await WebBrowser.openBrowserAsync(STRIPE_CONFIG.checkoutUrl);
     return result;
   } catch (error) {
     console.error('Error opening Stripe checkout:', error);

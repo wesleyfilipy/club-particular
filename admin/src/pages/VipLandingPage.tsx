@@ -18,7 +18,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { supabase, ADMIN_EMAILS } from '../services/supabase';
-import { openStripeCheckoutPage, STRIPE_WEB_CONFIG } from '../services/stripe';
+import { openCheckoutPage, PAYMENT_CONFIG } from '../services/payment';
 import { ScaleChart } from '../components/ScaleChart';
 
 interface VipLandingPageProps {
@@ -165,7 +165,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
   };
 
   // Cadastro: cria UMA conta por e-mail e envia para o pagamento vinculado a esta conta.
-  // O acesso só é liberado quando o Stripe confirma o pagamento (webhook).
+  // O acesso só é liberado quando a Lastlink confirma o pagamento deste e-mail (webhook).
   const handleSubscribeCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -197,7 +197,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
       return;
     }
 
-    openStripeCheckoutPage(cleanEmail, data.user.id);
+    openCheckoutPage();
   };
 
   // Login de administrador: senha obrigatória no Supabase Auth + e-mail na lista de administradores
@@ -363,7 +363,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
               { icon: UserPlus, title: 'Crie sua conta', text: 'Uma conta por e-mail, com a sua senha de acesso.' },
-              { icon: CreditCard, title: 'Assine pelo Stripe', text: 'Pagamento seguro. A assinatura fica vinculada à sua conta.' },
+              { icon: CreditCard, title: 'Assine pela Lastlink', text: 'Pague com o mesmo e-mail da sua conta. A assinatura fica vinculada a ele.' },
               { icon: Globe, title: 'Acesse as ofertas', text: 'Assim que o pagamento é confirmado, a área de membros é liberada.' },
             ].map((step, i) => {
               const Icon = step.icon;
@@ -398,7 +398,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg text-gray-400">R$</span>
-                <span className="text-5xl font-bold">{STRIPE_WEB_CONFIG.priceFormatted.replace('R$', '').split('/')[0].trim()}</span>
+                <span className="text-5xl font-bold">{PAYMENT_CONFIG.priceFormatted.replace('R$', '').split('/')[0].trim()}</span>
                 <span className="text-sm text-gray-400">/ mês</span>
               </div>
               <ul className="space-y-3 text-sm text-gray-200">
@@ -446,7 +446,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
       {showCheckoutModal && (
         <Modal
           title="Criar conta e assinar"
-          subtitle={`${STRIPE_WEB_CONFIG.priceFormatted} · pagamento seguro pelo Stripe`}
+          subtitle={`${PAYMENT_CONFIG.priceFormatted} · pagamento seguro pela Lastlink`}
           error={error}
           onClose={() => setShowCheckoutModal(false)}
         >
@@ -455,7 +455,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
             <input type="email" required placeholder="Seu e-mail" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
             <input type="password" required minLength={6} placeholder="Crie uma senha (mín. 6 caracteres)" className={inputClass} value={password} onChange={(e) => setPassword(e.target.value)} />
             <p className="text-[11px] text-gray-400 px-1">
-              Sua conta é criada com este e-mail e você vai para o pagamento. O acesso é liberado assim que o pagamento for confirmado.
+              Sua conta é criada e você vai para o pagamento na Lastlink. <strong className="text-white">Use este mesmo e-mail no pagamento</strong>: o acesso é liberado para ele assim que a compra for confirmada.
             </p>
             <button type="submit" disabled={loading} className={`w-full py-3.5 text-sm flex items-center justify-center gap-2 ${ctaClass}`}>
               {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Criando sua conta...</> : <>Ir para o pagamento <ArrowRight className="w-4 h-4" /></>}

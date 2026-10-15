@@ -82,7 +82,7 @@ export const MediaUploader: React.FC = () => {
             </span>
           </h2>
           <p className="text-sm text-gray-400">
-            Upload direto para o Cloudflare R2 com URLs temporárias (Signed URLs) liberadas via Supabase + Stripe.
+            Upload direto para o Cloudflare R2 com URLs temporárias (Signed URLs) liberadas via Supabase + Lastlink.
           </p>
         </div>
       </div>

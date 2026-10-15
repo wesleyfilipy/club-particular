@@ -46,7 +46,7 @@ export const Dashboard: React.FC = () => {
 
   const stats = [
     {
-      title: 'Faturamento Mensal (Stripe)',
+      title: 'Faturamento Mensal (Lastlink)',
       value: monthlyRevenue,
       change: `${activeSubscribersCount} assinatura${activeSubscribersCount === 1 ? '' : 's'} ativa${activeSubscribersCount === 1 ? '' : 's'}`,
       icon: DollarSign,
@@ -78,7 +78,7 @@ export const Dashboard: React.FC = () => {
         <div>
           <h2 className="text-2xl font-extrabold text-white">Visão Geral da Plataforma & Analytics</h2>
           <p className="text-sm text-gray-400">
-            Métricas reais em tempo real de assinaturas Stripe, banco de dados Supabase e downloads de ofertas.
+            Métricas reais em tempo real de assinaturas Lastlink, banco de dados Supabase e downloads de ofertas.
           </p>
         </div>
 

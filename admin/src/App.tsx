@@ -61,6 +61,21 @@ export default function App() {
     if (sessionLoaded) resolveView();
   }, [sessionLoaded, currentUserId, resolveView]);
 
+  // Reverifica a assinatura a cada minuto e ao voltar para a aba:
+  // quem não renovou é bloqueado mesmo com a página aberta.
+  useEffect(() => {
+    if (!currentUserId) return;
+    const recheck = () => {
+      if (document.visibilityState === 'visible') resolveView();
+    };
+    const interval = window.setInterval(recheck, 60_000);
+    document.addEventListener('visibilitychange', recheck);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', recheck);
+    };
+  }, [currentUserId, resolveView]);
+
   const handleLoginSuccess = (role: 'admin' | 'member') => {
     sessionStorage.setItem('preferred_role', role);
     resolveView();
@@ -87,7 +102,7 @@ export default function App() {
   const userName = session.user.user_metadata?.full_name || userEmail.split('@')[0];
 
   if (view === 'paywall') {
-    return <Paywall userId={session.user.id} userEmail={userEmail} onRecheck={resolveView} onLogout={handleLogout} />;
+    return <Paywall userEmail={userEmail} onRecheck={resolveView} onLogout={handleLogout} />;
   }
 
   if (view === 'member') {

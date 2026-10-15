@@ -23,7 +23,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { getR2SignedUrls, getR2PresignedDownloadUrl, isR2Key } from '../services/r2';
-import { openStripeCustomerPortalPage, cancelStripeSubscriptionApi } from '../services/stripe';
+import { openManageSubscriptionPage } from '../services/payment';
+import { supabase } from '../services/supabase';
 import { OfferItem, fetchOffersFromSupabase } from '../services/offersService';
 import { ScaleChart } from '../components/ScaleChart';
 
@@ -41,6 +42,17 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
   const [offers, setOffers] = useState<OfferItem[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(true);
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<{ current_period_end: string | null; cancel_at_period_end: boolean } | null>(null);
+
+  // Assinatura da conta (vinculada ao e-mail usado na Lastlink)
+  useEffect(() => {
+    supabase
+      .from('es_subscriptions')
+      .select('current_period_end, cancel_at_period_end')
+      .eq('email', userEmail.toLowerCase())
+      .maybeSingle()
+      .then(({ data }) => setSubscription(data));
+  }, [userEmail]);
 
   // URLs temporárias do Cloudflare R2 (chave -> URL assinada) para tocar os vídeos e exibir as capas
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
@@ -391,39 +403,31 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <span className="text-xs text-gray-400 block mb-1">Status da assinatura</span>
                   <span className="font-bold text-emerald-400 text-sm flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4" />
-                    Ativa
+                    {subscription?.cancel_at_period_end ? 'Ativa — renovação cancelada' : 'Ativa'}
                   </span>
+                  {subscription?.current_period_end && (
+                    <span className="text-[11px] text-gray-400 block mt-1">
+                      Acesso pago até {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <div className="p-6 rounded-3xl bg-[#13122b]/80 border border-[#25244a] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h4 className="font-extrabold text-base text-white">Gerenciar Assinatura</h4>
-                  <p className="text-xs text-gray-400 mt-1">Atualize o cartão ou cancele quando quiser.</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    A assinatura é cobrada pela Lastlink no e-mail {userEmail}. Se não for renovada, o acesso fecha no fim do período pago.
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => openStripeCustomerPortalPage(userEmail)}
-                    className="px-4 py-2.5 rounded-xl bg-[#13122b] border border-[#25244a] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 text-[#6b76ff]" />
-                    Portal Stripe
-                  </button>
-
-                  <button
-                    onClick={async () => {
-                      if (confirm(`Tem certeza que deseja cancelar a assinatura de ${userEmail}?`)) {
-                        const res = await cancelStripeSubscriptionApi();
-                        alert(res.message);
-                        if (res.success) onLogout();
-                      }
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs hover:bg-red-500/20 transition-all cursor-pointer shrink-0"
-                  >
-                    Cancelar Minha Assinatura
-                  </button>
-                </div>
+                <button
+                  onClick={openManageSubscriptionPage}
+                  className="px-4 py-2.5 rounded-full bg-[#13122b] border border-[#25244a] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-[#6b76ff]" />
+                  Gerenciar na Lastlink
+                </button>
               </div>
             </div>
           )}

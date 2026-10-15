@@ -24,7 +24,7 @@ export interface AccessStatus {
 
 /**
  * Verifica no Supabase se a conta logada é admin e se tem assinatura paga ativa.
- * A assinatura só fica "active" quando o webhook do Stripe confirma o pagamento desta conta.
+ * A assinatura só fica "active" quando o webhook da Lastlink confirma o pagamento do e-mail desta conta.
  */
 export async function getAccessStatus(userId: string, email: string): Promise<AccessStatus> {
   const cleanEmail = email.toLowerCase().trim();

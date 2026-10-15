@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Crown, CreditCard, LogOut, RefreshCw, Loader2 } from 'lucide-react';
-import { openStripeCheckoutPage, STRIPE_WEB_CONFIG } from '../services/stripe';
+import { CreditCard, LogOut, RefreshCw, Loader2, Lock } from 'lucide-react';
+import { openCheckoutPage, PAYMENT_CONFIG } from '../services/payment';
 
 interface PaywallProps {
-  userId: string;
   userEmail: string;
   onRecheck: () => Promise<void>;
   onLogout: () => void;
 }
 
-/** Conta criada mas sem assinatura paga: o acesso só é liberado após o pagamento desta conta */
-export const Paywall: React.FC<PaywallProps> = ({ userId, userEmail, onRecheck, onLogout }) => {
+/**
+ * Conta sem assinatura ativa (nunca pagou ou não renovou): o login fica bloqueado
+ * aqui até a Lastlink confirmar o pagamento do e-mail desta conta.
+ */
+export const Paywall: React.FC<PaywallProps> = ({ userEmail, onRecheck, onLogout }) => {
   const [checking, setChecking] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -23,40 +25,44 @@ export const Paywall: React.FC<PaywallProps> = ({ userId, userEmail, onRecheck, 
   };
 
   return (
-    <div className="min-h-screen bg-[#010013] text-white flex items-center justify-center p-4">
-      <div className="bg-[#0b0a1f] border border-[#6b76ff] rounded-3xl max-w-md w-full p-8 space-y-6 text-center shadow-2xl">
-        <div className="w-14 h-14 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff] flex items-center justify-center mx-auto text-[#a8aeff]">
-          <Crown className="w-7 h-7" />
+    <div className="min-h-screen bg-[#010013] text-white flex items-center justify-center p-4 hero-glow">
+      <div className="bg-[#0b0a1f] border border-white/10 rounded-[30px] max-w-md w-full p-8 space-y-6 text-center shadow-2xl">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#bc060f] to-[#3e4be1] flex items-center justify-center mx-auto">
+          <Lock className="w-6 h-6 text-white" />
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-xl font-extrabold text-white">Ative sua assinatura</h1>
-          <p className="text-xs text-gray-400">
-            A conta <span className="font-mono text-gray-200">{userEmail}</span> ainda não tem uma assinatura paga.
-            Cada conta precisa da sua própria assinatura para acessar o Escala Swipe.
+          <h1 className="text-xl font-bold">Acesso bloqueado</h1>
+          <p className="text-sm text-gray-300">
+            A conta <span className="font-mono text-white">{userEmail}</span> não tem uma assinatura ativa.
+            Se a assinatura não foi renovada, o acesso volta assim que o pagamento for confirmado.
           </p>
         </div>
 
+        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-gray-300 text-left">
+          Na Lastlink, pague com o e-mail <strong className="text-white">{userEmail}</strong>. É por ele que liberamos o seu acesso.
+        </div>
+
         <button
-          onClick={() => openStripeCheckoutPage(userEmail, userId)}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          onClick={openCheckoutPage}
+          className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold uppercase tracking-wide text-sm shadow-lg shadow-[#3e4be1]/30 hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <CreditCard className="w-5 h-5" />
-          Assinar agora ({STRIPE_WEB_CONFIG.priceFormatted})
+          Pagar assinatura ({PAYMENT_CONFIG.priceFormatted})
         </button>
 
         <button
           onClick={handleRecheck}
           disabled={checking}
-          className="w-full py-3 rounded-xl bg-[#13122b] border border-[#25244a] text-gray-200 font-bold text-xs hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          className="w-full py-3 rounded-full border border-white/15 text-gray-200 font-semibold text-xs hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
-          {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-[#6b76ff]" />}
+          {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-[#a8aeff]" />}
           Já paguei — verificar novamente
         </button>
 
         {notFound && (
           <p className="text-[11px] text-gray-400">
-            Pagamento ainda não confirmado. A confirmação do Stripe pode levar alguns segundos.
+            Pagamento ainda não confirmado. A confirmação da Lastlink pode levar alguns minutos (Pix e boleto podem demorar mais).
           </p>
         )}
 
