@@ -6,16 +6,19 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
       colors: {
-        dark: '#090a0f',
-        surface: '#12141d',
-        'surface-elevated': '#1a1d29',
+        dark: '#010013',
+        surface: '#0b0a1f',
+        'surface-elevated': '#13122b',
         gold: {
-          light: '#f5d77f',
-          DEFAULT: '#d4af37',
-          dark: '#997d2e',
+          light: '#a8aeff',
+          DEFAULT: '#6b76ff',
+          dark: '#3e4be1',
         },
-        border: '#282c3d',
+        border: '#25244a',
       },
     },
   },

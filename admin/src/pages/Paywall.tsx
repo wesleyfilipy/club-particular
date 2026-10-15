@@ -23,9 +23,9 @@ export const Paywall: React.FC<PaywallProps> = ({ userId, userEmail, onRecheck, 
   };
 
   return (
-    <div className="min-h-screen bg-[#090a0f] text-white flex items-center justify-center p-4">
-      <div className="bg-[#12141d] border border-[#d4af37] rounded-3xl max-w-md w-full p-8 space-y-6 text-center shadow-2xl">
-        <div className="w-14 h-14 rounded-full bg-[#d4af37]/10 border border-[#d4af37] flex items-center justify-center mx-auto text-[#f5d77f]">
+    <div className="min-h-screen bg-[#010013] text-white flex items-center justify-center p-4">
+      <div className="bg-[#0b0a1f] border border-[#6b76ff] rounded-3xl max-w-md w-full p-8 space-y-6 text-center shadow-2xl">
+        <div className="w-14 h-14 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff] flex items-center justify-center mx-auto text-[#a8aeff]">
           <Crown className="w-7 h-7" />
         </div>
 
@@ -39,7 +39,7 @@ export const Paywall: React.FC<PaywallProps> = ({ userId, userEmail, onRecheck, 
 
         <button
           onClick={() => openStripeCheckoutPage(userEmail, userId)}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-extrabold text-sm shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <CreditCard className="w-5 h-5" />
           Assinar agora ({STRIPE_WEB_CONFIG.priceFormatted})
@@ -48,9 +48,9 @@ export const Paywall: React.FC<PaywallProps> = ({ userId, userEmail, onRecheck, 
         <button
           onClick={handleRecheck}
           disabled={checking}
-          className="w-full py-3 rounded-xl bg-[#1a1d29] border border-[#282c3d] text-gray-200 font-bold text-xs hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          className="w-full py-3 rounded-xl bg-[#13122b] border border-[#25244a] text-gray-200 font-bold text-xs hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
-          {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-[#d4af37]" />}
+          {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-[#6b76ff]" />}
           Já paguei — verificar novamente
         </button>
 

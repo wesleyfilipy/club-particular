@@ -73,7 +73,7 @@ export default function App() {
 
   if (view === 'loading') {
     return (
-      <div className="min-h-screen bg-[#090a0f] flex items-center justify-center text-[#d4af37] font-bold text-sm">
+      <div className="min-h-screen bg-[#010013] flex items-center justify-center text-[#6b76ff] font-bold text-sm">
         Carregando sessão segura do Escala Swipe...
       </div>
     );
@@ -96,7 +96,7 @@ export default function App() {
 
   // PAINEL ADMINISTRATIVO (apenas e-mails de administrador)
   return (
-    <div className="flex min-h-screen bg-[#090a0f] text-white selection:bg-[#d4af37] selection:text-[#090a0f]">
+    <div className="flex min-h-screen bg-[#010013] text-white selection:bg-[#6b76ff] selection:text-white">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">

@@ -22,7 +22,7 @@ export const ScaleChart: React.FC<ScaleChartProps> = ({ data, height = 200 }) =>
 
   if (data.length === 0) {
     return (
-      <div className="p-6 rounded-2xl bg-[#090a0f] border border-[#282c3d] text-center text-xs text-gray-400">
+      <div className="p-6 rounded-2xl bg-[#010013] border border-[#25244a] text-center text-xs text-gray-400">
         Ainda não há dados de escala para esta oferta.
       </div>
     );
@@ -70,7 +70,7 @@ export const ScaleChart: React.FC<ScaleChartProps> = ({ data, height = 200 }) =>
           <span className="text-2xl font-extrabold text-white">{last}</span>
         </div>
         <span className="text-xs font-bold text-gray-300 flex items-center gap-1">
-          <TrendIcon className="w-4 h-4 text-[#d4af37]" />
+          <TrendIcon className="w-4 h-4 text-[#6b76ff]" />
           {delta > 0 ? `+${delta}` : delta} anúncios em {data.length} dia{data.length > 1 ? 's' : ''}
         </span>
       </div>
@@ -85,7 +85,7 @@ export const ScaleChart: React.FC<ScaleChartProps> = ({ data, height = 200 }) =>
         >
           {gridValues.map((v) => (
             <g key={v}>
-              <line x1={PAD.left} x2={WIDTH - PAD.right} y1={y(v)} y2={y(v)} stroke="#282c3d" strokeWidth={1} />
+              <line x1={PAD.left} x2={WIDTH - PAD.right} y1={y(v)} y2={y(v)} stroke="#25244a" strokeWidth={1} />
               <text x={PAD.left - 8} y={y(v) + 4} textAnchor="end" fontSize={11} fill="#9ca3af">
                 {Math.round(v)}
               </text>
@@ -100,8 +100,8 @@ export const ScaleChart: React.FC<ScaleChartProps> = ({ data, height = 200 }) =>
             ) : null
           )}
 
-          <path d={areaPath} fill="#d4af37" fillOpacity={0.08} />
-          <path d={linePath} fill="none" stroke="#d4af37" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          <path d={areaPath} fill="#6b76ff" fillOpacity={0.08} />
+          <path d={linePath} fill="none" stroke="#6b76ff" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
           {hover !== null && (
             <line x1={x(hover)} x2={x(hover)} y1={PAD.top} y2={y(0)} stroke="#9ca3af" strokeWidth={1} strokeDasharray="3 3" />
@@ -113,8 +113,8 @@ export const ScaleChart: React.FC<ScaleChartProps> = ({ data, height = 200 }) =>
               cx={x(i)}
               cy={y(p.ads)}
               r={hover === i ? 5 : 4}
-              fill="#d4af37"
-              stroke="#12141d"
+              fill="#6b76ff"
+              stroke="#0b0a1f"
               strokeWidth={2}
             />
           ))}
@@ -132,7 +132,7 @@ export const ScaleChart: React.FC<ScaleChartProps> = ({ data, height = 200 }) =>
 
         {hovered && hover !== null && (
           <div
-            className="absolute pointer-events-none px-3 py-2 rounded-xl bg-[#090a0f] border border-[#282c3d] shadow-xl text-xs whitespace-nowrap"
+            className="absolute pointer-events-none px-3 py-2 rounded-xl bg-[#010013] border border-[#25244a] shadow-xl text-xs whitespace-nowrap"
             style={{
               left: `${(x(hover) / WIDTH) * 100}%`,
               top: 0,

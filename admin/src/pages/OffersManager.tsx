@@ -203,7 +203,7 @@ export const OffersManager: React.FC = () => {
 
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold text-sm shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all cursor-pointer"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-sm shadow-lg shadow-[#6b76ff]/20 hover:opacity-95 transition-all cursor-pointer"
         >
           <Plus className="w-5 h-5" />
           Cadastrar Nova Oferta
@@ -211,9 +211,9 @@ export const OffersManager: React.FC = () => {
       </div>
 
       {/* Offers Table */}
-      <div className="bg-[#12141d] rounded-2xl border border-[#282c3d] overflow-x-auto shadow-2xl">
+      <div className="bg-[#0b0a1f] rounded-2xl border border-[#25244a] overflow-x-auto shadow-2xl">
         <table className="w-full text-left text-sm text-gray-300">
-          <thead className="bg-[#1a1d29] text-xs font-bold text-[#f5d77f] uppercase border-b border-[#282c3d]">
+          <thead className="bg-[#13122b] text-xs font-bold text-[#a8aeff] uppercase border-b border-[#25244a]">
             <tr>
               <th className="p-4">Nome da Oferta</th>
               <th className="p-4">Categoria</th>
@@ -223,7 +223,7 @@ export const OffersManager: React.FC = () => {
               <th className="p-4 text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#282c3d]">
+          <tbody className="divide-y divide-[#25244a]">
             {loadingList && (
               <tr>
                 <td colSpan={6} className="p-6 text-center text-xs text-gray-400">Carregando ofertas do Supabase...</td>
@@ -235,10 +235,10 @@ export const OffersManager: React.FC = () => {
               </tr>
             )}
             {offersList.map((offer) => (
-              <tr key={offer.id} className="hover:bg-[#1a1d29]/50 transition-all">
+              <tr key={offer.id} className="hover:bg-[#13122b]/50 transition-all">
                 <td className="p-4 font-bold text-white">{offer.name}</td>
                 <td className="p-4">
-                  <span className="px-3 py-1 rounded-full bg-[#1a1d29] border border-[#282c3d] text-xs font-medium text-gray-300">
+                  <span className="px-3 py-1 rounded-full bg-[#13122b] border border-[#25244a] text-xs font-medium text-gray-300">
                     {offer.category}
                   </span>
                 </td>
@@ -260,7 +260,7 @@ export const OffersManager: React.FC = () => {
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => openEdit(offer)}
-                      className="p-2 rounded-lg bg-[#1a1d29] text-[#f5d77f] hover:bg-[#222736] transition-all cursor-pointer"
+                      className="p-2 rounded-lg bg-[#13122b] text-[#a8aeff] hover:bg-[#1c1b3a] transition-all cursor-pointer"
                       title="Editar oferta / atualizar escala"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -283,11 +283,11 @@ export const OffersManager: React.FC = () => {
       {/* Add / Edit Offer Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6 overflow-y-auto">
-          <div className="bg-[#12141d] border border-[#d4af37] w-full max-w-3xl rounded-2xl p-6 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#282c3d] pb-4">
+          <div className="bg-[#0b0a1f] border border-[#6b76ff] w-full max-w-3xl rounded-2xl p-6 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#25244a] pb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 {editingId ? 'Editar Oferta' : 'Cadastrar Nova Oferta'}
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#d4af37]/10 text-[#f5d77f] border border-[#d4af37]">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#6b76ff]/10 text-[#a8aeff] border border-[#6b76ff]">
                   Bucket: {R2_BUCKET}
                 </span>
               </h3>
@@ -310,7 +310,7 @@ export const OffersManager: React.FC = () => {
                   type="text"
                   required
                   placeholder="Ex: Oferta Especial VSL 4K"
-                  className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
+                  className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
@@ -320,7 +320,7 @@ export const OffersManager: React.FC = () => {
                 <div>
                   <label className="block text-gray-300 mb-1 font-semibold">Categoria</label>
                   <select
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
+                    className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
@@ -335,7 +335,7 @@ export const OffersManager: React.FC = () => {
                     type="text"
                     required
                     placeholder="Ex: 80% (R$ 180,00)"
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
+                    className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                     value={formData.commission}
                     onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
                   />
@@ -343,7 +343,7 @@ export const OffersManager: React.FC = () => {
                 <div>
                   <label className="block text-gray-300 mb-1 font-semibold">Qualidade da VSL</label>
                   <select
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
+                    className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                     value={formData.vslResolution}
                     onChange={(e) => setFormData({ ...formData, vslResolution: e.target.value })}
                   >
@@ -359,22 +359,22 @@ export const OffersManager: React.FC = () => {
                 <textarea
                   rows={2}
                   placeholder="Resumo da oferta..."
-                  className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
+                  className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
 
               {/* MÍDIAS DA OFERTA NO CLOUDFLARE R2 */}
-              <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-4">
-                <h4 className="font-extrabold text-[#f5d77f] flex items-center gap-2 text-sm uppercase tracking-wider">
+              <div className="p-4 rounded-xl bg-[#13122b] border border-[#25244a] space-y-4">
+                <h4 className="font-extrabold text-[#a8aeff] flex items-center gap-2 text-sm uppercase tracking-wider">
                   <Film className="w-4 h-4" />
                   Mídias da Oferta (Cloudflare R2)
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* VSL */}
-                  <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
+                  <div className="p-4 rounded-xl bg-[#0b0a1f] border border-[#25244a] space-y-3">
                     <span className="block font-bold text-xs text-gray-300">🎥 Vídeo da VSL (original)</span>
                     <input
                       type="file"
@@ -385,9 +385,9 @@ export const OffersManager: React.FC = () => {
                     />
                     <label
                       htmlFor="vsl-upload-input"
-                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                      className="cursor-pointer border border-dashed border-[#6b76ff]/50 rounded-xl p-3 text-center block hover:bg-[#6b76ff]/10 transition-all"
                     >
-                      <UploadCloud className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <UploadCloud className="w-6 h-6 text-[#6b76ff] mx-auto mb-1" />
                       <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('vsl', 'Selecionar vídeo da VSL')}</span>
                     </label>
                     {formData.vslFileName && (
@@ -399,7 +399,7 @@ export const OffersManager: React.FC = () => {
                   </div>
 
                   {/* CAPA */}
-                  <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
+                  <div className="p-4 rounded-xl bg-[#0b0a1f] border border-[#25244a] space-y-3">
                     <span className="block font-bold text-xs text-gray-300">🖼️ Capa da VSL (imagem)</span>
                     <input
                       type="file"
@@ -410,9 +410,9 @@ export const OffersManager: React.FC = () => {
                     />
                     <label
                       htmlFor="poster-upload-input"
-                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                      className="cursor-pointer border border-dashed border-[#6b76ff]/50 rounded-xl p-3 text-center block hover:bg-[#6b76ff]/10 transition-all"
                     >
-                      <ImageIcon className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <ImageIcon className="w-6 h-6 text-[#6b76ff] mx-auto mb-1" />
                       <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('poster', 'Selecionar imagem de capa')}</span>
                     </label>
                     {formData.posterKey && (
@@ -424,7 +424,7 @@ export const OffersManager: React.FC = () => {
                   </div>
 
                   {/* VÍDEOS DOS ANÚNCIOS (BIBLIOTECA DO META) */}
-                  <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
+                  <div className="p-4 rounded-xl bg-[#0b0a1f] border border-[#25244a] space-y-3">
                     <span className="block font-bold text-xs text-gray-300">🎬 Vídeos dos anúncios (Biblioteca do Meta Ads)</span>
                     <input
                       type="file"
@@ -436,9 +436,9 @@ export const OffersManager: React.FC = () => {
                     />
                     <label
                       htmlFor="ads-upload-input"
-                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                      className="cursor-pointer border border-dashed border-[#6b76ff]/50 rounded-xl p-3 text-center block hover:bg-[#6b76ff]/10 transition-all"
                     >
-                      <Video className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <Video className="w-6 h-6 text-[#6b76ff] mx-auto mb-1" />
                       <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('ads', 'Selecionar vídeos (vários)')}</span>
                     </label>
                     {formData.adVideos.map((ad) => (
@@ -457,7 +457,7 @@ export const OffersManager: React.FC = () => {
                   </div>
 
                   {/* PACK DE CRIATIVOS */}
-                  <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
+                  <div className="p-4 rounded-xl bg-[#0b0a1f] border border-[#25244a] space-y-3">
                     <span className="block font-bold text-xs text-gray-300">📦 Pack de criativos (ZIP)</span>
                     <input
                       type="file"
@@ -467,9 +467,9 @@ export const OffersManager: React.FC = () => {
                     />
                     <label
                       htmlFor="creative-upload-input"
-                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                      className="cursor-pointer border border-dashed border-[#6b76ff]/50 rounded-xl p-3 text-center block hover:bg-[#6b76ff]/10 transition-all"
                     >
-                      <Package className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <Package className="w-6 h-6 text-[#6b76ff] mx-auto mb-1" />
                       <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('creative', 'Selecionar pack')}</span>
                     </label>
                     {formData.creativeFileName && (
@@ -489,7 +489,7 @@ export const OffersManager: React.FC = () => {
                   <input
                     type="url"
                     placeholder="https://..."
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
+                    className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-3 py-2 text-white focus:border-[#6b76ff] outline-none text-xs"
                     value={formData.siteUrl}
                     onChange={(e) => setFormData({ ...formData, siteUrl: e.target.value })}
                   />
@@ -499,7 +499,7 @@ export const OffersManager: React.FC = () => {
                   <input
                     type="url"
                     placeholder="https://..."
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
+                    className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-3 py-2 text-white focus:border-[#6b76ff] outline-none text-xs"
                     value={formData.landingPageUrl}
                     onChange={(e) => setFormData({ ...formData, landingPageUrl: e.target.value })}
                   />
@@ -509,7 +509,7 @@ export const OffersManager: React.FC = () => {
                   <input
                     type="url"
                     placeholder="https://facebook.com/ads/library/..."
-                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
+                    className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-3 py-2 text-white focus:border-[#6b76ff] outline-none text-xs"
                     value={formData.adsLibraryUrl}
                     onChange={(e) => setFormData({ ...formData, adsLibraryUrl: e.target.value })}
                   />
@@ -517,8 +517,8 @@ export const OffersManager: React.FC = () => {
               </div>
 
               {/* GRÁFICO DE ESCALA POR DIA */}
-              <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-4">
-                <h4 className="font-extrabold text-[#f5d77f] flex items-center gap-2 text-sm uppercase tracking-wider">
+              <div className="p-4 rounded-xl bg-[#13122b] border border-[#25244a] space-y-4">
+                <h4 className="font-extrabold text-[#a8aeff] flex items-center gap-2 text-sm uppercase tracking-wider">
                   <BarChart3 className="w-4 h-4" />
                   Escala por dia (anúncios ativos na Biblioteca do Meta)
                 </h4>
@@ -528,7 +528,7 @@ export const OffersManager: React.FC = () => {
                     <label className="block text-gray-300 mb-1 font-semibold text-xs">Dia</label>
                     <input
                       type="date"
-                      className="bg-[#12141d] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
+                      className="bg-[#0b0a1f] border border-[#25244a] rounded-xl px-3 py-2 text-white focus:border-[#6b76ff] outline-none text-xs"
                       value={scaleDate}
                       onChange={(e) => setScaleDate(e.target.value)}
                     />
@@ -539,7 +539,7 @@ export const OffersManager: React.FC = () => {
                       type="number"
                       min={0}
                       placeholder="Ex: 42"
-                      className="w-32 bg-[#12141d] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
+                      className="w-32 bg-[#0b0a1f] border border-[#25244a] rounded-xl px-3 py-2 text-white focus:border-[#6b76ff] outline-none text-xs"
                       value={scaleAds}
                       onChange={(e) => setScaleAds(e.target.value)}
                     />
@@ -547,7 +547,7 @@ export const OffersManager: React.FC = () => {
                   <button
                     type="button"
                     onClick={addScalePoint}
-                    className="px-4 py-2 rounded-xl bg-[#12141d] border border-[#d4af37]/50 text-[#f5d77f] text-xs font-bold hover:bg-[#d4af37]/10 cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-[#0b0a1f] border border-[#6b76ff]/50 text-[#a8aeff] text-xs font-bold hover:bg-[#6b76ff]/10 cursor-pointer"
                   >
                     Adicionar dia
                   </button>
@@ -558,7 +558,7 @@ export const OffersManager: React.FC = () => {
                 {formData.dailyScale.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {formData.dailyScale.map((p) => (
-                      <span key={p.date} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#12141d] border border-[#282c3d] text-[11px] text-gray-300">
+                      <span key={p.date} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0b0a1f] border border-[#25244a] text-[11px] text-gray-300">
                         {p.date.split('-').reverse().join('/')}: <strong className="text-white">{p.ads}</strong>
                         <button type="button" onClick={() => removeScalePoint(p.date)} className="text-red-400 hover:text-red-300 cursor-pointer" title="Remover dia">
                           <X className="w-3 h-3" />
@@ -569,7 +569,7 @@ export const OffersManager: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#282c3d]">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#25244a]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -580,7 +580,7 @@ export const OffersManager: React.FC = () => {
                 <button
                   type="submit"
                   disabled={saving || isUploading}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold shadow-lg cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold shadow-lg cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {isUploading ? 'Aguarde o upload...' : 'Salvar Oferta'}

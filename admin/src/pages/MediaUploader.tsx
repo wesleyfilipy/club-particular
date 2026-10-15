@@ -77,7 +77,7 @@ export const MediaUploader: React.FC = () => {
         <div>
           <h2 className="text-2xl font-extrabold text-white flex items-center gap-3">
             Central Cloudflare R2 S3 Storage
-            <span className="text-xs px-3 py-1 rounded-full bg-[#d4af37]/10 text-[#f5d77f] border border-[#d4af37]">
+            <span className="text-xs px-3 py-1 rounded-full bg-[#6b76ff]/10 text-[#a8aeff] border border-[#6b76ff]">
               Bucket: {R2_BUCKET}
             </span>
           </h2>
@@ -88,11 +88,11 @@ export const MediaUploader: React.FC = () => {
       </div>
 
       {/* Offer & Folder Selection Header */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#12141d] p-6 rounded-2xl border border-[#282c3d]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#0b0a1f] p-6 rounded-2xl border border-[#25244a]">
         <div>
           <label className="block text-xs font-bold text-gray-400 mb-1">1. SELECIONAR OFERTA</label>
           <select
-            className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
+            className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
             value={selectedOffer}
             onChange={(e) => setSelectedOffer(e.target.value)}
           >
@@ -105,7 +105,7 @@ export const MediaUploader: React.FC = () => {
         <div>
           <label className="block text-xs font-bold text-gray-400 mb-1">2. PASTA DE DESTINO (ESTRUTURA R2)</label>
           <select
-            className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
+            className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
             value={fileCategory}
             onChange={(e) => setFileCategory(e.target.value as any)}
           >
@@ -126,23 +126,23 @@ export const MediaUploader: React.FC = () => {
         onDragOver={handleDrag}
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all ${
-          dragActive ? 'border-[#d4af37] bg-[#d4af37]/10' : 'border-[#282c3d] bg-[#12141d] hover:border-[#d4af37]/50'
+          dragActive ? 'border-[#6b76ff] bg-[#6b76ff]/10' : 'border-[#25244a] bg-[#0b0a1f] hover:border-[#6b76ff]/50'
         }`}
       >
         <input type="file" id="file-upload" className="hidden" onChange={handleFileSelect} />
         <label htmlFor="file-upload" className="cursor-pointer space-y-4 inline-block">
-          <div className="w-16 h-16 rounded-full bg-[#1a1d29] border border-[#d4af37] flex items-center justify-center mx-auto text-[#d4af37]">
+          <div className="w-16 h-16 rounded-full bg-[#13122b] border border-[#6b76ff] flex items-center justify-center mx-auto text-[#6b76ff]">
             <UploadCloud className="w-8 h-8" />
           </div>
           <div>
             <h4 className="text-lg font-bold text-white">Arraste seus ficheiros para o Cloudflare R2</h4>
             <p className="text-xs text-gray-400 mt-1">
-              Caminho R2 automático: <span className="text-[#f5d77f] font-mono">offers/{selectedOffer}/{fileCategory}/[nome-do-ficheiro]</span>
+              Caminho R2 automático: <span className="text-[#a8aeff] font-mono">offers/{selectedOffer}/{fileCategory}/[nome-do-ficheiro]</span>
             </p>
           </div>
           <button
             type="button"
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold text-sm shadow-lg"
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-sm shadow-lg"
           >
             Fazer Upload para R2
           </button>
@@ -151,17 +151,17 @@ export const MediaUploader: React.FC = () => {
 
       {/* Progress Indicator */}
       {uploading && (
-        <div className="bg-[#12141d] border border-[#d4af37] p-6 rounded-2xl space-y-3">
+        <div className="bg-[#0b0a1f] border border-[#6b76ff] p-6 rounded-2xl space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="font-bold text-white flex items-center gap-2">
-              <FileVideo className="w-4 h-4 text-[#d4af37]" />
+              <FileVideo className="w-4 h-4 text-[#6b76ff]" />
               Enviando arquivo diretamente para o Cloudflare R2 S3...
             </span>
-            <span className="font-bold text-[#f5d77f]">{progress}%</span>
+            <span className="font-bold text-[#a8aeff]">{progress}%</span>
           </div>
-          <div className="w-full bg-[#1a1d29] h-3 rounded-full overflow-hidden">
+          <div className="w-full bg-[#13122b] h-3 rounded-full overflow-hidden">
             <div
-              className="bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] h-full transition-all duration-300"
+              className="bg-gradient-to-r from-[#bc060f] to-[#3e4be1] h-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -169,9 +169,9 @@ export const MediaUploader: React.FC = () => {
       )}
 
       {/* R2 Uploaded Files List */}
-      <div className="bg-[#12141d] rounded-2xl border border-[#282c3d] p-6 space-y-4">
+      <div className="bg-[#0b0a1f] rounded-2xl border border-[#25244a] p-6 space-y-4">
         <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <HardDrive className="w-5 h-5 text-[#d4af37]" />
+          <HardDrive className="w-5 h-5 text-[#6b76ff]" />
           Arquivos no Bucket Cloudflare R2 (club-particular)
         </h3>
 
@@ -179,16 +179,16 @@ export const MediaUploader: React.FC = () => {
           {uploadedFiles.map((file, idx) => (
             <div
               key={idx}
-              className="flex items-center justify-between p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] hover:border-[#d4af37]/40 transition-all"
+              className="flex items-center justify-between p-4 rounded-xl bg-[#13122b] border border-[#25244a] hover:border-[#6b76ff]/40 transition-all"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#12141d] border border-[#282c3d] flex items-center justify-center text-[#d4af37]">
+                <div className="w-10 h-10 rounded-lg bg-[#0b0a1f] border border-[#25244a] flex items-center justify-center text-[#6b76ff]">
                   <Folder className="w-5 h-5" />
                 </div>
                 <div>
                   <h5 className="font-bold text-sm text-white">{file.name}</h5>
                   <p className="text-xs text-gray-400 font-mono">
-                    R2 Key: <span className="text-[#f5d77f]">{file.key}</span> • {file.size}
+                    R2 Key: <span className="text-[#a8aeff]">{file.key}</span> • {file.size}
                   </p>
                 </div>
               </div>
