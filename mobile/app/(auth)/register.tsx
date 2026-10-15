@@ -36,7 +36,7 @@ export default function RegisterScreen() {
           <Crown size={36} color={COLORS.gold} />
         </View>
         <Text style={styles.brandTitle}>CRIAR CONTA VIP</Text>
-        <Text style={styles.subtitle}>Junte-se à comunidade de membros do Club Particular</Text>
+        <Text style={styles.subtitle}>Crie sua conta no Escala Swipe (1 conta por e-mail)</Text>
       </View>
 
       <View style={styles.formCard}>

@@ -17,6 +17,39 @@ export const ADMIN_EMAILS = [
   'inteligenciaartificial558@gmail.com'
 ];
 
+export interface AccessStatus {
+  isAdmin: boolean;
+  hasActiveSubscription: boolean;
+}
+
+/**
+ * Verifica no Supabase se a conta logada é admin e se tem assinatura paga ativa.
+ * A assinatura só fica "active" quando o webhook do Stripe confirma o pagamento desta conta.
+ */
+export async function getAccessStatus(userId: string, email: string): Promise<AccessStatus> {
+  const cleanEmail = email.toLowerCase().trim();
+
+  // Cria o perfil do Escala Swipe desta conta no primeiro acesso (es_profiles)
+  const { error: profileError } = await supabase.rpc('es_ensure_profile');
+  if (profileError) {
+    console.warn('Erro ao criar perfil:', profileError.message);
+  }
+
+  const [{ data: profile }, { data: isActive, error: rpcError }] = await Promise.all([
+    supabase.from('es_profiles').select('role').eq('id', userId).maybeSingle(),
+    supabase.rpc('es_is_active_member', { user_uuid: userId }),
+  ]);
+
+  if (rpcError) {
+    console.warn('Erro ao verificar assinatura:', rpcError.message);
+  }
+
+  return {
+    isAdmin: ADMIN_EMAILS.includes(cleanEmail) || profile?.role === 'admin',
+    hasActiveSubscription: isActive === true,
+  };
+}
+
 /**
  * Consulta a role oficial do usuário no Supabase user_profiles ou e-mails autorizados de fundador
  */
@@ -46,7 +79,7 @@ export async function getUserRoleFromSupabase(userIdOrEmail?: string, emailParam
 
     if (isUUID) {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('es_profiles')
         .select('role')
         .eq('id', targetId)
         .single();
@@ -60,7 +93,7 @@ export async function getUserRoleFromSupabase(userIdOrEmail?: string, emailParam
       }
     } else if (cleanEmail) {
       const { data } = await supabase
-        .from('user_profiles')
+        .from('es_profiles')
         .select('role')
         .eq('email', cleanEmail)
         .single();

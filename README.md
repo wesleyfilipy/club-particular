@@ -1,70 +1,99 @@
-# 👑 CLUB PARTICULAR - PLATAFORMA PREMIUM (REACT NATIVE EXPO + SUPABASE + STRIPE)
+# ESCALA SWIPE — Ofertas escaladas (React + Supabase + Cloudflare R2 + Stripe)
 
-Plataforma luxuosa, moderna e profissional voltada a afiliados VIP, streaming & download de VSLs em 4K/1080p, biblioteca de criativos, copys validadas, chat privado em tempo real (Discord-style) e controle de assinatura Stripe (R$ 100/mês).
-
----
-
-## 📂 Estrutura de Pastas do Projeto
-
-```
-c:\club particular\
-├── supabase/
-│   ├── schema.sql           # Schema SQL com todas as 13 tabelas, foreign keys e triggers
-│   ├── rls.sql              # Políticas RLS (Row Level Security) rigorosas
-│   ├── storage.sql          # 8 Buckets de armazenamento e políticas de Signed URLs
-│   └── seed.sql             # Dados de teste (Ofertas VIP, VSLs, Copys, Demográficos)
-├── mobile/                  # Aplicativo React Native (Expo Router v3)
-│   ├── app/                 # Rotas (Auth, Tab Bar, Swipe TikTok/Netflix, Chat Realtime, Settings)
-│   ├── components/          # Design System Luxuoso (Preto, Grafite e Dourado Metalizado #D4AF37)
-│   ├── constants/           # Cores, Tipografia, Sombras e Espaçamentos
-│   ├── services/            # Clientes Supabase, Stripe Portal & File Downloader com Progresso
-│   ├── store/               # Estados globais Zustand (Auth, Offers, Realtime Chat)
-│   └── package.json
-├── admin/                   # Painel Administrativo Web (Vite + React + Lucide Icons)
-│   ├── src/                 # Dashboard, CRUD de Ofertas, Drag & Drop (até 10GB), Disparo de Push
-│   ├── index.html
-│   └── package.json
-└── stripe/                  # Integração Stripe & Webhook Serverless
-    └── webhook.ts           # Handler para sincronização automática de assinaturas
-```
+Plataforma de assinatura para afiliados: cada oferta traz a VSL original, os vídeos dos anúncios da Biblioteca de Anúncios do Meta, site oficial, landing page, pack de criativos e o **gráfico de escala por dia** (anúncios ativos por dia).
 
 ---
 
-## ⚡ Como Executar o Projeto
+## Onde cada coisa fica guardada
 
-### 1. Configuração do Banco de Dados no Supabase
-1. Acesse o seu painel do **Supabase**.
-2. Abra o **SQL Editor** e execute na ordem:
-   - `supabase/schema.sql`
-   - `supabase/rls.sql`
-   - `supabase/storage.sql`
-   - `supabase/seed.sql`
+| O quê | Onde |
+|---|---|
+| Vídeos da VSL, capa, vídeos dos anúncios, packs | **Cloudflare R2** (bucket privado, links temporários) |
+| Dados da oferta, URLs (site, landing, biblioteca de anúncios) e gráfico de escala | Supabase (`es_offers`) |
+| Contas (1 por e-mail) e assinaturas (1 por conta) | Supabase Auth + `es_profiles` + `es_subscriptions` |
 
-### 2. Rodando o Aplicativo Mobile (Expo)
+O navegador nunca vê as chaves do R2: o painel pede uma URL temporária às Edge Functions do Supabase (`get-upload-url` para o admin enviar, `get-download-url` para assinantes assistirem/baixarem).
+
+## Regras de acesso
+
+- Cada e-mail só pode ter **uma conta** (Supabase Auth).
+- Criar a conta **não libera acesso**: o membro vai para o Stripe com `client_reference_id` = ID da conta.
+- O webhook do Stripe marca a assinatura como `active` **somente para a conta que pagou**. Uma assinatura não libera duas contas.
+- Sem assinatura ativa, o site mostra a tela de pagamento.
+
+---
+
+## 📂 Estrutura
+
+```
+supabase/
+  full_setup.sql                       # Instalação nova (tabelas, RLS, funções)
+  migrations/20261015_escala_swipe.sql # Rode no projeto JÁ existente
+  functions/
+    _shared/r2.ts                      # Cliente R2 + verificação de acesso
+    get-upload-url/                    # URL PUT temporária (só admin)
+    get-download-url/                  # URLs GET temporárias (assinante ativo ou admin)
+    stripe-webhook/                    # Libera/bloqueia a conta conforme o Stripe
+    cancel-subscription/               # Cancela a assinatura da conta logada
+admin/   # Site (Vite + React) publicado na Vercel: landing, área de membros e painel admin
+mobile/  # App Expo
+```
+
+---
+
+## ⚡ Configuração (uma vez)
+
+### 1. Banco de dados
+No **SQL Editor** do Supabase, rode **somente** `supabase/full_setup.sql`. Ele cria as tabelas `es_profiles`, `es_subscriptions` e `es_offers` (prefixo `es_`) sem tocar em nenhuma tabela, função ou gatilho de outro app que use o mesmo projeto Supabase.
+
+⚠️ Não rode `schema.sql`, `rls.sql`, `seed.sql` nem `storage.sql`: são do modelo antigo e criam tabelas com nomes genéricos (`user_profiles`, `subscriptions`…) que conflitam com o outro app.
+
+### 2. Cloudflare R2
+1. Crie o bucket (padrão: `club-particular`) e um **API Token** com permissão de leitura/escrita.
+2. Em **Settings → CORS Policy** do bucket, libere o site:
+```json
+[
+  {
+    "AllowedOrigins": ["https://SEU-SITE.vercel.app", "http://localhost:3000"],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+### 3. Edge Functions (Supabase CLI)
 ```bash
-cd "c:\club particular\mobile"
+supabase secrets set R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com \
+  R2_ACCESS_KEY_ID=... R2_SECRET_ACCESS_KEY=... R2_BUCKET=club-particular \
+  STRIPE_SECRET_KEY=sk_live_... STRIPE_WEBHOOK_SECRET=whsec_...
+
+supabase functions deploy get-upload-url
+supabase functions deploy get-download-url
+supabase functions deploy cancel-subscription
+supabase functions deploy stripe-webhook --no-verify-jwt
+```
+
+### 4. Stripe
+No painel do Stripe, crie um webhook apontando para `https://<PROJETO>.supabase.co/functions/v1/stripe-webhook` com os eventos:
+`checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`.
+
+### 5. Vercel
+Variáveis de ambiente do projeto: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_R2_BUCKET`, `VITE_STRIPE_CHECKOUT_URL`, `VITE_STRIPE_PORTAL_URL`. Cada push no GitHub publica o site automaticamente.
+
+---
+
+## Rodando localmente
+
+```bash
+cd admin
+npm install
+npm run dev     # http://localhost:3000
+```
+
+```bash
+cd mobile
 npm install
 npx expo start
 ```
-- Digite `w` para rodar na Web.
-- Digite `a` para rodar no Emulador Android.
-- Abra o aplicativo Expo Go no celular iOS/Android para testar diretamente no dispositivo físico.
-
-### 3. Rodando o Painel Administrativo Web
-```bash
-cd "c:\club particular\admin"
-npm install
-npm run dev
-```
-Acesse `http://localhost:3000` no seu navegador para gerenciar ofertas, fazer upload de mídias de até 10 GB via Drag & Drop e disparar notificações push para os membros VIP.
-
----
-
-## 💎 Funcionalidades Entregues
-
-1. **Autenticação Completa**: Login por e-mail e senha, Cadastro, Recuperar senha e Sessão persistente via Supabase Auth.
-2. **Assinatura Stripe (R$ 100/mês)**: Verificação automática da assinatura ao abrir o app, bloqueio total de áreas premium se inativa (`SubscriptionGate`), e modal de cancelamento com redirecionamento ao Portal Stripe.
-3. **Swipe de Ofertas Estilo TikTok/Netflix**: Deslize horizontal fluido mostrando capa, logo, comissão, VSL online, download do vídeo original VSL com barra de progresso, biblioteca de anúncios, site oficial, landing page e copys de alta conversão.
-4. **Chat Privado de Membros (Discord-Style)**: Supabase Realtime com fotos de perfil, cargos, indicador "digitando...", contador de mensagens não lidas, emojis rápidos, e exclusão de mensagens com permissões de moderador.
-5. **Configurações Completa**: Perfil, segurança, suporte WhatsApp, termos, políticas e botão destacado de cancelar assinatura Stripe.
-6. **Painel Web Administrativo**: CRUD completo de ofertas e mídias sem alterar código, suporte a uploads de até 10 GB com progresso e estatísticas.

@@ -1,13 +1,10 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, RADIUS, SPACING } from '../../constants/theme';
-import { Home, MessageSquare, Gift, Settings } from 'lucide-react-native';
-import { useChatStore } from '../../store/useChatStore';
+import { StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/theme';
+import { Home, Gift, Settings } from 'lucide-react-native';
 
 export default function TabsLayout() {
-  const { unreadCount } = useChatStore();
-
   return (
     <Tabs
       screenOptions={{
@@ -27,22 +24,8 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.iconContainer}>
-              <MessageSquare size={22} color={focused ? COLORS.gold : color} />
-              {unreadCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{unreadCount}</Text>
-                </View>
-              )}
-            </View>
-          ),
-        }}
-      />
+      {/* Chat removido: rota oculta da barra de abas */}
+      <Tabs.Screen name="chat" options={{ href: null }} />
       <Tabs.Screen
         name="offers"
         options={{
@@ -78,24 +61,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     marginTop: 2,
-  },
-  iconContainer: {
-    position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -10,
-    backgroundColor: COLORS.gold,
-    borderRadius: RADIUS.full,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    minWidth: 16,
-    alignItems: 'center',
-  },
-  badgeText: {
-    color: COLORS.textDark,
-    fontSize: 10,
-    fontWeight: '900',
   },
 });

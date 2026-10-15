@@ -42,7 +42,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         // Tentar salvar perfil adicional na tabela user_profiles (se existir)
         try {
-          await supabase.from('user_profiles').insert({
+          await supabase.from('es_profiles').insert({
             id: data.user?.id || `usr-${Date.now()}`,
             full_name: fullName || 'Novo Membro VIP',
             avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
@@ -160,7 +160,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <div className="w-16 h-16 rounded-full bg-[#d4af37]/10 border border-[#d4af37] flex items-center justify-center mx-auto text-[#d4af37] shadow-lg shadow-[#d4af37]/10">
             <Crown className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-wider gold-text-gradient">CLUB PARTICULAR</h1>
+          <h1 className="text-2xl font-extrabold tracking-wider gold-text-gradient">ESCALA SWIPE</h1>
           <p className="text-xs text-gray-400">
             {loginMode === 'admin'
               ? 'Painel Administrativo VIP • Acesso Restrito'

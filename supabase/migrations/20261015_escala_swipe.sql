@@ -1,0 +1,5 @@
+-- ====================================================================
+-- OBSOLETO: não rode este arquivo.
+-- Use supabase/full_setup.sql, que cria as tabelas do Escala Swipe
+-- isoladas (prefixo es_) sem mexer no outro app que usa este Supabase.
+-- ====================================================================

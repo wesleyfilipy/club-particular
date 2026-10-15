@@ -3,69 +3,47 @@ import { supabase } from './supabase';
 export const STRIPE_WEB_CONFIG = {
   priceFormatted: 'R$ 0,01 / mês',
   priceAmount: 0.01,
-  // Link Oficial de Checkout do Stripe para o Club Particular
+  // Link oficial de checkout (Stripe Payment Link) do Escala Swipe
   checkoutUrl: import.meta.env.VITE_STRIPE_CHECKOUT_URL || 'https://buy.stripe.com/eVq14m1C75mY4MPdN32Fa02',
   portalUrl: import.meta.env.VITE_STRIPE_PORTAL_URL || 'https://billing.stripe.com/p/login/test_clubparticular_portal',
 };
 
 /**
- * Abre a página oficial de Checkout do Stripe com o e-mail individual do aluno preenchido
+ * Monta o link de checkout do Stripe vinculado à conta do Supabase.
+ * client_reference_id = ID do usuário: o webhook libera exatamente esta conta após o pagamento.
  */
-export const openStripeCheckoutPage = (userEmail?: string) => {
-  let url = STRIPE_WEB_CONFIG.checkoutUrl;
-  if (userEmail) {
-    const separator = url.includes('?') ? '&' : '?';
-    url += `${separator}prefilled_email=${encodeURIComponent(userEmail)}`;
-  }
-  window.open(url, '_blank');
+export const getStripeCheckoutUrl = (userEmail: string, userId: string) => {
+  const url = new URL(STRIPE_WEB_CONFIG.checkoutUrl);
+  url.searchParams.set('prefilled_email', userEmail);
+  url.searchParams.set('client_reference_id', userId);
+  return url.toString();
+};
+
+export const openStripeCheckoutPage = (userEmail: string, userId: string) => {
+  window.location.href = getStripeCheckoutUrl(userEmail, userId);
 };
 
 /**
- * Cancela a assinatura do usuário no Stripe e no Supabase em 1-clique
+ * Cancela a assinatura da conta logada (a Edge Function identifica o usuário pelo token)
  */
-export const cancelStripeSubscriptionApi = async (userEmail: string): Promise<{ success: boolean; message: string }> => {
-  try {
-    // 1. Inspeciona a Edge Function cancel-subscription no Supabase
-    const { data, error } = await supabase.functions.invoke('cancel-subscription', {
-      body: { email: userEmail },
-    });
+export const cancelStripeSubscriptionApi = async (): Promise<{ success: boolean; message: string }> => {
+  const { data, error } = await supabase.functions.invoke('cancel-subscription', { body: {} });
 
-    if (!error && data?.success) {
-      return {
-        success: true,
-        message: data.message || 'Assinatura cancelada com sucesso no Stripe e no sistema.',
-      };
-    }
-
-    // 2. Fallback: Atualiza a tabela subscriptions do Supabase diretamente caso a Edge Function não esteja implantada
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('email', userEmail)
-      .maybeSingle();
-
-    const targetUserId = profile?.id || userEmail;
-
-    await supabase
-      .from('subscriptions')
-      .update({ status: 'canceled', cancel_at_period_end: false, updated_at: new Date().toISOString() })
-      .eq('user_id', targetUserId);
-
+  if (!error && data?.success) {
     return {
       success: true,
-      message: 'Sua assinatura foi marcada como cancelada no sistema.',
-    };
-  } catch (err: any) {
-    console.error('Erro ao cancelar assinatura:', err);
-    return {
-      success: false,
-      message: err.message || 'Não foi possível cancelar a assinatura.',
+      message: data.message || 'Assinatura cancelada com sucesso.',
     };
   }
+
+  return {
+    success: false,
+    message: data?.error || error?.message || 'Não foi possível cancelar a assinatura. Use o Portal Stripe.',
+  };
 };
 
 /**
- * Abre o Portal de Gestão de Assinatura Individual no Stripe
+ * Abre o Portal de Gestão de Assinatura no Stripe
  */
 export const openStripeCustomerPortalPage = (userEmail?: string) => {
   let url = STRIPE_WEB_CONFIG.portalUrl;

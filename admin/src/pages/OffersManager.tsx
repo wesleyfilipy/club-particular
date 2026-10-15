@@ -1,203 +1,239 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Globe, FileText, UploadCloud, Film, Package, CheckCircle2, ShieldCheck, ExternalLink } from 'lucide-react';
-import { uploadToR2, R2_BUCKET } from '../services/r2';
-import { OfferItem, getStoredOffers, saveStoredOffers, fetchOffersFromSupabase } from '../services/offersService';
-import { supabase } from '../services/supabase';
+import { Plus, Edit2, Trash2, UploadCloud, Film, Package, CheckCircle2, Image as ImageIcon, Video, X, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
+import { uploadToR2, R2_BUCKET, slugify } from '../services/r2';
+import {
+  OfferItem,
+  OfferInput,
+  ScalePoint,
+  fetchOffersFromSupabase,
+  createOffer,
+  updateOffer,
+  deleteOffer,
+} from '../services/offersService';
+import { ScaleChart } from '../components/ScaleChart';
+
+const CATEGORIES = [
+  'Saúde & Emagrecimento',
+  'Renda Extra & Finanças',
+  'Desenvolvimento Pessoal',
+  'Relacionamento & Conquista',
+  'Investimentos & Cripto',
+  'E-commerce & Dropshipping',
+];
+
+const emptyForm = (): OfferInput => ({
+  name: '',
+  category: CATEGORIES[0],
+  commission: '',
+  description: '',
+  vslKey: '',
+  vslFileName: '',
+  vslResolution: '1080p Full HD',
+  posterKey: '',
+  creativeKey: '',
+  creativeFileName: '',
+  creativeFileSize: '',
+  adVideos: [],
+  dailyScale: [],
+  siteUrl: '',
+  landingPageUrl: '',
+  adsLibraryUrl: '',
+});
+
+const formatSize = (bytes: number) =>
+  bytes > 1024 * 1024 * 1024
+    ? `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+    : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+type UploadSlot = 'vsl' | 'poster' | 'ads' | 'creative';
 
 export const OffersManager: React.FC = () => {
+  const [offersList, setOffersList] = useState<OfferItem[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [uploadingVsl, setUploadingVsl] = useState(false);
-  const [uploadingCreative, setUploadingCreative] = useState(false);
-  const [vslProgress, setVslProgress] = useState(0);
-  const [creativeProgress, setCreativeProgress] = useState(0);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [folder, setFolder] = useState('');
+  const [formData, setFormData] = useState<OfferInput>(emptyForm);
+  const [uploads, setUploads] = useState<Partial<Record<UploadSlot, number>>>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [scaleDate, setScaleDate] = useState(today());
+  const [scaleAds, setScaleAds] = useState('');
 
-  const [offersList, setOffersList] = useState<OfferItem[]>(() => getStoredOffers());
+  const loadOffers = async () => {
+    setLoadingList(true);
+    setOffersList(await fetchOffersFromSupabase());
+    setLoadingList(false);
+  };
 
-  // Carrega ofertas do Supabase / LocalStorage
   useEffect(() => {
-    const loadOffers = async () => {
-      const data = await fetchOffersFromSupabase();
-      if (data && data.length > 0) {
-        setOffersList(data);
-      }
-    };
     loadOffers();
   }, []);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    category: 'Saúde & Emagrecimento',
-    commission: '',
-    description: '',
-    siteUrl: '',
-    landingPageUrl: '',
-    adsLibraryUrl: '',
-    vslFileUrl: '',
-    vslFileName: '',
-    creativeFileUrl: '',
-    creativeFileName: '',
-  });
+  const openCreate = () => {
+    setEditingId(null);
+    setFolder(`oferta-${Date.now()}`);
+    setFormData(emptyForm());
+    setError('');
+    setShowModal(true);
+  };
+
+  const openEdit = (offer: OfferItem) => {
+    const { id, ...rest } = offer;
+    setEditingId(id);
+    setFolder(id);
+    setFormData(rest);
+    setError('');
+    setShowModal(true);
+  };
+
+  const isUploading = Object.keys(uploads).length > 0;
+
+  // Envia um arquivo para offers/<pasta-da-oferta>/<subpasta>/<arquivo> no Cloudflare R2
+  const uploadFile = async (slot: UploadSlot, subfolder: string, file: File) => {
+    const keyPath = `offers/${folder}/${subfolder}/${Date.now()}-${slugify(file.name)}`;
+    setError('');
+    setUploads((prev) => ({ ...prev, [slot]: 0 }));
+    try {
+      await uploadToR2(file, keyPath, file.type || 'application/octet-stream', (percent) =>
+        setUploads((prev) => ({ ...prev, [slot]: percent }))
+      );
+      return keyPath;
+    } catch (err: any) {
+      setError(err.message || 'Erro no upload para o Cloudflare R2.');
+      return null;
+    } finally {
+      setUploads((prev) => {
+        const next = { ...prev };
+        delete next[slot];
+        return next;
+      });
+    }
+  };
 
   const handleVslUpload = async (file: File) => {
-    setUploadingVsl(true);
-    setVslProgress(15);
-    const offerCode = formData.name ? formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : `oferta-${Date.now()}`;
-    const keyPath = `offers/${offerCode}/vsl/${file.name}`;
+    const key = await uploadFile('vsl', 'vsl', file);
+    if (key) setFormData((prev) => ({ ...prev, vslKey: key, vslFileName: file.name }));
+  };
 
-    try {
-      const interval = setInterval(() => {
-        setVslProgress((prev) => (prev < 90 ? prev + 20 : prev));
-      }, 250);
+  const handlePosterUpload = async (file: File) => {
+    const key = await uploadFile('poster', 'poster', file);
+    if (key) setFormData((prev) => ({ ...prev, posterKey: key }));
+  };
 
-      await uploadToR2(file, keyPath, file.type || 'video/mp4');
-      clearInterval(interval);
-      setVslProgress(100);
-
-      setFormData((prev) => ({
-        ...prev,
-        vslFileUrl: keyPath,
-        vslFileName: file.name,
-      }));
-    } catch (err) {
-      console.error('Erro no upload da VSL para o R2:', err);
-    } finally {
-      setTimeout(() => setUploadingVsl(false), 1000);
+  const handleAdVideosUpload = async (files: FileList) => {
+    for (const file of Array.from(files)) {
+      const key = await uploadFile('ads', 'ad-videos', file);
+      if (key) setFormData((prev) => ({ ...prev, adVideos: [...prev.adVideos, { key, name: file.name }] }));
     }
   };
 
   const handleCreativeUpload = async (file: File) => {
-    setUploadingCreative(true);
-    setCreativeProgress(15);
-    const offerCode = formData.name ? formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : `oferta-${Date.now()}`;
-    const keyPath = `offers/${offerCode}/creatives/${file.name}`;
-
-    try {
-      const interval = setInterval(() => {
-        setCreativeProgress((prev) => (prev < 90 ? prev + 20 : prev));
-      }, 250);
-
-      await uploadToR2(file, keyPath, file.type || 'video/mp4');
-      clearInterval(interval);
-      setCreativeProgress(100);
-
+    const key = await uploadFile('creative', 'creatives', file);
+    if (key) {
       setFormData((prev) => ({
         ...prev,
-        creativeFileUrl: keyPath,
+        creativeKey: key,
         creativeFileName: file.name,
+        creativeFileSize: formatSize(file.size),
       }));
-    } catch (err) {
-      console.error('Erro no upload dos Criativos para o R2:', err);
-    } finally {
-      setTimeout(() => setUploadingCreative(false), 1000);
     }
   };
 
-  const handleCreateOffer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const newOffer: OfferItem = {
-      id: `oferta-${Date.now()}`,
-      name: formData.name || 'Nova Oferta VIP',
-      category: formData.category,
-      commission: formData.commission || '80% (R$ 180,00 por venda)',
-      description: formData.description || 'Oferta exclusiva adicionada pelo administrador com material completo no R2.',
-      vslVideoUrl: formData.vslFileUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      vslPoster: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=600',
-      vslFileName: formData.vslFileName || 'vsl_video_oficial_4k.mp4',
-      vslResolution: '4K Ultra HD',
-      creativeFileName: formData.creativeFileName || 'pack_anuncios_criativos.zip',
-      creativeFileSize: '180 MB',
-      siteUrl: formData.siteUrl || 'https://clubparticular.com',
-      landingPageUrl: formData.landingPageUrl || 'https://clubparticular.com',
-      adsLibraryUrl: formData.adsLibraryUrl || 'https://facebook.com/ads/library',
-      conversionRate: '8.7%',
-      viewsCount: '1.200',
-    };
-
-    const updated = [newOffer, ...offersList];
-    setOffersList(updated);
-    saveStoredOffers(updated);
-
-    // Grava também no Supabase
-    try {
-      await supabase.from('offers').insert([
-        {
-          id: newOffer.id,
-          name: newOffer.name,
-          category: newOffer.category,
-          commission: newOffer.commission,
-          description: newOffer.description,
-          image_url: newOffer.vslVideoUrl,
-          logo_url: newOffer.vslPoster,
-          official_site_url: newOffer.siteUrl,
-          landing_page_url: newOffer.landingPageUrl,
-          facebook_ads_library_url: newOffer.adsLibraryUrl,
-        },
-      ]);
-    } catch (err) {
-      console.warn('Erro ao inserir no Supabase, salvo localmente:', err);
-    }
-
-    setShowModal(false);
-    setFormData({
-      name: '',
-      category: 'Saúde & Emagrecimento',
-      commission: '',
-      description: '',
-      siteUrl: '',
-      landingPageUrl: '',
-      adsLibraryUrl: '',
-      vslFileUrl: '',
-      vslFileName: '',
-      creativeFileUrl: '',
-      creativeFileName: '',
+  // Adiciona/atualiza o número de anúncios ativos de um dia
+  const addScalePoint = () => {
+    const ads = parseInt(scaleAds, 10);
+    if (!scaleDate || isNaN(ads) || ads < 0) return;
+    setFormData((prev) => {
+      const others = prev.dailyScale.filter((p) => p.date !== scaleDate);
+      const next: ScalePoint[] = [...others, { date: scaleDate, ads }].sort((a, b) => a.date.localeCompare(b.date));
+      return { ...prev, dailyScale: next };
     });
+    setScaleAds('');
   };
 
-  const handleDelete = async (id: string) => {
-    const updated = offersList.filter((o) => o.id !== id);
-    setOffersList(updated);
-    saveStoredOffers(updated);
+  const removeScalePoint = (date: string) =>
+    setFormData((prev) => ({ ...prev, dailyScale: prev.dailyScale.filter((p) => p.date !== date) }));
 
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isUploading) return;
+    setSaving(true);
+    setError('');
     try {
-      await supabase.from('offers').delete().eq('id', id);
-    } catch {
-      // Ignore
+      if (editingId) {
+        const updated = await updateOffer(editingId, formData);
+        setOffersList((prev) => prev.map((o) => (o.id === editingId ? updated : o)));
+      } else {
+        const created = await createOffer(formData);
+        setOffersList((prev) => [created, ...prev]);
+      }
+      setShowModal(false);
+    } catch (err: any) {
+      setError(`Erro ao salvar no Supabase: ${err.message}`);
+    } finally {
+      setSaving(false);
     }
   };
+
+  const handleDelete = async (offer: OfferItem) => {
+    if (!confirm(`Excluir a oferta "${offer.name}"?`)) return;
+    try {
+      await deleteOffer(offer.id);
+      setOffersList((prev) => prev.filter((o) => o.id !== offer.id));
+    } catch (err: any) {
+      alert(`Erro ao excluir: ${err.message}`);
+    }
+  };
+
+  const uploadLabel = (slot: UploadSlot, idle: string) =>
+    uploads[slot] !== undefined ? `Enviando... ${uploads[slot]}%` : idle;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-white">Gerenciamento de Ofertas VIP</h2>
+          <h2 className="text-2xl font-extrabold text-white">Gerenciamento de Ofertas</h2>
           <p className="text-sm text-gray-400">
-            Adicione ofertas com upload direto de vídeos de VSL e anúncios no Cloudflare R2. Todas as ofertas aqui ficam visíveis no menu do Aluno!
+            VSLs, vídeos dos anúncios e packs vão direto para o Cloudflare R2. Os dados da oferta e o gráfico de escala ficam no Supabase.
           </p>
         </div>
 
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openCreate}
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold text-sm shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all cursor-pointer"
         >
           <Plus className="w-5 h-5" />
-          Cadastrar Nova Oferta VIP
+          Cadastrar Nova Oferta
         </button>
       </div>
 
       {/* Offers Table */}
-      <div className="bg-[#12141d] rounded-2xl border border-[#282c3d] overflow-hidden shadow-2xl">
+      <div className="bg-[#12141d] rounded-2xl border border-[#282c3d] overflow-x-auto shadow-2xl">
         <table className="w-full text-left text-sm text-gray-300">
           <thead className="bg-[#1a1d29] text-xs font-bold text-[#f5d77f] uppercase border-b border-[#282c3d]">
             <tr>
               <th className="p-4">Nome da Oferta</th>
               <th className="p-4">Categoria</th>
-              <th className="p-4">Comissão VIP</th>
-              <th className="p-4">Vídeo VSL (R2)</th>
-              <th className="p-4">Anúncios / Pack R2</th>
+              <th className="p-4">VSL (R2)</th>
+              <th className="p-4">Vídeos de Anúncios</th>
+              <th className="p-4">Escala (hoje)</th>
               <th className="p-4 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#282c3d]">
+            {loadingList && (
+              <tr>
+                <td colSpan={6} className="p-6 text-center text-xs text-gray-400">Carregando ofertas do Supabase...</td>
+              </tr>
+            )}
+            {!loadingList && offersList.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-6 text-center text-xs text-gray-400">Nenhuma oferta cadastrada ainda.</td>
+              </tr>
+            )}
             {offersList.map((offer) => (
               <tr key={offer.id} className="hover:bg-[#1a1d29]/50 transition-all">
                 <td className="p-4 font-bold text-white">{offer.name}</td>
@@ -206,7 +242,6 @@ export const OffersManager: React.FC = () => {
                     {offer.category}
                   </span>
                 </td>
-                <td className="p-4 font-bold text-[#d4af37]">{offer.commission}</td>
                 <td className="p-4">
                   {offer.vslFileName ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
@@ -214,23 +249,24 @@ export const OffersManager: React.FC = () => {
                       {offer.vslFileName}
                     </span>
                   ) : (
-                    <span className="text-xs text-gray-500">Sem VSL anexada</span>
+                    <span className="text-xs text-gray-500">Sem VSL</span>
                   )}
                 </td>
-                <td className="p-4">
-                  {offer.creativeFileName ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-semibold">
-                      <Package className="w-3.5 h-3.5" />
-                      {offer.creativeFileName}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-500">Sem criativos anexados</span>
-                  )}
+                <td className="p-4 text-xs font-semibold">{offer.adVideos.length} vídeo{offer.adVideos.length === 1 ? '' : 's'}</td>
+                <td className="p-4 text-xs font-semibold">
+                  {offer.dailyScale.length > 0 ? `${offer.dailyScale[offer.dailyScale.length - 1].ads} anúncios` : '—'}
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
-                      onClick={() => handleDelete(offer.id)}
+                      onClick={() => openEdit(offer)}
+                      className="p-2 rounded-lg bg-[#1a1d29] text-[#f5d77f] hover:bg-[#222736] transition-all cursor-pointer"
+                      title="Editar oferta / atualizar escala"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(offer)}
                       className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all cursor-pointer"
                       title="Excluir Oferta"
                     >
@@ -250,17 +286,24 @@ export const OffersManager: React.FC = () => {
           <div className="bg-[#12141d] border border-[#d4af37] w-full max-w-3xl rounded-2xl p-6 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#282c3d] pb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                Cadastrar Nova Oferta VIP
+                {editingId ? 'Editar Oferta' : 'Cadastrar Nova Oferta'}
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#d4af37]/10 text-[#f5d77f] border border-[#d4af37]">
                   Bucket: {R2_BUCKET}
                 </span>
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white font-bold text-lg cursor-pointer">
-                ✕
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateOffer} className="space-y-5 text-sm">
+            {error && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-400">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSave} className="space-y-5 text-sm">
               <div>
                 <label className="block text-gray-300 mb-1 font-semibold">Nome da Oferta</label>
                 <input
@@ -273,7 +316,7 @@ export const OffersManager: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-gray-300 mb-1 font-semibold">Categoria</label>
                   <select
@@ -281,12 +324,9 @@ export const OffersManager: React.FC = () => {
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
-                    <option>Saúde & Emagrecimento</option>
-                    <option>Renda Extra & Finanças</option>
-                    <option>Desenvolvimento Pessoal</option>
-                    <option>Relacionamento & Conquista</option>
-                    <option>Investimentos & Cripto</option>
-                    <option>E-commerce & Dropshipping</option>
+                    {CATEGORIES.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -299,6 +339,18 @@ export const OffersManager: React.FC = () => {
                     value={formData.commission}
                     onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
                   />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1 font-semibold">Qualidade da VSL</label>
+                  <select
+                    className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
+                    value={formData.vslResolution}
+                    onChange={(e) => setFormData({ ...formData, vslResolution: e.target.value })}
+                  >
+                    <option>4K Ultra HD</option>
+                    <option>1080p Full HD</option>
+                    <option>720p HD</option>
+                  </select>
                 </div>
               </div>
 
@@ -313,19 +365,17 @@ export const OffersManager: React.FC = () => {
                 />
               </div>
 
-              {/* MÍDIAS DA OFERTA (VSL & ANÚNCIOS R2) */}
+              {/* MÍDIAS DA OFERTA NO CLOUDFLARE R2 */}
               <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-4">
                 <h4 className="font-extrabold text-[#f5d77f] flex items-center gap-2 text-sm uppercase tracking-wider">
                   <Film className="w-4 h-4" />
-                  Mídias da Oferta (Cloudflare R2 Direct Upload)
+                  Mídias da Oferta (Cloudflare R2)
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* UPLOAD VSL */}
+                  {/* VSL */}
                   <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
-                    <label className="block font-bold text-xs text-gray-300">
-                      🎥 Vídeo de VSL (Original 4K/1080p)
-                    </label>
+                    <span className="block font-bold text-xs text-gray-300">🎥 Vídeo da VSL (original)</span>
                     <input
                       type="file"
                       id="vsl-upload-input"
@@ -338,12 +388,8 @@ export const OffersManager: React.FC = () => {
                       className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
                     >
                       <UploadCloud className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
-                      <span className="text-xs font-semibold text-gray-300 block">
-                        {uploadingVsl ? `Enviando VSL... ${vslProgress}%` : 'Selecionar Vídeo de VSL para R2'}
-                      </span>
-                      <span className="text-[10px] text-gray-500 block">Salva em /vsl/[nome-do-arquivo]</span>
+                      <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('vsl', 'Selecionar vídeo da VSL')}</span>
                     </label>
-
                     {formData.vslFileName && (
                       <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
                         <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -352,11 +398,67 @@ export const OffersManager: React.FC = () => {
                     )}
                   </div>
 
-                  {/* UPLOAD CRIATIVOS E VÍDEOS DE ANÚNCIOS */}
+                  {/* CAPA */}
                   <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
-                    <label className="block font-bold text-xs text-gray-300">
-                      🎬 Vídeos de Anúncios / Criativos (Pack Canva / ZIP)
+                    <span className="block font-bold text-xs text-gray-300">🖼️ Capa da VSL (imagem)</span>
+                    <input
+                      type="file"
+                      id="poster-upload-input"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handlePosterUpload(e.target.files[0])}
+                    />
+                    <label
+                      htmlFor="poster-upload-input"
+                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                    >
+                      <ImageIcon className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('poster', 'Selecionar imagem de capa')}</span>
                     </label>
+                    {formData.posterKey && (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span className="truncate">Capa enviada</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* VÍDEOS DOS ANÚNCIOS (BIBLIOTECA DO META) */}
+                  <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
+                    <span className="block font-bold text-xs text-gray-300">🎬 Vídeos dos anúncios (Biblioteca do Meta Ads)</span>
+                    <input
+                      type="file"
+                      id="ads-upload-input"
+                      accept="video/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => e.target.files && e.target.files.length > 0 && handleAdVideosUpload(e.target.files)}
+                    />
+                    <label
+                      htmlFor="ads-upload-input"
+                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                    >
+                      <Video className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('ads', 'Selecionar vídeos (vários)')}</span>
+                    </label>
+                    {formData.adVideos.map((ad) => (
+                      <div key={ad.key} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-purple-500/10 text-purple-300 text-xs font-semibold">
+                        <span className="truncate">{ad.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, adVideos: prev.adVideos.filter((v) => v.key !== ad.key) }))}
+                          className="text-red-400 hover:text-red-300 cursor-pointer"
+                          title="Remover"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* PACK DE CRIATIVOS */}
+                  <div className="p-4 rounded-xl bg-[#12141d] border border-[#282c3d] space-y-3">
+                    <span className="block font-bold text-xs text-gray-300">📦 Pack de criativos (ZIP)</span>
                     <input
                       type="file"
                       id="creative-upload-input"
@@ -367,17 +469,13 @@ export const OffersManager: React.FC = () => {
                       htmlFor="creative-upload-input"
                       className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
                     >
-                      <UploadCloud className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
-                      <span className="text-xs font-semibold text-gray-300 block">
-                        {uploadingCreative ? `Enviando Criativos... ${creativeProgress}%` : 'Selecionar Anúncios / Pack para R2'}
-                      </span>
-                      <span className="text-[10px] text-gray-500 block">Salva em /creatives/[nome-do-arquivo]</span>
+                      <Package className="w-6 h-6 text-[#d4af37] mx-auto mb-1" />
+                      <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('creative', 'Selecionar pack')}</span>
                     </label>
-
                     {formData.creativeFileName && (
                       <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-semibold">
-                        <ShieldCheck className="w-4 h-4 shrink-0" />
-                        <span className="truncate">{formData.creativeFileName}</span>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{formData.creativeFileName} ({formData.creativeFileSize})</span>
                       </div>
                     )}
                   </div>
@@ -407,15 +505,68 @@ export const OffersManager: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-300 mb-1 font-semibold text-xs">URL Ads Library</label>
+                  <label className="block text-gray-300 mb-1 font-semibold text-xs">URL Biblioteca de Anúncios</label>
                   <input
                     type="url"
-                    placeholder="https://facebook.com/ads..."
+                    placeholder="https://facebook.com/ads/library/..."
                     className="w-full bg-[#1a1d29] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
                     value={formData.adsLibraryUrl}
                     onChange={(e) => setFormData({ ...formData, adsLibraryUrl: e.target.value })}
                   />
                 </div>
+              </div>
+
+              {/* GRÁFICO DE ESCALA POR DIA */}
+              <div className="p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d] space-y-4">
+                <h4 className="font-extrabold text-[#f5d77f] flex items-center gap-2 text-sm uppercase tracking-wider">
+                  <BarChart3 className="w-4 h-4" />
+                  Escala por dia (anúncios ativos na Biblioteca do Meta)
+                </h4>
+
+                <div className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-semibold text-xs">Dia</label>
+                    <input
+                      type="date"
+                      className="bg-[#12141d] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
+                      value={scaleDate}
+                      onChange={(e) => setScaleDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-semibold text-xs">Anúncios ativos</label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Ex: 42"
+                      className="w-32 bg-[#12141d] border border-[#282c3d] rounded-xl px-3 py-2 text-white focus:border-[#d4af37] outline-none text-xs"
+                      value={scaleAds}
+                      onChange={(e) => setScaleAds(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addScalePoint}
+                    className="px-4 py-2 rounded-xl bg-[#12141d] border border-[#d4af37]/50 text-[#f5d77f] text-xs font-bold hover:bg-[#d4af37]/10 cursor-pointer"
+                  >
+                    Adicionar dia
+                  </button>
+                </div>
+
+                <ScaleChart data={formData.dailyScale} height={180} />
+
+                {formData.dailyScale.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.dailyScale.map((p) => (
+                      <span key={p.date} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#12141d] border border-[#282c3d] text-[11px] text-gray-300">
+                        {p.date.split('-').reverse().join('/')}: <strong className="text-white">{p.ads}</strong>
+                        <button type="button" onClick={() => removeScalePoint(p.date)} className="text-red-400 hover:text-red-300 cursor-pointer" title="Remover dia">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-[#282c3d]">
@@ -428,9 +579,11 @@ export const OffersManager: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold shadow-lg cursor-pointer"
+                  disabled={saving || isUploading}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#f5d77f] via-[#d4af37] to-[#997d2e] text-[#090a0f] font-bold shadow-lg cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
-                  Salvar Oferta no Supabase
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {isUploading ? 'Aguarde o upload...' : 'Salvar Oferta'}
                 </button>
               </div>
             </form>

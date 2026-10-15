@@ -5,38 +5,34 @@ import { fetchOffersFromSupabase, OfferItem } from '../services/offersService';
 
 export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [activeSubscribersCount, setActiveSubscribersCount] = useState<number>(1);
-  const [monthlyRevenue, setMonthlyRevenue] = useState<string>('R$ 0,01');
+  const [activeSubscribersCount, setActiveSubscribersCount] = useState<number>(0);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<string>('R$ 0,00');
   const [offersList, setOffersList] = useState<OfferItem[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [activeUserIds, setActiveUserIds] = useState<Set<string>>(new Set());
 
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // 1. Assinaturas Ativas no Supabase
+      // 1. Assinaturas pagas e ativas no Supabase
       const { data: subsData } = await supabase
-        .from('subscriptions')
+        .from('es_subscriptions')
         .select('*')
         .eq('status', 'active');
 
-      if (subsData && subsData.length > 0) {
-        setActiveSubscribersCount(subsData.length);
-        const totalRev = subsData.reduce((acc: number, curr: any) => acc + (Number(curr.price_amount) || 0.01), 0);
-        setMonthlyRevenue(`R$ ${totalRev.toFixed(2).replace('.', ',')}`);
-      } else {
-        setActiveSubscribersCount(1);
-        setMonthlyRevenue('R$ 0,01');
-      }
+      const subs = subsData || [];
+      setActiveSubscribersCount(subs.length);
+      setActiveUserIds(new Set(subs.map((s: any) => s.user_id)));
+      const totalRev = subs.reduce((acc: number, curr: any) => acc + (Number(curr.price_amount) || 0), 0);
+      setMonthlyRevenue(`R$ ${totalRev.toFixed(2).replace('.', ',')}`);
 
       // 2. Ofertas cadastradas
       const offers = await fetchOffersFromSupabase();
       setOffersList(offers);
 
-      // 3. Usuários/Membros do Supabase
-      const { data: profiles } = await supabase.from('user_profiles').select('*');
-      if (profiles && profiles.length > 0) {
-        setUsersList(profiles);
-      }
+      // 3. Contas cadastradas no Supabase (uma por e-mail)
+      const { data: profiles } = await supabase.from('es_profiles').select('*');
+      setUsersList(profiles || []);
     } catch (err) {
       console.warn('Erro ao carregar métricas reais:', err);
     } finally {
@@ -52,7 +48,7 @@ export const Dashboard: React.FC = () => {
     {
       title: 'Faturamento Mensal (Stripe)',
       value: monthlyRevenue,
-      change: '1 Assinante Ativo',
+      change: `${activeSubscribersCount} assinatura${activeSubscribersCount === 1 ? '' : 's'} ativa${activeSubscribersCount === 1 ? '' : 's'}`,
       icon: DollarSign,
       isGold: true,
     },
@@ -69,9 +65,9 @@ export const Dashboard: React.FC = () => {
       icon: Gift,
     },
     {
-      title: 'Downloads no Cloudflare R2',
-      value: `${offersList.length * 3} arquivos`,
-      change: 'Mídias e Packs Disponíveis',
+      title: 'Arquivos no Cloudflare R2',
+      value: `${offersList.reduce((acc, o) => acc + (o.vslKey ? 1 : 0) + (o.creativeKey ? 1 : 0) + o.adVideos.length, 0)} arquivos`,
+      change: 'VSLs, vídeos de anúncios e packs',
       icon: Download,
     },
   ];
@@ -143,7 +139,8 @@ export const Dashboard: React.FC = () => {
                 <th className="p-4">Categoria</th>
                 <th className="p-4">Qualidade VSL</th>
                 <th className="p-4">Arquivo VSL</th>
-                <th className="p-4">Pack Criativos</th>
+                <th className="p-4">Vídeos de Anúncios</th>
+                <th className="p-4">Anúncios Ativos (último dia)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#282c3d]">
@@ -154,8 +151,11 @@ export const Dashboard: React.FC = () => {
                   </td>
                   <td className="p-4 text-gray-300 font-semibold">{item.category}</td>
                   <td className="p-4 font-bold text-[#f5d77f]">{item.vslResolution}</td>
-                  <td className="p-4 font-mono text-xs text-emerald-400">{item.vslFileName}</td>
-                  <td className="p-4 text-purple-400 font-mono text-xs">{item.creativeFileName}</td>
+                  <td className="p-4 font-mono text-xs text-emerald-400">{item.vslFileName || '—'}</td>
+                  <td className="p-4 text-purple-400 font-mono text-xs">{item.adVideos.length}</td>
+                  <td className="p-4 text-xs font-bold text-white">
+                    {item.dailyScale.length > 0 ? item.dailyScale[item.dailyScale.length - 1].ads : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -165,27 +165,23 @@ export const Dashboard: React.FC = () => {
 
       {/* Recent System Activity */}
       <div className="bg-[#12141d] rounded-2xl border border-[#282c3d] p-6">
-        <h3 className="text-lg font-bold text-white mb-4">Registro de Atividades & Membros do Supabase</h3>
+        <h3 className="text-lg font-bold text-white mb-4">Contas cadastradas (1 por e-mail)</h3>
         <div className="space-y-3">
-          {usersList.length > 0 ? (
-            usersList.map((userItem, i) => (
-              <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d]">
+          {usersList.length === 0 && <p className="text-xs text-gray-400">Nenhuma conta cadastrada ainda.</p>}
+          {usersList.map((userItem) => {
+            const isActive = activeUserIds.has(userItem.id);
+            return (
+              <div key={userItem.id} className="flex items-center justify-between p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d]">
                 <div>
                   <span className="font-bold text-sm text-[#f5d77f]">{userItem.full_name || userItem.email}</span>
-                  <p className="text-xs text-gray-300">Assinatura ativa vinculada ao Stripe ({userItem.email})</p>
+                  <p className="text-xs text-gray-300">{userItem.email}</p>
                 </div>
-                <span className="text-xs text-emerald-400 font-bold">Ativo no Supabase</span>
+                <span className={`text-xs font-bold ${isActive ? 'text-emerald-400' : 'text-gray-500'}`}>
+                  {userItem.role === 'admin' ? 'Administrador' : isActive ? 'Assinatura paga ativa' : 'Sem assinatura paga'}
+                </span>
               </div>
-            ))
-          ) : (
-            <div className="flex items-center justify-between p-4 rounded-xl bg-[#1a1d29] border border-[#282c3d]">
-              <div>
-                <span className="font-bold text-sm text-[#f5d77f]">Wesley Filipy</span>
-                <p className="text-xs text-gray-300">Assinatura Stripe de R$ 0,01/mês ativada com sucesso (wesleyfilipy21@gmail.com)</p>
-              </div>
-              <span className="text-xs text-emerald-400 font-bold">Ativo no Supabase</span>
-            </div>
-          )}
+            );
+          })}
         </div>
       </div>
     </div>

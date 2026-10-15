@@ -22,11 +22,14 @@ export async function openStripeCustomerPortal() {
 }
 
 /**
- * Open Stripe Checkout Session to subscribe for R$ 100/mês
+ * Abre o checkout do Stripe vinculado à conta: o webhook libera exatamente este usuário (client_reference_id)
  */
-export async function openStripeCheckout() {
+export async function openStripeCheckout(userId: string, email: string) {
   try {
-    const result = await WebBrowser.openBrowserAsync(STRIPE_CONFIG.checkoutUrl);
+    const url =
+      `${STRIPE_CONFIG.checkoutUrl}?client_reference_id=${encodeURIComponent(userId)}` +
+      `&prefilled_email=${encodeURIComponent(email)}`;
+    const result = await WebBrowser.openBrowserAsync(url);
     return result;
   } catch (error) {
     console.error('Error opening Stripe checkout:', error);
@@ -52,7 +55,7 @@ export async function cancelStripeSubscriptionMobile(userId: string, email?: str
 
     // Fallback: update subscriptions table in Supabase
     await supabase
-      .from('subscriptions')
+      .from('es_subscriptions')
       .update({ status: 'canceled', cancel_at_period_end: false, updated_at: new Date().toISOString() })
       .eq('user_id', userId);
 
@@ -76,9 +79,12 @@ export async function checkSubscriptionStatus(userId: string): Promise<boolean> 
   try {
     if (!userId) return false;
 
+    // Cria o perfil do Escala Swipe desta conta no primeiro acesso
+    await supabase.rpc('es_ensure_profile');
+
     // 1. Check user profile for Admin or Founder privileges
     const { data: profile } = await supabase
-      .from('user_profiles')
+      .from('es_profiles')
       .select('role, email')
       .eq('id', userId)
       .single();
@@ -89,7 +95,7 @@ export async function checkSubscriptionStatus(userId: string): Promise<boolean> 
 
     // 2. Check subscriptions table by user_id
     const { data } = await supabase
-      .from('subscriptions')
+      .from('es_subscriptions')
       .select('status')
       .eq('user_id', userId)
       .single();
@@ -101,7 +107,7 @@ export async function checkSubscriptionStatus(userId: string): Promise<boolean> 
     // 3. Fallback check by email if available
     if (profile?.email) {
       const { data: subByEmail } = await supabase
-        .from('subscriptions')
+        .from('es_subscriptions')
         .select('status')
         .eq('user_id', profile.email)
         .single();

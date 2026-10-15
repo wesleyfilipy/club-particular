@@ -11,7 +11,7 @@ interface SubscriptionGateProps {
 }
 
 export const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
-  const { isSubscribed, verifySubscription, isLoading } = useAuthStore();
+  const { isSubscribed, verifySubscription, isLoading, user } = useAuthStore();
 
   if (isSubscribed) {
     return <>{children}</>;
@@ -30,11 +30,11 @@ export const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) 
         </View>
 
         <Text style={styles.description}>
-          Sua assinatura do <Text style={{ color: COLORS.gold }}>Club Particular (R$ 0,01/mês)</Text> está inativa ou expirada.
+          Sua assinatura do <Text style={{ color: COLORS.gold }}>Escala Swipe (R$ 0,01/mês)</Text> está inativa ou expirada.
         </Text>
 
         <Text style={styles.subtext}>
-          Assine para liberar acesso completo a Ofertas VSL, Downloads de Criativos, Biblioteca de Anúncios e Chat Privado de Membros.
+          Assine para liberar acesso completo a Ofertas VSL, vídeos dos anúncios, gráfico de escala e downloads de criativos.
         </Text>
 
         <View style={styles.priceTag}>
@@ -44,7 +44,7 @@ export const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) 
 
         <LuxuryButton
           title="Assinar Agora no Stripe"
-          onPress={openStripeCheckout}
+          onPress={() => user && openStripeCheckout(user.id, user.email)}
           variant="gold"
           style={styles.actionBtn}
         />

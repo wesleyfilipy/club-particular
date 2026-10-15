@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
       <View>
         <View style={styles.brandRow}>
           <Crown size={22} color={COLORS.gold} />
-          <Text style={styles.brandTitle}>CLUB PARTICULAR</Text>
+          <Text style={styles.brandTitle}>ESCALA SWIPE</Text>
         </View>
         {subtitle ? (
           <Text style={styles.subtitle}>{subtitle}</Text>

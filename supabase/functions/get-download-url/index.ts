@@ -1,111 +1,51 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.0';
-import { S3Client, GetObjectCommand } from 'https://esm.sh/@aws-sdk/client-s3@3.587.0';
+import { GetObjectCommand } from 'https://esm.sh/@aws-sdk/client-s3@3.587.0';
 import { getSignedUrl } from 'https://esm.sh/@aws-sdk/s3-request-presigner@3.587.0';
+import { r2, r2Bucket, corsHeaders, jsonResponse, getAccess, isValidKey } from '../_shared/r2.ts';
 
-const r2Endpoint = Deno.env.get('R2_ENDPOINT') || '';
-const r2AccessKey = Deno.env.get('R2_ACCESS_KEY_ID') || '';
-const r2SecretKey = Deno.env.get('R2_SECRET_ACCESS_KEY') || '';
-const r2Bucket = Deno.env.get('R2_BUCKET') || 'club-particular';
+const EXPIRES_IN_SECONDS = 3 * 3600;
 
-const r2 = new S3Client({
-  region: 'auto',
-  endpoint: r2Endpoint,
-  credentials: {
-    accessKeyId: r2AccessKey,
-    secretAccessKey: r2SecretKey,
-  },
-});
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
+// Gera URLs temporárias (GET) do Cloudflare R2 para assistir ou baixar VSLs, vídeos de anúncios e packs.
+// Body: { keyPaths: string[], download?: boolean }  (ou { keyPath } para um único arquivo)
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Cabeçalho de autorização não fornecido (HTTP 401).' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const access = await getAccess(req);
+    if (!access) {
+      return jsonResponse({ error: 'Sessão expirada ou token inválido (HTTP 401).' }, 401);
+    }
+    if (!access.isAdmin && !access.isActiveMember) {
+      return jsonResponse({ error: 'Acesso negado (HTTP 403): sua assinatura está inativa ou expirada.' }, 403);
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const body = await req.json();
+    const keys: unknown[] = Array.isArray(body.keyPaths) ? body.keyPaths : [body.keyPath];
+    const validKeys = [...new Set(keys.filter(isValidKey))].slice(0, 200);
 
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Sessão expirada ou token de usuário inválido (HTTP 401).' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (validKeys.length === 0) {
+      return jsonResponse({ error: 'Nenhum caminho de arquivo válido foi informado.' }, 400);
     }
 
-    // 1. Verify if user is Admin / Moderator or has Active Stripe Subscription
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    const isAdminOrMod = profile?.role === 'admin' || profile?.role === 'moderator';
-
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('status')
-      .eq('user_id', user.id)
-      .single();
-
-    const isSubscribed = subscription?.status === 'active';
-
-    if (!isAdminOrMod && !isSubscribed) {
-      return new Response(
-        JSON.stringify({ error: 'Acesso Negado (HTTP 403): Sua assinatura Stripe está inativa ou expirada.' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const urls: Record<string, string> = {};
+    for (const key of validKeys) {
+      const fileName = key.split('/').pop() || 'arquivo';
+      const command = new GetObjectCommand({
+        Bucket: r2Bucket,
+        Key: key,
+        ResponseContentDisposition: body.download ? `attachment; filename="${fileName.replace(/"/g, '')}"` : undefined,
+      });
+      urls[key] = await getSignedUrl(r2, command, { expiresIn: EXPIRES_IN_SECONDS });
     }
 
-    const { keyPath } = await req.json();
-    if (!keyPath) {
-      return new Response(
-        JSON.stringify({ error: 'O caminho do arquivo no bucket R2 é obrigatório.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // 2. Generate Cloudflare R2 Presigned Temporary URL (1 Hour Expiration)
-    const command = new GetObjectCommand({
-      Bucket: r2Bucket,
-      Key: keyPath,
+    return jsonResponse({
+      urls,
+      url: urls[validKeys[0]],
+      expiresInSeconds: EXPIRES_IN_SECONDS,
     });
-
-    const presignedUrl = await getSignedUrl(r2, command, { expiresIn: 3600 });
-
-    return new Response(
-      JSON.stringify({
-        url: presignedUrl,
-        expiresInSeconds: 3600,
-        bucket: r2Bucket,
-        key: keyPath,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
   } catch (err: any) {
-    return new Response(
-      JSON.stringify({ error: err.message || 'Erro interno ao gerar URL temporária do Cloudflare R2.' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ error: err.message || 'Erro interno ao gerar URL temporária do Cloudflare R2.' }, 500);
   }
 });

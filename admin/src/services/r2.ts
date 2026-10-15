@@ -2,70 +2,80 @@ import { supabase } from './supabase';
 
 export const R2_BUCKET = import.meta.env.VITE_R2_BUCKET || 'club-particular';
 
+/** Chave do R2 (offers/...) em vez de uma URL http(s) completa */
+export const isR2Key = (value?: string): value is string => !!value && value.startsWith('offers/');
+
+/** Normaliza nomes para usar em caminhos do bucket */
+export const slugify = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 /**
- * Uploads a file buffer/blob safely via Supabase Storage or Edge Function.
- * Note: Cloudflare R2 secrets remain server-side only.
+ * Envia um arquivo direto para o Cloudflare R2.
+ * A Edge Function get-upload-url (somente admin) gera uma URL PUT temporária;
+ * os segredos do R2 nunca chegam ao navegador.
  */
 export async function uploadToR2(
   file: File | Blob,
   keyPath: string,
-  contentType: string
+  contentType: string,
+  onProgress?: (percent: number) => void
 ): Promise<{ key: string; bucket: string }> {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error('Sessão não encontrada. Usuário não autenticado.');
-    }
+  const { data, error } = await supabase.functions.invoke('get-upload-url', {
+    body: { keyPath, contentType },
+  });
 
-    // Usar Supabase Storage bucket configurado ou Edge Function para armazenamento
-    const { data, error } = await supabase.storage
-      .from('creatives')
-      .upload(keyPath, file, { contentType, upsert: true });
-
-    if (error) {
-      console.warn('Upload via Supabase Storage:', error.message);
-    }
-
-    return { key: keyPath, bucket: R2_BUCKET };
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    throw error;
+  if (error || !data?.uploadUrl) {
+    throw new Error(data?.error || error?.message || 'Não foi possível gerar a URL de upload do Cloudflare R2.');
   }
+
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', data.uploadUrl);
+    xhr.setRequestHeader('Content-Type', contentType);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error(`Cloudflare R2 recusou o upload (HTTP ${xhr.status}). Verifique o CORS do bucket.`));
+    xhr.onerror = () => reject(new Error('Falha de rede no upload para o Cloudflare R2. Verifique o CORS do bucket.'));
+    xhr.send(file);
+  });
+
+  return { key: keyPath, bucket: R2_BUCKET };
 }
 
 /**
- * Generates a temporary signed download URL (valid for 1 hour) for Cloudflare R2 objects
- * calling the secure Supabase Edge Function with JWT validation.
+ * Gera URLs temporárias (3h) para várias chaves do R2 de uma vez.
+ * Usado para assistir VSLs/vídeos de anúncios e para downloads (download = true).
  */
-export async function getR2PresignedDownloadUrl(keyPath: string, _expiresInSeconds = 3600): Promise<string> {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+export async function getR2SignedUrls(keyPaths: string[], download = false): Promise<Record<string, string>> {
+  const keys = keyPaths.filter(isR2Key);
+  if (keys.length === 0) return {};
 
-    if (!token) {
-      throw new Error('Sessão expirada ou usuário não autenticado.');
-    }
+  const { data, error } = await supabase.functions.invoke('get-download-url', {
+    body: { keyPaths: keys, download },
+  });
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://xyzcompany.supabase.co';
-    const response = await fetch(`${supabaseUrl}/functions/v1/get-download-url`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ keyPath }),
-    });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error || `Erro HTTP ${response.status} ao gerar URL de download.`);
-    }
-
-    const data = await response.json();
-    return data.url;
-  } catch (error) {
-    console.error('Error generating Cloudflare R2 presigned URL via Edge Function:', error);
-    throw error;
+  if (error || !data?.urls) {
+    throw new Error(data?.error || error?.message || 'Não foi possível gerar as URLs do Cloudflare R2.');
   }
+
+  return data.urls as Record<string, string>;
 }
 
+/** URL temporária para um único arquivo */
+export async function getR2PresignedDownloadUrl(keyPath: string, download = true): Promise<string> {
+  const urls = await getR2SignedUrls([keyPath], download);
+  const url = urls[keyPath];
+  if (!url) throw new Error('Arquivo não encontrado no Cloudflare R2.');
+  return url;
+}

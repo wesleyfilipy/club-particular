@@ -1,5 +1,5 @@
 // ====================================================================
-// CLUB PARTICULAR - LUXURY DARK & GOLD DESIGN SYSTEM TOKENS
+// ESCALA SWIPE - LUXURY DARK & GOLD DESIGN SYSTEM TOKENS
 // Palette: Obsidian, Deep Charcoal, Metallic Champagne Gold & Warm Accents
 // ====================================================================
 

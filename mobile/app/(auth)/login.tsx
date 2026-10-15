@@ -34,7 +34,7 @@ export default function LoginScreen() {
         <View style={styles.crownCircle}>
           <Crown size={36} color={COLORS.gold} />
         </View>
-        <Text style={styles.brandTitle}>CLUB PARTICULAR</Text>
+        <Text style={styles.brandTitle}>ESCALA SWIPE</Text>
         <Text style={styles.subtitle}>Acesso Privado & Plataforma VIP</Text>
       </View>
 

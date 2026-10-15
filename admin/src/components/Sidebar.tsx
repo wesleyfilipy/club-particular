@@ -23,8 +23,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
             <Crown className="w-5 h-5 text-[#d4af37]" />
           </div>
           <div>
-            <h1 className="font-extrabold text-sm tracking-wider gold-text-gradient">CLUB PARTICULAR</h1>
-            <p className="text-xs text-gray-400">Painel Administrativo VIP</p>
+            <h1 className="font-extrabold text-sm tracking-wider gold-text-gradient">ESCALA SWIPE</h1>
+            <p className="text-xs text-gray-400">Painel Administrativo</p>
           </div>
         </div>
 

@@ -22,7 +22,7 @@ export const NotificationsManager: React.FC = () => {
       <div>
         <h2 className="text-2xl font-extrabold text-white">Disparo de Notificações Push</h2>
         <p className="text-sm text-gray-400">
-          Envie alertas em tempo real para os aplicativos dos assinantes pagantes do Club Particular.
+          Envie alertas em tempo real para os aplicativos dos assinantes pagantes do Escala Swipe.
         </p>
       </div>
 

@@ -147,7 +147,7 @@ const MOCK_OFFERS: Offer[] = [
         headline: '🤖 Robô de Inteligência Artificial Vende no Automático Enquanto Você Dorme',
         description: 'Ferramenta americana recém-chegada ao Brasil permite automatizar vendas diárias sem precisar aparecer.',
         cta: '📲 CLIQUE E VEJA COMO FUNCIONA',
-        ad_body: 'Enquanto a maioria tenta vender no 1x1 manualmente, os novos afiliados do Club Particular estão usando algoritmos de IA para escalar em dólar e real com zero esforço manual.',
+        ad_body: 'Enquanto a maioria tenta vender no 1x1 manualmente, os novos afiliados do Escala Swipe estão usando algoritmos de IA para escalar em dólar e real com zero esforço manual.',
         target_age: '21 - 45 anos',
         target_gender: 'Homens e Mulheres',
         target_country: 'Brasil, Portugal',

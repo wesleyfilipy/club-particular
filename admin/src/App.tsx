@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
@@ -6,126 +7,97 @@ import { OffersManager } from './pages/OffersManager';
 import { NotificationsManager } from './pages/NotificationsManager';
 import { MemberDashboard } from './pages/MemberDashboard';
 import { VipLandingPage } from './pages/VipLandingPage';
-import { supabase, ADMIN_EMAILS } from './services/supabase';
+import { Paywall } from './pages/Paywall';
+import { supabase, getAccessStatus } from './services/supabase';
+
+type ViewState = 'loading' | 'anon' | 'paywall' | 'member' | 'admin';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
-  const [userEmail, setUserEmail] = useState('');
-  const [userName, setUserName] = useState('');
+  const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+  const [view, setView] = useState<ViewState>('loading');
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [loading, setLoading] = useState(true);
 
+  // 1. Sessão vem SEMPRE do Supabase Auth (nunca liberamos acesso sem sessão válida)
   useEffect(() => {
-    // 1. Validar sessão JWT ativa no carregamento
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const email = (session.user.email || '').toLowerCase().trim();
-          const storedRole = sessionStorage.getItem('preferred_role');
-          const isAllowedAdmin = ADMIN_EMAILS.includes(email);
-          
-          const role = (storedRole === 'admin' && isAllowedAdmin) ? 'admin' : 'member';
-          setUserRole(role);
-          setUserEmail(email);
-          setUserName(session.user.user_metadata?.full_name || email.split('@')[0] || '');
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        console.error('Erro ao verificar sessão Supabase:', err);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-
-    // 2. Escutar eventos do Supabase Auth em tempo real
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const email = (session.user.email || '').toLowerCase().trim();
-        const storedRole = sessionStorage.getItem('preferred_role');
-        const isAllowedAdmin = ADMIN_EMAILS.includes(email);
-
-        const role = (storedRole === 'admin' && isAllowedAdmin) ? 'admin' : 'member';
-        setUserRole(role);
-        setUserEmail(email);
-        setUserName(session.user.user_metadata?.full_name || email.split('@')[0] || '');
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-        setUserRole('member');
-        setUserEmail('');
-        setUserName('');
-        sessionStorage.removeItem('preferred_role');
-      }
-      setLoading(false);
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setSessionLoaded(true);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setSessionLoaded(true);
+      if (!newSession) sessionStorage.removeItem('preferred_role');
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleLoginSuccess = (role: 'admin' | 'member', email: string, name?: string) => {
-    const cleanEmail = (email || '').toLowerCase().trim();
-    const isAllowedAdmin = ADMIN_EMAILS.includes(cleanEmail);
-    const finalRole = (role === 'admin' && isAllowedAdmin) ? 'admin' : 'member';
+  // 2. Decide a tela: admin, membro com assinatura paga, ou tela de pagamento
+  // Lê a sessão atual direto do Supabase para não depender de estado desatualizado
+  const resolveView = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (!user) {
+      setView('anon');
+      return;
+    }
 
-    sessionStorage.setItem('preferred_role', finalRole);
-    setUserRole(finalRole);
-    setUserEmail(cleanEmail);
-    setUserName(name || '');
-    setIsAuthenticated(true);
+    const access = await getAccessStatus(user.id, user.email || '');
+    const wantsAdmin = sessionStorage.getItem('preferred_role') === 'admin';
+
+    if (access.isAdmin) {
+      setView(wantsAdmin ? 'admin' : 'member');
+    } else if (access.hasActiveSubscription) {
+      setView('member');
+    } else {
+      setView('paywall');
+    }
+  }, []);
+
+  const currentUserId = session?.user?.id;
+  useEffect(() => {
+    if (sessionLoaded) resolveView();
+  }, [sessionLoaded, currentUserId, resolveView]);
+
+  const handleLoginSuccess = (role: 'admin' | 'member') => {
+    sessionStorage.setItem('preferred_role', role);
+    resolveView();
   };
 
   const handleLogout = async () => {
     sessionStorage.removeItem('preferred_role');
     await supabase.auth.signOut();
-    setIsAuthenticated(false);
-    setUserRole('member');
-    setUserEmail('');
-    setUserName('');
   };
 
-  if (loading) {
+  if (view === 'loading') {
     return (
       <div className="min-h-screen bg-[#090a0f] flex items-center justify-center text-[#d4af37] font-bold text-sm">
-        Carregando sessão segura do Club Particular...
+        Carregando sessão segura do Escala Swipe...
       </div>
     );
   }
 
-  // VISITANTES E NOVOS ALUNOS VÊEM A LANDING PAGE VIP (COM VENDAS E LOGIN DE ALUNOS)
-  if (!isAuthenticated) {
+  if (view === 'anon' || !session?.user) {
     return <VipLandingPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // APENAS SE FOR E-MAIL DE ADMINISTRADOR AUTORIZADO E TIVER SELECIONADO LOGIN ADMIN
-  const isAdminSession = userRole === 'admin' && ADMIN_EMAILS.includes(userEmail.toLowerCase().trim());
+  const userEmail = (session.user.email || '').toLowerCase();
+  const userName = session.user.user_metadata?.full_name || userEmail.split('@')[0];
 
-  if (!isAdminSession) {
-    return (
-      <MemberDashboard
-        userEmail={userEmail || 'aluno@clubparticular.com'}
-        userName={userName || 'Aluno VIP'}
-        onLogout={handleLogout}
-      />
-    );
+  if (view === 'paywall') {
+    return <Paywall userId={session.user.id} userEmail={userEmail} onRecheck={resolveView} onLogout={handleLogout} />;
   }
 
-  // PAINEL ADMINISTRATIVO VIP EXCLUSIVO (APENAS VOCÊ LOGADO COMO ADMIN)
+  if (view === 'member') {
+    return <MemberDashboard userEmail={userEmail} userName={userName} onLogout={handleLogout} />;
+  }
+
+  // PAINEL ADMINISTRATIVO (apenas e-mails de administrador)
   return (
     <div className="flex min-h-screen bg-[#090a0f] text-white selection:bg-[#d4af37] selection:text-[#090a0f]">
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onLogout={handleLogout}
-      />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
