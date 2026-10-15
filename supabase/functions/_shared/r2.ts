@@ -1,16 +1,19 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.0';
 import { S3Client } from 'https://esm.sh/@aws-sdk/client-s3@3.587.0';
 
-// Segredos do Cloudflare R2 ficam apenas aqui (Supabase Edge Function secrets)
+// Segredos do Cloudflare R2 ficam apenas aqui (Supabase Edge Function secrets).
+// trim(): um Enter/espaço colado junto do valor no painel invalida a assinatura do R2.
+const env = (name: string) => (Deno.env.get(name) || '').trim();
+
 // (nome padrão mantido para não quebrar o bucket já existente)
-export const r2Bucket = Deno.env.get('R2_BUCKET') || 'club-particular';
+export const r2Bucket = env('R2_BUCKET') || 'club-particular';
 
 export const r2 = new S3Client({
   region: 'auto',
-  endpoint: Deno.env.get('R2_ENDPOINT') || '',
+  endpoint: env('R2_ENDPOINT'),
   credentials: {
-    accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID') || '',
-    secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY') || '',
+    accessKeyId: env('R2_ACCESS_KEY_ID'),
+    secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
   },
 });
 
