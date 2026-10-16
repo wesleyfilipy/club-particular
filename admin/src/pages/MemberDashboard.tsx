@@ -478,8 +478,16 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                       )}
                     </div>
                   </div>
+                </>
+              )}
 
-                  <div className="p-6 rounded-3xl bg-[#13122b]/80 border border-[#25244a] space-y-4">
+              {/* CANCELAR / GERENCIAR (o admin vê como prévia do que o cliente vê) */}
+              <div className="p-6 rounded-3xl bg-[#13122b]/80 border border-[#25244a] space-y-4">
+                    {isAdmin && (
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#6b76ff]/15 text-[#a8aeff]">
+                        Prévia — é assim que o cliente vê
+                      </span>
+                    )}
                     <div>
                       <h4 className="font-extrabold text-base text-white">Cancelar ou gerenciar assinatura</h4>
                       <p className="text-xs text-gray-400 mt-1">
@@ -501,9 +509,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                       <ExternalLink className="w-3.5 h-3.5 text-[#6b76ff]" />
                       Abrir minha conta na Lastlink
                     </button>
-                  </div>
-                </>
-              )}
+              </div>
             </div>
           )}
         </main>
