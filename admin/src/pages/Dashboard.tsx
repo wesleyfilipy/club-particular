@@ -74,9 +74,9 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-white">Visão Geral da Plataforma & Analytics</h2>
+          <h2 className="text-xl md:text-2xl font-extrabold text-white">Visão Geral da Plataforma & Analytics</h2>
           <p className="text-sm text-gray-400">
             Métricas reais em tempo real de assinaturas Lastlink, banco de dados Supabase e downloads de ofertas.
           </p>
@@ -123,7 +123,7 @@ export const Dashboard: React.FC = () => {
 
       {/* Per-Offer Analytics Breakdown */}
       <div className="bg-[#0b0a1f] rounded-2xl border border-[#25244a] p-6 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <Eye className="w-5 h-5 text-[#6b76ff]" />
             Ofertas & Mídias Disponíveis no Banco
@@ -135,25 +135,25 @@ export const Dashboard: React.FC = () => {
           <table className="w-full text-left text-sm text-gray-300">
             <thead className="bg-[#13122b] text-xs font-bold text-[#a8aeff] uppercase border-b border-[#25244a]">
               <tr>
-                <th className="p-4">Oferta VIP</th>
-                <th className="p-4">Categoria</th>
-                <th className="p-4">Qualidade VSL</th>
-                <th className="p-4">Arquivo VSL</th>
-                <th className="p-4">Criativos dos Anúncios</th>
-                <th className="p-4">Anúncios Ativos (último dia)</th>
+                <th className="p-3 md:p-4">Oferta</th>
+                <th className="p-3 md:p-4 hidden md:table-cell">Categoria</th>
+                <th className="p-3 md:p-4 hidden md:table-cell">Qualidade VSL</th>
+                <th className="p-3 md:p-4 hidden md:table-cell">Arquivo VSL</th>
+                <th className="p-3 md:p-4 hidden md:table-cell">Criativos dos Anúncios</th>
+                <th className="p-3 md:p-4">Anúncios ativos</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#25244a]">
               {offersList.map((item, idx) => (
                 <tr key={idx} className="hover:bg-[#13122b]/50 transition-all">
-                  <td className="p-4 font-bold text-white">
+                  <td className="p-3 md:p-4 font-bold text-white">
                     {item.name}
                   </td>
-                  <td className="p-4 text-gray-300 font-semibold">{item.category}</td>
-                  <td className="p-4 font-bold text-[#a8aeff]">{item.vslResolution}</td>
-                  <td className="p-4 font-mono text-xs text-emerald-400">{item.vslFileName || '—'}</td>
-                  <td className="p-4 text-purple-400 font-mono text-xs">{item.adVideos.length}</td>
-                  <td className="p-4 text-xs font-bold text-white">
+                  <td className="p-3 md:p-4 text-gray-300 font-semibold hidden md:table-cell">{item.category}</td>
+                  <td className="p-3 md:p-4 font-bold text-[#a8aeff] hidden md:table-cell">{item.vslResolution}</td>
+                  <td className="p-3 md:p-4 font-mono text-xs text-emerald-400 hidden md:table-cell">{item.vslFileName || '—'}</td>
+                  <td className="p-3 md:p-4 text-purple-400 font-mono text-xs hidden md:table-cell">{item.adVideos.length}</td>
+                  <td className="p-3 md:p-4 text-xs font-bold text-white">
                     {item.dailyScale.length > 0 ? item.dailyScale[item.dailyScale.length - 1].ads : '—'}
                   </td>
                 </tr>
@@ -171,10 +171,10 @@ export const Dashboard: React.FC = () => {
           {usersList.map((userItem) => {
             const isActive = activeUserIds.has(userItem.id);
             return (
-              <div key={userItem.id} className="flex items-center justify-between p-4 rounded-xl bg-[#13122b] border border-[#25244a]">
+              <div key={userItem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 rounded-xl bg-[#13122b] border border-[#25244a]">
                 <div>
                   <span className="font-bold text-sm text-[#a8aeff]">{userItem.full_name || userItem.email}</span>
-                  <p className="text-xs text-gray-300">{userItem.email}</p>
+                  <p className="text-xs text-gray-300 break-all">{userItem.email}</p>
                 </div>
                 <span className={`text-xs font-bold ${isActive ? 'text-emerald-400' : 'text-gray-500'}`}>
                   {userItem.role === 'admin' ? 'Administrador' : isActive ? 'Assinatura paga ativa' : 'Sem assinatura paga'}

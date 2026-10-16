@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Sidebar } from './components/Sidebar';
-import { Header } from './components/Header';
-import { Dashboard } from './pages/Dashboard';
-import { OffersManager } from './pages/OffersManager';
-import { NotificationsManager } from './pages/NotificationsManager';
+import { AdminLayout } from './components/AdminLayout';
 import { MemberDashboard } from './pages/MemberDashboard';
 import { VipLandingPage } from './pages/VipLandingPage';
 import { Paywall } from './pages/Paywall';
@@ -21,7 +17,6 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [view, setView] = useState<ViewState>('loading');
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [notice, setNotice] = useState('');
   const [recovering, setRecovering] = useState(() => {
     if (!isRecoveryLink()) return false;
@@ -151,19 +146,5 @@ export default function App() {
   }
 
   // PAINEL ADMINISTRATIVO (apenas e-mails de administrador)
-  return (
-    <div className="flex min-h-screen bg-[#010013] text-white selection:bg-[#6b76ff] selection:text-white">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header />
-
-        <main className="p-8 flex-1 overflow-y-auto">
-          {activeTab === 'dashboard' && <Dashboard />}
-          {activeTab === 'offers' && <OffersManager />}
-          {activeTab === 'notifications' && <NotificationsManager />}
-        </main>
-      </div>
-    </div>
-  );
+  return <AdminLayout onLogout={handleLogout} />;
 }

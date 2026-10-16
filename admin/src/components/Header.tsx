@@ -1,22 +1,33 @@
 import React from 'react';
-import { ShieldCheck, User } from 'lucide-react';
+import { ShieldCheck, Menu } from 'lucide-react';
+import { Logo } from './Logo';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onOpenMenu: () => void; // abre o menu lateral no celular
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenMenu }) => {
   return (
-    <header className="h-16 bg-[#0b0a1f] border-b border-[#25244a] px-8 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span className="text-xs text-gray-400 font-medium">Servidor Supabase Conectado</span>
+    <header className="h-16 bg-[#0b0a1f] border-b border-[#25244a] px-4 md:px-8 flex items-center justify-between gap-3 sticky top-0 z-30">
+      <div className="flex items-center gap-3 min-w-0">
+        <button
+          onClick={onOpenMenu}
+          className="md:hidden p-2 rounded-full bg-white/5 text-gray-200 cursor-pointer shrink-0"
+          aria-label="Abrir menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <Logo className="h-8 md:hidden" />
+        <div className="hidden md:flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-xs text-gray-400 font-medium">Servidor conectado</span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff]/40 text-xs font-bold text-[#a8aeff]">
-          <ShieldCheck className="w-4 h-4 text-[#6b76ff]" />
-          ADMINISTRADOR SUPREMO
-        </div>
-        <div className="w-9 h-9 rounded-full bg-[#13122b] border border-[#25244a] flex items-center justify-center text-white">
-          <User className="w-5 h-5" />
-        </div>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff]/40 text-xs font-bold text-[#a8aeff] shrink-0">
+        <ShieldCheck className="w-4 h-4 text-[#6b76ff]" />
+        <span className="hidden sm:inline">ADMINISTRADOR</span>
+        <span className="sm:hidden">ADMIN</span>
       </div>
     </header>
   );

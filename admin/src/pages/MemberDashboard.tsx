@@ -425,17 +425,17 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
           {/* TAB 2: MINHA CONTA */}
           {activeTab === 'profile' && (
-            <div className="bg-[#0b0a1f] border border-[#25244a] rounded-3xl p-8 space-y-6 shadow-2xl">
-              <div className="flex items-center gap-5 border-b border-[#25244a] pb-6">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#bc060f] to-[#3e4be1] p-0.5 shadow-lg">
+            <div className="bg-[#0b0a1f] border border-[#25244a] rounded-3xl p-5 sm:p-8 space-y-6 shadow-2xl">
+              <div className="flex items-center gap-4 sm:gap-5 border-b border-[#25244a] pb-6">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-2xl bg-gradient-to-br from-[#bc060f] to-[#3e4be1] p-0.5 shadow-lg">
                   <div className="w-full h-full bg-[#010013] rounded-[14px] flex items-center justify-center text-[#a8aeff] font-extrabold text-xl">
                     {userEmail.substring(0, 2).toUpperCase()}
                   </div>
                 </div>
-                <div>
-                  <h2 className="font-extrabold text-xl text-white">{userName}</h2>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs font-mono text-gray-300">{userEmail}</span>
+                <div className="min-w-0">
+                  <h2 className="font-extrabold text-lg sm:text-xl text-white break-words">{userName}</h2>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                    <span className="text-xs font-mono text-gray-300 break-all">{userEmail}</span>
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Conta vinculada a este e-mail
                     </span>

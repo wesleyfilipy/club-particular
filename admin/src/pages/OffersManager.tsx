@@ -304,9 +304,9 @@ export const OffersManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-white">Gerenciamento de Ofertas</h2>
+          <h2 className="text-xl md:text-2xl font-extrabold text-white">Gerenciamento de Ofertas</h2>
           <p className="text-sm text-gray-400">
             VSLs, vídeos dos anúncios e packs vão direto para o Cloudflare R2. Os dados da oferta e o gráfico de escala ficam no Supabase.
           </p>
@@ -314,7 +314,7 @@ export const OffersManager: React.FC = () => {
 
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-sm shadow-lg shadow-[#6b76ff]/20 hover:opacity-95 transition-all cursor-pointer"
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-sm shadow-lg shadow-[#6b76ff]/20 hover:opacity-95 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-5 h-5" />
           Cadastrar Novas Ofertas
@@ -326,11 +326,11 @@ export const OffersManager: React.FC = () => {
         <table className="w-full text-left text-sm text-gray-300">
           <thead className="bg-[#13122b] text-xs font-bold text-[#a8aeff] uppercase border-b border-[#25244a]">
             <tr>
-              <th className="p-4">Nome da Oferta</th>
-              <th className="p-4">Categoria</th>
-              <th className="p-4">VSL (R2)</th>
-              <th className="p-4">Criativos dos Anúncios</th>
-              <th className="p-4">Escala (hoje)</th>
+              <th className="p-3 md:p-4">Nome da Oferta</th>
+              <th className="p-3 md:p-4 hidden md:table-cell">Categoria</th>
+              <th className="p-3 md:p-4 hidden md:table-cell">VSL (R2)</th>
+              <th className="p-3 md:p-4 hidden md:table-cell">Criativos dos Anúncios</th>
+              <th className="p-3 md:p-4">Escala (hoje)</th>
               <th className="p-4 text-right">Ações</th>
             </tr>
           </thead>
@@ -347,13 +347,13 @@ export const OffersManager: React.FC = () => {
             )}
             {offersList.map((offer) => (
               <tr key={offer.id} className="hover:bg-[#13122b]/50 transition-all">
-                <td className="p-4 font-bold text-white">{offer.name}</td>
-                <td className="p-4">
+                <td className="p-3 md:p-4 font-bold text-white">{offer.name}</td>
+                <td className="p-3 md:p-4 hidden md:table-cell">
                   <span className="px-3 py-1 rounded-full bg-[#13122b] border border-[#25244a] text-xs font-medium text-gray-300">
                     {offer.category}
                   </span>
                 </td>
-                <td className="p-4">
+                <td className="p-3 md:p-4 hidden md:table-cell">
                   {offer.vslFileName ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
                       <Film className="w-3.5 h-3.5" />
@@ -363,11 +363,11 @@ export const OffersManager: React.FC = () => {
                     <span className="text-xs text-gray-500">Sem VSL</span>
                   )}
                 </td>
-                <td className="p-4 text-xs font-semibold">{offer.adVideos.length} criativo{offer.adVideos.length === 1 ? '' : 's'}</td>
-                <td className="p-4 text-xs font-semibold">
+                <td className="p-3 md:p-4 text-xs font-semibold hidden md:table-cell">{offer.adVideos.length} criativo{offer.adVideos.length === 1 ? '' : 's'}</td>
+                <td className="p-3 md:p-4 text-xs font-semibold">
                   {offer.dailyScale.length > 0 ? `${offer.dailyScale[offer.dailyScale.length - 1].ads} anúncios` : '—'}
                 </td>
-                <td className="p-4 text-right">
+                <td className="p-3 md:p-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     {offer.vslKey && !offer.posterKey && (
                       <button
@@ -404,10 +404,10 @@ export const OffersManager: React.FC = () => {
 
       {/* Add / Edit Offer Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6 overflow-y-auto">
-          <div className="bg-[#0b0a1f] border border-[#6b76ff] w-full max-w-3xl rounded-2xl p-6 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
+          <div className="bg-[#0b0a1f] border border-[#6b76ff] w-full max-w-3xl rounded-2xl p-4 sm:p-6 space-y-6 max-h-[96vh] sm:max-h-[92vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#25244a] pb-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
                 {editingId ? 'Editar Oferta' : `Cadastrar Novas Ofertas (até ${BATCH_SIZE})`}
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#6b76ff]/10 text-[#a8aeff] border border-[#6b76ff]">
                   Bucket: {R2_BUCKET}
@@ -470,7 +470,7 @@ export const OffersManager: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-300 mb-1 font-semibold">Categoria</label>
                   <select
@@ -629,7 +629,7 @@ export const OffersManager: React.FC = () => {
               </div>
 
               {/* URLS DA OFERTA */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-gray-300 mb-1 font-semibold text-xs">URL Site Oficial</label>
                   <input
