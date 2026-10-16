@@ -6,13 +6,14 @@ import { Logo } from '../components/Logo';
 interface AdminMfaProps {
   onVerified: () => void;
   onLogout: () => void;
+  onCancel?: () => void; // volta para a página principal sem sair da conta
 }
 
 /**
  * Verificação em 2 etapas do administrador (código do app autenticador).
  * Sem ela, o banco e as funções não reconhecem os poderes de admin.
  */
-export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout }) => {
+export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout, onCancel }) => {
   const [mode, setMode] = useState<'loading' | 'enroll' | 'verify'>('loading');
   const [factorId, setFactorId] = useState('');
   const [qrCode, setQrCode] = useState('');
@@ -144,9 +145,16 @@ export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout }) => {
           </form>
         )}
 
-        <button onClick={onLogout} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 mx-auto cursor-pointer">
+        <div className="flex items-center justify-center gap-6">
+        {onCancel && (
+          <button onClick={onCancel} className="text-xs text-gray-400 hover:text-white cursor-pointer">
+            Voltar ao site
+          </button>
+        )}
+        <button onClick={onLogout} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 cursor-pointer">
           <LogOut className="w-3.5 h-3.5" /> Sair
         </button>
+        </div>
       </div>
     </div>
   );

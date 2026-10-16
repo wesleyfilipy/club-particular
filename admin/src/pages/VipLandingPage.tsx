@@ -26,6 +26,7 @@ import { startNewSession } from '../services/session';
 interface VipLandingPageProps {
   onLoginSuccess: (role: 'admin' | 'member') => void;
   notice?: string; // aviso exibido no topo (ex.: desconectado por login em outro aparelho)
+  onAdminEnter?: () => void; // admin já logado: pula o formulário e vai para a verificação
 }
 
 const translateAuthError = (message: string) => {
@@ -132,7 +133,7 @@ const Modal: React.FC<ModalProps> = ({ title, subtitle, error, onClose, children
   </div>
 );
 
-export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, notice }) => {
+export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, notice, onAdminEnter }) => {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -487,7 +488,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             ))}
             <button onClick={openLogin} className="hover:text-white transition-colors cursor-pointer">Área de membros</button>
             <button
-              onClick={() => { setShowAdminModal(true); setError(''); }}
+              onClick={() => (onAdminEnter ? onAdminEnter() : (setShowAdminModal(true), setError('')))}
               className="text-gray-600 hover:text-gray-400 transition-colors cursor-pointer flex items-center gap-1"
             >
               <Lock className="w-3 h-3" /> Admin

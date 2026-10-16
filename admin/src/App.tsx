@@ -69,10 +69,17 @@ export default function App() {
     }
 
     setIsAdminUser(access.isAdmin);
-    const wantsAdmin = sessionStorage.getItem('preferred_role') === 'admin';
+    const preferredRole = sessionStorage.getItem('preferred_role');
+    const wantsAdmin = preferredRole === 'admin';
 
     if (access.isAdmin) {
-      // Conta de administrador: sempre exige a verificação em 2 etapas (app autenticador)
+      // Admin logado mas sem ter clicado em "Admin" (ex.: abriu o site de novo):
+      // mostra a página de vendas normal; a verificação só aparece ao clicar em "Admin"
+      if (!preferredRole) {
+        setView('anon');
+        return;
+      }
+      // Conta de administrador: exige a verificação em 2 etapas (app autenticador)
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aal?.currentLevel !== 'aal2') {
         setView('mfa');
@@ -138,14 +145,30 @@ export default function App() {
   }
 
   if (view === 'anon' || !session?.user) {
-    return <VipLandingPage onLoginSuccess={handleLoginSuccess} notice={notice} />;
+    return (
+      <VipLandingPage
+        onLoginSuccess={handleLoginSuccess}
+        notice={notice}
+        // Admin já logado: o link "Admin" abre direto a verificação em 2 etapas
+        onAdminEnter={isAdminUser && session?.user ? () => handleLoginSuccess('admin') : undefined}
+      />
+    );
   }
 
   const userEmail = (session.user.email || '').toLowerCase();
   const userName = session.user.user_metadata?.full_name || userEmail.split('@')[0];
 
   if (view === 'mfa') {
-    return <AdminMfa onVerified={resolveView} onLogout={handleLogout} />;
+    return (
+      <AdminMfa
+        onVerified={resolveView}
+        onLogout={handleLogout}
+        onCancel={() => {
+          sessionStorage.removeItem('preferred_role');
+          setView('anon');
+        }}
+      />
+    );
   }
 
   if (view === 'paywall') {
