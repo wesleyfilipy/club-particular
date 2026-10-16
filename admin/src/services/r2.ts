@@ -15,6 +15,20 @@ export const slugify = (value: string) =>
     .replace(/^-+|-+$/g, '');
 
 /**
+ * Lê a mensagem real de erro da Edge Function (o supabase-js só diz "non-2xx status code").
+ */
+export async function functionErrorMessage(error: any, data?: any): Promise<string> {
+  if (data?.error) return data.error;
+  try {
+    const body = await error?.context?.json?.();
+    if (body?.error) return body.error;
+  } catch {
+    // resposta sem JSON
+  }
+  return error?.message || '';
+}
+
+/**
  * Envia um arquivo direto para o Cloudflare R2.
  * A Edge Function get-upload-url (somente admin) gera uma URL PUT temporária;
  * os segredos do R2 nunca chegam ao navegador.
@@ -30,7 +44,12 @@ export async function uploadToR2(
   });
 
   if (error || !data?.uploadUrl) {
-    throw new Error(data?.error || error?.message || 'Não foi possível gerar a URL de upload do Cloudflare R2.');
+    const message = await functionErrorMessage(error, data);
+    throw new Error(
+      /administradores/i.test(message)
+        ? 'Upload bloqueado: confirme o login de administrador com o código do app autenticador. Recarregue a página (Ctrl+F5) e entre de novo.'
+        : message || 'Não foi possível gerar a URL de upload do Cloudflare R2.'
+    );
   }
 
   await new Promise<void>((resolve, reject) => {
@@ -66,7 +85,7 @@ export async function getR2SignedUrls(keyPaths: string[], download = false): Pro
   });
 
   if (error || !data?.urls) {
-    throw new Error(data?.error || error?.message || 'Não foi possível gerar as URLs do Cloudflare R2.');
+    throw new Error((await functionErrorMessage(error, data)) || 'Não foi possível gerar as URLs do Cloudflare R2.');
   }
 
   return data.urls as Record<string, string>;
