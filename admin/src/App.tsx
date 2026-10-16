@@ -8,8 +8,12 @@ import { NotificationsManager } from './pages/NotificationsManager';
 import { MemberDashboard } from './pages/MemberDashboard';
 import { VipLandingPage } from './pages/VipLandingPage';
 import { Paywall } from './pages/Paywall';
+import { ResetPassword } from './pages/ResetPassword';
 import { supabase, getAccessStatus } from './services/supabase';
-import { verifySession, clearSession } from './services/session';
+import { verifySession, clearSession, startNewSession } from './services/session';
+
+// Link de "redefinir senha" do e-mail: o Supabase volta para o site com type=recovery
+const isRecoveryLink = () => /type=recovery/.test(window.location.hash + window.location.search);
 
 type ViewState = 'loading' | 'anon' | 'paywall' | 'member' | 'admin';
 
@@ -19,6 +23,11 @@ export default function App() {
   const [view, setView] = useState<ViewState>('loading');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [notice, setNotice] = useState('');
+  const [recovering, setRecovering] = useState(() => {
+    if (!isRecoveryLink()) return false;
+    startNewSession(); // este aparelho passa a ser o ativo da conta
+    return true;
+  });
   const [isAdminUser, setIsAdminUser] = useState(false);
 
   // 1. Sessão vem SEMPRE do Supabase Auth (nunca liberamos acesso sem sessão válida)
@@ -28,7 +37,11 @@ export default function App() {
       setSessionLoaded(true);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        startNewSession();
+        setRecovering(true);
+      }
       setSession(newSession);
       setSessionLoaded(true);
       if (!newSession) sessionStorage.removeItem('preferred_role');
@@ -102,6 +115,17 @@ export default function App() {
     clearSession();
     await supabase.auth.signOut();
   };
+
+  if (recovering) {
+    return (
+      <ResetPassword
+        onDone={() => {
+          setRecovering(false);
+          resolveView();
+        }}
+      />
+    );
+  }
 
   if (view === 'loading') {
     return (

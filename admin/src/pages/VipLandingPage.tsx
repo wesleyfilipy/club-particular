@@ -148,6 +148,31 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
   const openCheckout = () => { setShowCheckoutModal(true); setError(''); setMobileMenuOpen(false); };
   const openLogin = () => { setShowLoginModal(true); setError(''); setMobileMenuOpen(false); };
 
+  // Esqueci minha senha: o Supabase envia um link; ao abrir, o site pede a nova senha
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const openForgot = (closeCurrent: () => void) => {
+    closeCurrent();
+    setError('');
+    setForgotSent(false);
+    setShowForgotModal(true);
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: window.location.origin,
+    });
+    setLoading(false);
+    if (resetError) {
+      setError(translateAuthError(resetError.message));
+      return;
+    }
+    setForgotSent(true);
+  };
+
   // Login do membro: só autentica. O App verifica a assinatura paga e mostra a tela de pagamento se precisar.
   const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -488,10 +513,39 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             <button type="submit" disabled={loading} className={`w-full py-3.5 text-sm flex items-center justify-center ${ctaClass}`}>
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar na área de membros'}
             </button>
+            <button type="button" onClick={() => openForgot(() => setShowLoginModal(false))} className="w-full text-xs text-[#a8aeff] hover:text-white cursor-pointer">
+              Esqueci minha senha
+            </button>
             <button type="button" onClick={() => { setShowLoginModal(false); openCheckout(); }} className="w-full text-xs text-gray-400 hover:text-white cursor-pointer pt-1">
               Ainda não tem conta? <span className="text-[#a8aeff]">Criar conta</span>
             </button>
           </form>
+        </Modal>
+      )}
+
+      {/* MODAL: ESQUECI MINHA SENHA */}
+      {showForgotModal && (
+        <Modal
+          title="Redefinir senha"
+          subtitle="Enviaremos um link para o seu e-mail"
+          error={error}
+          onClose={() => { setShowForgotModal(false); setForgotSent(false); }}
+        >
+          {forgotSent ? (
+            <div className="space-y-3 text-sm text-gray-300">
+              <p>
+                Se existir uma conta com <strong className="text-white">{email}</strong>, você vai receber um e-mail com o link para criar uma nova senha.
+              </p>
+              <p className="text-xs text-gray-400">Confira também a caixa de spam. O link vale por pouco tempo.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="space-y-3">
+              <input type="email" required placeholder="Seu e-mail" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
+              <button type="submit" disabled={loading} className={`w-full py-3.5 text-sm flex items-center justify-center ${ctaClass}`}>
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enviar link'}
+              </button>
+            </form>
+          )}
         </Modal>
       )}
 
@@ -503,6 +557,9 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             <input type="password" required placeholder="Senha" className={inputClass} value={password} onChange={(e) => setPassword(e.target.value)} />
             <button type="submit" disabled={loading} className={`w-full py-3.5 text-sm flex items-center justify-center ${ctaClass}`}>
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Acessar painel'}
+            </button>
+            <button type="button" onClick={() => openForgot(() => setShowAdminModal(false))} className="w-full text-xs text-[#a8aeff] hover:text-white cursor-pointer">
+              Esqueci minha senha
             </button>
           </form>
         </Modal>
