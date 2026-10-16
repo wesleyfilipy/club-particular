@@ -36,7 +36,8 @@ export const jsonResponse = (body: unknown, status = 200) =>
 export interface AccessInfo {
   userId: string;
   email: string;
-  isAdmin: boolean;
+  isAdmin: boolean; // admin com o código do autenticador (pode editar/enviar)
+  hasAdminRole: boolean; // conta admin, mesmo sem o código (só ver/baixar)
   isActiveMember: boolean;
 }
 
@@ -78,6 +79,7 @@ export async function getAccess(req: Request): Promise<AccessInfo | null> {
     userId: user.id,
     email: (user.email || '').toLowerCase(),
     isAdmin,
+    hasAdminRole: profile?.role === 'admin',
     isActiveMember: isActiveMember === true,
   };
 }

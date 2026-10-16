@@ -79,13 +79,18 @@ export default function App() {
         setView('anon');
         return;
       }
-      // Conta de administrador: exige a verificação em 2 etapas (app autenticador)
+      // Entrou pela área de membros: só vê o conteúdo, sem precisar do código
+      if (!wantsAdmin) {
+        setView('member');
+        return;
+      }
+      // Painel admin: exige a verificação em 2 etapas (app autenticador)
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aal?.currentLevel !== 'aal2') {
         setView('mfa');
         return;
       }
-      setView(wantsAdmin ? 'admin' : 'member');
+      setView('admin');
     } else if (access.hasActiveSubscription) {
       setView('member');
     } else {

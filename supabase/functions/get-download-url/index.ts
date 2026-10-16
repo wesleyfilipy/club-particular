@@ -17,7 +17,8 @@ serve(async (req) => {
     if (!access) {
       return jsonResponse({ error: 'Sessão expirada ou token inválido (HTTP 401).' }, 401);
     }
-    if (!access.isAdmin && !access.isActiveMember) {
+    // Assistir/baixar: assinante ativo ou a conta do dono (mesmo sem o código)
+    if (!access.hasAdminRole && !access.isActiveMember) {
       return jsonResponse({ error: 'Acesso negado (HTTP 403): sua assinatura está inativa ou expirada.' }, 403);
     }
 
