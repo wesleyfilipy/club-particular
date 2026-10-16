@@ -550,10 +550,22 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
               <p>
                 Se existir uma conta com <strong className="text-white">{email}</strong>, você vai receber um e-mail com o link para criar uma nova senha.
               </p>
+              <div className="p-3 rounded-2xl bg-[#6b76ff]/10 border border-[#6b76ff]/30 text-xs text-[#c9cdff] flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  O e-mail chega com o remetente <strong className="text-white">"Supabase Auth"</strong>, o serviço que protege o login do Escala Swipe. Pode abrir com segurança.
+                </span>
+              </div>
               <p className="text-xs text-gray-400">Confira também a caixa de spam. O link vale por pouco tempo.</p>
             </div>
           ) : (
             <form onSubmit={handleForgotPassword} className="space-y-3">
+              <div className="p-3 rounded-2xl bg-[#6b76ff]/10 border border-[#6b76ff]/30 text-xs text-[#c9cdff] flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Atenção: o e-mail para trocar a senha chega com o nome <strong className="text-white">"Supabase Auth"</strong>, o serviço que protege o login do Escala Swipe.
+                </span>
+              </div>
               <input type="email" required placeholder="Seu e-mail" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
               <button type="submit" disabled={loading} className={`w-full py-3.5 text-sm flex items-center justify-center ${ctaClass}`}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enviar link'}
