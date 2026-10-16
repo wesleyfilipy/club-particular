@@ -32,10 +32,11 @@ import { ScaleChart } from '../components/ScaleChart';
 interface MemberDashboardProps {
   userEmail: string;
   userName: string;
+  isAdmin?: boolean; // admin vendo a área de membros (sem assinatura)
   onLogout: () => void;
 }
 
-export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, userName, onLogout }) => {
+export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, userName, isAdmin = false, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'offers' | 'profile'>('offers');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -161,7 +162,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
               <span className="text-xs font-bold text-gray-200 truncate max-w-[180px]">{userEmail}</span>
               <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#6b76ff]/20 text-[#a8aeff] font-bold uppercase tracking-wider ml-1">
-                ASSINATURA ATIVA
+                {isAdmin ? 'ADMINISTRADOR' : 'ASSINATURA ATIVA'}
               </span>
             </div>
 
@@ -450,45 +451,67 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {isAdmin ? (
                 <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
                   <span className="text-xs text-gray-400 block mb-1">Acesso</span>
                   <span className="font-bold text-[#a8aeff] text-sm flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#6b76ff]" />
-                    Individual — 1 assinatura por conta
+                    <ShieldCheck className="w-4 h-4 text-[#6b76ff]" />
+                    Administrador — acesso total, sem assinatura
+                  </span>
+                  <span className="text-[11px] text-gray-400 block mt-1">
+                    Você está vendo a área de membros como os clientes a veem.
                   </span>
                 </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
+                      <span className="text-xs text-gray-400 block mb-1">Acesso</span>
+                      <span className="font-bold text-[#a8aeff] text-sm flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-[#6b76ff]" />
+                        Individual — 1 aparelho por vez
+                      </span>
+                    </div>
 
-                <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
-                  <span className="text-xs text-gray-400 block mb-1">Status da assinatura</span>
-                  <span className="font-bold text-emerald-400 text-sm flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4" />
-                    {subscription?.cancel_at_period_end ? 'Ativa — renovação cancelada' : 'Ativa'}
-                  </span>
-                  {subscription?.current_period_end && (
-                    <span className="text-[11px] text-gray-400 block mt-1">
-                      Acesso pago até {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
-                    </span>
-                  )}
-                </div>
-              </div>
+                    <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
+                      <span className="text-xs text-gray-400 block mb-1">Status da assinatura</span>
+                      <span className="font-bold text-emerald-400 text-sm flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4" />
+                        {subscription?.cancel_at_period_end ? 'Ativa — renovação cancelada' : 'Ativa'}
+                      </span>
+                      {subscription?.current_period_end && (
+                        <span className="text-[11px] text-gray-400 block mt-1">
+                          Acesso pago até {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              <div className="p-6 rounded-3xl bg-[#13122b]/80 border border-[#25244a] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <h4 className="font-extrabold text-base text-white">Gerenciar Assinatura</h4>
-                  <p className="text-xs text-gray-400 mt-1">
-                    A assinatura é cobrada pela Lastlink no e-mail {userEmail}. Se não for renovada, o acesso fecha no fim do período pago.
-                  </p>
-                </div>
+                  <div className="p-6 rounded-3xl bg-[#13122b]/80 border border-[#25244a] space-y-4">
+                    <div>
+                      <h4 className="font-extrabold text-base text-white">Cancelar ou gerenciar assinatura</h4>
+                      <p className="text-xs text-gray-400 mt-1">
+                        A assinatura é feita pela Lastlink no e-mail <strong className="text-gray-200">{userEmail}</strong>. Ao cancelar, você continua com acesso até o fim do período já pago.
+                      </p>
+                    </div>
 
-                <button
-                  onClick={openManageSubscriptionPage}
-                  className="px-4 py-2.5 rounded-full bg-[#13122b] border border-[#25244a] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-[#6b76ff]" />
-                  Gerenciar na Lastlink
-                </button>
-              </div>
+                    <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
+                      <li>Entre na Lastlink com o e-mail <strong className="text-gray-100">{userEmail}</strong></li>
+                      <li>Abra <strong className="text-gray-100">Minhas compras</strong> e encontre o Escala Swipe</li>
+                      <li>Clique em <strong className="text-gray-100">"..."</strong> → <strong className="text-gray-100">Detalhes da compra</strong></li>
+                      <li>Clique em <strong className="text-gray-100">Cancelar assinatura</strong></li>
+                    </ol>
+
+                    <button
+                      onClick={openManageSubscriptionPage}
+                      className="px-5 py-2.5 rounded-full bg-[#13122b] border border-[#25244a] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-[#6b76ff]" />
+                      Abrir minha conta na Lastlink
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </main>

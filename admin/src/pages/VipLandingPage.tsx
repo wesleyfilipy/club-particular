@@ -20,9 +20,11 @@ import {
 import { supabase, ADMIN_EMAILS } from '../services/supabase';
 import { openCheckoutPage, PAYMENT_CONFIG } from '../services/payment';
 import { ScaleChart } from '../components/ScaleChart';
+import { startNewSession } from '../services/session';
 
 interface VipLandingPageProps {
   onLoginSuccess: (role: 'admin' | 'member') => void;
+  notice?: string; // aviso exibido no topo (ex.: desconectado por login em outro aparelho)
 }
 
 const translateAuthError = (message: string) => {
@@ -129,7 +131,7 @@ const Modal: React.FC<ModalProps> = ({ title, subtitle, error, onClose, children
   </div>
 );
 
-export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }) => {
+export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, notice }) => {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -151,6 +153,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
     setLoading(true);
     setError('');
 
+    startNewSession();
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
@@ -173,6 +176,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
 
     const cleanEmail = email.trim().toLowerCase();
 
+    startNewSession();
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: cleanEmail,
       password,
@@ -214,6 +218,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
       return;
     }
 
+    startNewSession();
     const { error: authError } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
 
     setLoading(false);
@@ -269,6 +274,15 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess }
           </div>
         )}
       </header>
+
+      {notice && (
+        <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 pt-6">
+          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-sm text-red-200">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{notice}</span>
+          </div>
+        </div>
+      )}
 
       {/* HERO */}
       <section id="inicio" className="relative overflow-hidden px-4 sm:px-6 pt-16 md:pt-24 pb-16">

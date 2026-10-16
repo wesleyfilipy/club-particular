@@ -7,7 +7,7 @@ export const PAYMENT_CONFIG = {
   priceFormatted: import.meta.env.VITE_PLAN_PRICE || 'R$ 150,00 / mês',
   checkoutUrl: import.meta.env.VITE_LASTLINK_CHECKOUT_URL || 'https://lastlink.com/p/CB91A400B/checkout-payment/',
   // Onde o assinante gerencia/cancela a assinatura (área do comprador da Lastlink)
-  manageUrl: import.meta.env.VITE_LASTLINK_MANAGE_URL || 'https://lastlink.com/',
+  manageUrl: import.meta.env.VITE_LASTLINK_MANAGE_URL || 'https://lastlink.com/app/login',
 };
 
 /** Vai para o checkout da Lastlink */

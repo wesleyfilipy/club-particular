@@ -9,6 +9,7 @@ import { MemberDashboard } from './pages/MemberDashboard';
 import { VipLandingPage } from './pages/VipLandingPage';
 import { Paywall } from './pages/Paywall';
 import { supabase, getAccessStatus } from './services/supabase';
+import { verifySession, clearSession } from './services/session';
 
 type ViewState = 'loading' | 'anon' | 'paywall' | 'member' | 'admin';
 
@@ -17,6 +18,8 @@ export default function App() {
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [view, setView] = useState<ViewState>('loading');
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [notice, setNotice] = useState('');
+  const [isAdminUser, setIsAdminUser] = useState(false);
 
   // 1. Sessão vem SEMPRE do Supabase Auth (nunca liberamos acesso sem sessão válida)
   useEffect(() => {
@@ -45,6 +48,18 @@ export default function App() {
     }
 
     const access = await getAccessStatus(user.id, user.email || '');
+
+    // Uma sessão por conta: se a conta entrou em outro aparelho, este é desconectado
+    if (!(await verifySession())) {
+      clearSession();
+      sessionStorage.removeItem('preferred_role');
+      setNotice('Sua conta foi acessada em outro aparelho. Por segurança, este aparelho foi desconectado.');
+      await supabase.auth.signOut();
+      setView('anon');
+      return;
+    }
+
+    setIsAdminUser(access.isAdmin);
     const wantsAdmin = sessionStorage.getItem('preferred_role') === 'admin';
 
     if (access.isAdmin) {
@@ -77,12 +92,14 @@ export default function App() {
   }, [currentUserId, resolveView]);
 
   const handleLoginSuccess = (role: 'admin' | 'member') => {
+    setNotice('');
     sessionStorage.setItem('preferred_role', role);
     resolveView();
   };
 
   const handleLogout = async () => {
     sessionStorage.removeItem('preferred_role');
+    clearSession();
     await supabase.auth.signOut();
   };
 
@@ -95,7 +112,7 @@ export default function App() {
   }
 
   if (view === 'anon' || !session?.user) {
-    return <VipLandingPage onLoginSuccess={handleLoginSuccess} />;
+    return <VipLandingPage onLoginSuccess={handleLoginSuccess} notice={notice} />;
   }
 
   const userEmail = (session.user.email || '').toLowerCase();
@@ -106,7 +123,7 @@ export default function App() {
   }
 
   if (view === 'member') {
-    return <MemberDashboard userEmail={userEmail} userName={userName} onLogout={handleLogout} />;
+    return <MemberDashboard userEmail={userEmail} userName={userName} isAdmin={isAdminUser} onLogout={handleLogout} />;
   }
 
   // PAINEL ADMINISTRATIVO (apenas e-mails de administrador)
