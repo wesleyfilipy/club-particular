@@ -2,10 +2,11 @@ import React from 'react';
 import { Star, BarChart3, Clock, Play, Facebook, Globe, Layers, Package, Languages, TrendingUp } from 'lucide-react';
 import { OfferItem } from '../../services/offersService';
 import { lastAds, growthOf, sinceDate, formatAge, formatShortDate, isNewOffer } from './offerUtils';
+import { OfferCover } from './OfferCover';
 
 interface OfferCardProps {
   offer: OfferItem;
-  posterSrc: string;
+  mediaSrc: (key: string) => string; // chave do R2 -> URL assinada
   favorite: boolean;
   onToggleFavorite: () => void;
   onOpen: () => void;
@@ -18,7 +19,7 @@ const Tag: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }
   </span>
 );
 
-export const OfferCard: React.FC<OfferCardProps> = ({ offer, posterSrc, favorite, onToggleFavorite, onOpen }) => {
+export const OfferCard: React.FC<OfferCardProps> = ({ offer, mediaSrc, favorite, onToggleFavorite, onOpen }) => {
   const ads = lastAds(offer);
   const growth = growthOf(offer);
   const since = sinceDate(offer);
@@ -86,7 +87,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({ offer, posterSrc, favorite
 
       {/* CAPA DA VSL */}
       <button onClick={onOpen} className="relative aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-[#bc060f]/25 to-[#3e4be1]/25 cursor-pointer group">
-        {posterSrc && <img src={posterSrc} alt={`Capa da VSL ${offer.name}`} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
+        <OfferCover offer={offer} mediaSrc={mediaSrc} />
         <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
           <span className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-sm border border-white/30 flex items-center justify-center opacity-90 group-hover:opacity-100">
             <Play className="w-5 h-5 text-white ml-0.5" />

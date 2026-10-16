@@ -25,6 +25,7 @@ import { OfferItem, isImageCreative } from '../../services/offersService';
 import { slugify } from '../../services/r2';
 import { ScaleChart } from '../ScaleChart';
 import { lastAds, growthOf, sinceDate, formatAge } from './offerUtils';
+import { OfferCover, coverCandidates } from './OfferCover';
 
 interface OfferDetailProps {
   offer: OfferItem;
@@ -145,10 +146,19 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-3 aspect-video bg-black rounded-2xl overflow-hidden border border-[#25244a]">
           {mediaSrc(offer.vslKey) ? (
-            <video controls poster={mediaSrc(offer.posterKey) || undefined} className="w-full h-full object-contain" src={mediaSrc(offer.vslKey)} />
+            <video
+              controls
+              poster={coverCandidates(offer, mediaSrc).find((c) => c.type === 'image')?.src}
+              className="w-full h-full object-contain"
+              src={mediaSrc(offer.vslKey)}
+            />
+          ) : offer.vslKey ? (
+            <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">Carregando VSL...</div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
-              {offer.vslKey ? 'Carregando VSL...' : 'VSL não enviada'}
+            // Sem VSL: mostra a capa, um criativo ou a página do site no lugar da tela vazia
+            <div className="relative w-full h-full bg-gradient-to-br from-[#bc060f]/25 to-[#3e4be1]/25">
+              <OfferCover offer={offer} mediaSrc={mediaSrc} />
+              <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-md bg-black/60 text-[11px] text-gray-200">Esta oferta não tem VSL em vídeo</span>
             </div>
           )}
         </div>
@@ -176,13 +186,15 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => onDownload(offer.vslKey)}
-              disabled={!offer.vslKey || downloadingKey === offer.vslKey}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
-            >
-              {downloadingKey === offer.vslKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Baixar VSL
-            </button>
+            {offer.vslKey && (
+              <button
+                onClick={() => onDownload(offer.vslKey)}
+                disabled={!offer.vslKey || downloadingKey === offer.vslKey}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              >
+                {downloadingKey === offer.vslKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Baixar VSL
+              </button>
+            )}
             {offer.transcript && (
               <button onClick={downloadTranscript} className="px-4 py-2 rounded-lg bg-[#3e4be1]/25 border border-[#3e4be1]/50 text-[#c9cdff] font-semibold text-xs flex items-center gap-1.5 cursor-pointer">
                 <FileText className="w-4 h-4" /> Baixar transcrição

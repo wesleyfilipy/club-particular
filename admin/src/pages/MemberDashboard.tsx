@@ -357,7 +357,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <OfferCard
                     key={offer.id}
                     offer={offer}
-                    posterSrc={mediaSrc(offer.posterKey)}
+                    mediaSrc={mediaSrc}
                     favorite={favorites.has(offer.id)}
                     onToggleFavorite={() => toggleFavorite(offer.id)}
                     onOpen={() => { setSelectedOffer(offer); window.scrollTo({ top: 0 }); }}
