@@ -506,11 +506,11 @@ export const OffersManager: React.FC = () => {
               {/* DADOS USADOS NOS FILTROS DA ÁREA DE MEMBROS */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
+                  { label: 'Tipo (Low/Mid/High Ticket)', key: 'ticketType' as const, options: TICKET_TYPES },
                   { label: 'Rede de tráfego', key: 'network' as const, options: NETWORKS },
                   { label: 'Estrutura', key: 'structure' as const, options: STRUCTURES },
                   { label: 'Tipo de produto', key: 'productType' as const, options: PRODUCT_TYPES },
                   { label: 'Idioma', key: 'language' as const, options: LANGUAGES },
-                  { label: 'Ticket', key: 'ticketType' as const, options: TICKET_TYPES },
                 ].map((field) => (
                   <div key={field.key}>
                     <label className="block text-gray-300 mb-1 font-semibold text-xs">{field.label}</label>
