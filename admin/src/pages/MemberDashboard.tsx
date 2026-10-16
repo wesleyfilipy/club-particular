@@ -20,12 +20,13 @@ import {
   Maximize2,
   TrendingUp,
   Video,
+  Image as ImageIcon,
   Loader2,
 } from 'lucide-react';
 import { getR2SignedUrls, getR2PresignedDownloadUrl, isR2Key } from '../services/r2';
 import { openManageSubscriptionPage } from '../services/payment';
 import { supabase } from '../services/supabase';
-import { OfferItem, fetchOffersFromSupabase } from '../services/offersService';
+import { OfferItem, fetchOffersFromSupabase, isImageCreative } from '../services/offersService';
 import { ScaleChart } from '../components/ScaleChart';
 
 interface MemberDashboardProps {
@@ -220,7 +221,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
                   {[
                     'Vídeo VSL original (Full HD / 4K)',
-                    'Vídeos dos anúncios da Biblioteca do Meta',
+                    'Criativos (vídeos e imagens) da Biblioteca do Meta',
                     'Gráfico de escala por dia',
                     'Packs completos de criativos',
                     'Site oficial e landing page',
@@ -520,28 +521,33 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
               <ScaleChart data={selectedOffer.dailyScale} />
             </div>
 
-            {/* VÍDEOS DOS ANÚNCIOS */}
+            {/* CRIATIVOS DOS ANÚNCIOS (VÍDEOS E IMAGENS) */}
             {selectedOffer.adVideos.length > 0 && (
               <div className="space-y-3">
                 <h3 className="font-extrabold text-sm text-white uppercase tracking-wider flex items-center gap-2">
                   <Video className="w-4 h-4 text-[#6b76ff]" />
-                  Vídeos dos anúncios ({selectedOffer.adVideos.length})
+                  Criativos dos anúncios ({selectedOffer.adVideos.length})
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {selectedOffer.adVideos.map((ad) => (
                     <div key={ad.key} className="rounded-2xl overflow-hidden border border-[#25244a] bg-[#13122b]">
-                      {mediaSrc(ad.key) ? (
-                        <video controls preload="metadata" className="w-full aspect-[9/16] max-h-80 bg-black object-contain" src={mediaSrc(ad.key)} />
+                      {!mediaSrc(ad.key) ? (
+                        <div className="w-full h-40 bg-black flex items-center justify-center text-xs text-gray-500">Carregando criativo...</div>
+                      ) : isImageCreative(ad) ? (
+                        <img src={mediaSrc(ad.key)} alt={ad.name} loading="lazy" className="w-full max-h-80 bg-black object-contain" />
                       ) : (
-                        <div className="w-full h-40 bg-black flex items-center justify-center text-xs text-gray-500">Carregando vídeo...</div>
+                        <video controls preload="metadata" className="w-full aspect-[9/16] max-h-80 bg-black object-contain" src={mediaSrc(ad.key)} />
                       )}
                       <div className="p-3 flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-gray-300 truncate">{ad.name}</span>
+                        <span className="text-[11px] text-gray-300 truncate flex items-center gap-1.5">
+                          {isImageCreative(ad) ? <ImageIcon className="w-3.5 h-3.5 shrink-0 text-[#a8aeff]" /> : <Video className="w-3.5 h-3.5 shrink-0 text-[#a8aeff]" />}
+                          {ad.name}
+                        </span>
                         <button
                           onClick={() => handleDownload(ad.key)}
                           disabled={downloadingKey === ad.key}
                           className="p-1.5 rounded-lg bg-[#0b0a1f] border border-[#25244a] text-[#a8aeff] hover:bg-[#1c1b3a] cursor-pointer disabled:opacity-40"
-                          title="Baixar vídeo"
+                          title={isImageCreative(ad) ? 'Baixar imagem' : 'Baixar vídeo'}
                         >
                           <Download className="w-3.5 h-3.5" />
                         </button>

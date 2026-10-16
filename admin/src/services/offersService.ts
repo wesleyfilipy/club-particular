@@ -1,9 +1,15 @@
 import { supabase } from './supabase';
 
+// Criativo de anúncio da Biblioteca do Meta (vídeo ou imagem)
 export interface AdVideo {
   key: string; // chave no Cloudflare R2
   name: string;
+  type?: 'video' | 'image';
 }
+
+/** Criativos antigos não têm "type": nesse caso decide pela extensão do arquivo */
+export const isImageCreative = (ad: AdVideo) =>
+  ad.type === 'image' || (!ad.type && /\.(jpe?g|png|webp|gif|avif|heic)$/i.test(ad.name));
 
 export interface ScalePoint {
   date: string; // AAAA-MM-DD

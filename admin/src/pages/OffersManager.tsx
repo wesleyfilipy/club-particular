@@ -9,6 +9,7 @@ import {
   createOffer,
   updateOffer,
   deleteOffer,
+  isImageCreative,
 } from '../services/offersService';
 import { ScaleChart } from '../components/ScaleChart';
 
@@ -154,8 +155,9 @@ export const OffersManager: React.FC = () => {
   const handleAdVideosUpload = async (files: FileList) => {
     const idx = activeDraft;
     for (const file of Array.from(files)) {
+      const type = file.type.startsWith('image/') ? 'image' : 'video';
       const key = await uploadFile(idx, 'ads', 'ad-videos', file);
-      if (key) updateDraft(idx, (prev) => ({ ...prev, adVideos: [...prev.adVideos, { key, name: file.name }] }));
+      if (key) updateDraft(idx, (prev) => ({ ...prev, adVideos: [...prev.adVideos, { key, name: file.name, type }] }));
     }
   };
 
@@ -292,7 +294,7 @@ export const OffersManager: React.FC = () => {
               <th className="p-4">Nome da Oferta</th>
               <th className="p-4">Categoria</th>
               <th className="p-4">VSL (R2)</th>
-              <th className="p-4">Vídeos de Anúncios</th>
+              <th className="p-4">Criativos dos Anúncios</th>
               <th className="p-4">Escala (hoje)</th>
               <th className="p-4 text-right">Ações</th>
             </tr>
@@ -326,7 +328,7 @@ export const OffersManager: React.FC = () => {
                     <span className="text-xs text-gray-500">Sem VSL</span>
                   )}
                 </td>
-                <td className="p-4 text-xs font-semibold">{offer.adVideos.length} vídeo{offer.adVideos.length === 1 ? '' : 's'}</td>
+                <td className="p-4 text-xs font-semibold">{offer.adVideos.length} criativo{offer.adVideos.length === 1 ? '' : 's'}</td>
                 <td className="p-4 text-xs font-semibold">
                   {offer.dailyScale.length > 0 ? `${offer.dailyScale[offer.dailyScale.length - 1].ads} anúncios` : '—'}
                 </td>
@@ -528,13 +530,13 @@ export const OffersManager: React.FC = () => {
                     )}
                   </div>
 
-                  {/* VÍDEOS DOS ANÚNCIOS (BIBLIOTECA DO META) */}
+                  {/* CRIATIVOS DOS ANÚNCIOS (BIBLIOTECA DO META): VÍDEOS E IMAGENS */}
                   <div className="p-4 rounded-xl bg-[#0b0a1f] border border-[#25244a] space-y-3">
-                    <span className="block font-bold text-xs text-gray-300">🎬 Vídeos dos anúncios (Biblioteca do Meta Ads)</span>
+                    <span className="block font-bold text-xs text-gray-300">🎬 Criativos dos anúncios — vídeos e imagens (Biblioteca do Meta Ads)</span>
                     <input
                       type="file"
                       id="ads-upload-input"
-                      accept="video/*"
+                      accept="video/*,image/*"
                       multiple
                       className="hidden"
                       onChange={(e) => e.target.files && e.target.files.length > 0 && handleAdVideosUpload(e.target.files)}
@@ -544,11 +546,14 @@ export const OffersManager: React.FC = () => {
                       className="cursor-pointer border border-dashed border-[#6b76ff]/50 rounded-xl p-3 text-center block hover:bg-[#6b76ff]/10 transition-all"
                     >
                       <Video className="w-6 h-6 text-[#6b76ff] mx-auto mb-1" />
-                      <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('ads', 'Selecionar vídeos (vários)')}</span>
+                      <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('ads', 'Selecionar vídeos e imagens (vários)')}</span>
                     </label>
                     {formData.adVideos.map((ad) => (
                       <div key={ad.key} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-purple-500/10 text-purple-300 text-xs font-semibold">
-                        <span className="truncate">{ad.name}</span>
+                        <span className="truncate flex items-center gap-1.5">
+                          {isImageCreative(ad) ? <ImageIcon className="w-3.5 h-3.5 shrink-0" /> : <Video className="w-3.5 h-3.5 shrink-0" />}
+                          {ad.name}
+                        </span>
                         <button
                           type="button"
                           onClick={() => setFormData((prev) => ({ ...prev, adVideos: prev.adVideos.filter((v) => v.key !== ad.key) }))}

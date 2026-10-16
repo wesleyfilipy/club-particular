@@ -139,7 +139,7 @@ export const Dashboard: React.FC = () => {
                 <th className="p-4">Categoria</th>
                 <th className="p-4">Qualidade VSL</th>
                 <th className="p-4">Arquivo VSL</th>
-                <th className="p-4">Vídeos de Anúncios</th>
+                <th className="p-4">Criativos dos Anúncios</th>
                 <th className="p-4">Anúncios Ativos (último dia)</th>
               </tr>
             </thead>
