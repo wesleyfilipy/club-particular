@@ -40,6 +40,16 @@ export interface AccessInfo {
   isActiveMember: boolean;
 }
 
+/** Nível de verificação do login (aal1 = só senha, aal2 = senha + código do autenticador) */
+const tokenAal = (token: string): string => {
+  try {
+    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '='))).aal || '';
+  } catch {
+    return '';
+  }
+};
+
 /**
  * Valida o JWT do Supabase e retorna se o usuário é admin e/ou assinante ativo.
  * Retorna null quando o token é inválido.
@@ -58,7 +68,9 @@ export async function getAccess(req: Request): Promise<AccessInfo | null> {
     .eq('id', user.id)
     .maybeSingle();
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'moderator';
+  // Admin só com login confirmado pelo app autenticador (verificação em 2 etapas = "aal2").
+  // O token já foi validado pelo getUser acima; aqui só lemos o nível de verificação dele.
+  const isAdmin = profile?.role === 'admin' && tokenAal(token) === 'aal2';
 
   const { data: isActiveMember } = await supabaseAdmin.rpc('es_is_active_member', { user_uuid: user.id });
 

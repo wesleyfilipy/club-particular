@@ -76,7 +76,7 @@ serve(async (req) => {
 
   const { data: existing } = await supabase
     .from('es_subscriptions')
-    .select('id, status, current_period_end, last_event_at')
+    .select('id, user_id, status, current_period_end, last_event_at')
     .eq('email', email)
     .maybeSingle();
 
@@ -92,7 +92,8 @@ serve(async (req) => {
 
   const row: Record<string, unknown> = {
     email,
-    user_id: profile?.id || null,
+    // Assinatura já vinculada a uma conta continua com ela (não migra para outra conta com o mesmo e-mail)
+    user_id: existing?.user_id || profile?.id || null,
     provider: 'lastlink',
     external_subscription_id: subscriptionId,
     last_event: eventName,

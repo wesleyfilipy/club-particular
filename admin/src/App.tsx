@@ -5,13 +5,14 @@ import { MemberDashboard } from './pages/MemberDashboard';
 import { VipLandingPage } from './pages/VipLandingPage';
 import { Paywall } from './pages/Paywall';
 import { ResetPassword } from './pages/ResetPassword';
+import { AdminMfa } from './pages/AdminMfa';
 import { supabase, getAccessStatus } from './services/supabase';
 import { verifySession, clearSession, startNewSession } from './services/session';
 
 // Link de "redefinir senha" do e-mail: o Supabase volta para o site com type=recovery
 const isRecoveryLink = () => /type=recovery/.test(window.location.hash + window.location.search);
 
-type ViewState = 'loading' | 'anon' | 'paywall' | 'member' | 'admin';
+type ViewState = 'loading' | 'anon' | 'paywall' | 'member' | 'admin' | 'mfa';
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -71,6 +72,12 @@ export default function App() {
     const wantsAdmin = sessionStorage.getItem('preferred_role') === 'admin';
 
     if (access.isAdmin) {
+      // Conta de administrador: sempre exige a verificação em 2 etapas (app autenticador)
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.currentLevel !== 'aal2') {
+        setView('mfa');
+        return;
+      }
       setView(wantsAdmin ? 'admin' : 'member');
     } else if (access.hasActiveSubscription) {
       setView('member');
@@ -136,6 +143,10 @@ export default function App() {
 
   const userEmail = (session.user.email || '').toLowerCase();
   const userName = session.user.user_metadata?.full_name || userEmail.split('@')[0];
+
+  if (view === 'mfa') {
+    return <AdminMfa onVerified={resolveView} onLogout={handleLogout} />;
+  }
 
   if (view === 'paywall') {
     return <Paywall userEmail={userEmail} onRecheck={resolveView} onLogout={handleLogout} />;
