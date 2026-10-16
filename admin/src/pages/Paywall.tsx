@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CreditCard, LogOut, RefreshCw, Loader2, Lock } from 'lucide-react';
 import { openCheckoutPage, PAYMENT_CONFIG } from '../services/payment';
+import { Logo } from '../components/Logo';
 
 interface PaywallProps {
   userEmail: string;
@@ -27,8 +28,9 @@ export const Paywall: React.FC<PaywallProps> = ({ userEmail, onRecheck, onLogout
   return (
     <div className="min-h-screen bg-[#010013] text-white flex items-center justify-center p-4 hero-glow">
       <div className="bg-[#0b0a1f] border border-white/10 rounded-[30px] max-w-md w-full p-8 space-y-6 text-center shadow-2xl">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#bc060f] to-[#3e4be1] flex items-center justify-center mx-auto">
-          <Lock className="w-6 h-6 text-white" />
+        <Logo className="h-10 mx-auto" />
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#bc060f] to-[#3e4be1] flex items-center justify-center mx-auto">
+          <Lock className="w-5 h-5 text-white" />
         </div>
 
         <div className="space-y-2">

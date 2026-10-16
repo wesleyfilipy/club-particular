@@ -1,5 +1,6 @@
 import React from 'react';
-import { LayoutDashboard, Gift, Bell, LogOut, Crown } from 'lucide-react';
+import { LayoutDashboard, Gift, Bell, LogOut } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface SidebarProps {
   activeTab: string;
@@ -18,14 +19,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
     <aside className="w-64 bg-[#0b0a1f] border-r border-[#25244a] flex flex-col justify-between h-screen sticky top-0">
       <div>
         {/* Brand Header */}
-        <div className="p-6 border-b border-[#25244a] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff] flex items-center justify-center">
-            <Crown className="w-5 h-5 text-[#6b76ff]" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-sm tracking-wider gold-text-gradient">ESCALA SWIPE</h1>
-            <p className="text-xs text-gray-400">Painel Administrativo</p>
-          </div>
+        <div className="p-6 border-b border-[#25244a] space-y-2">
+          <h1 className="sr-only">Escala Swipe</h1>
+          <Logo className="h-10" />
+          <p className="text-xs text-gray-400">Painel Administrativo</p>
         </div>
 
         {/* Navigation */}

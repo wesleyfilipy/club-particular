@@ -20,6 +20,7 @@ import {
 import { supabase, ADMIN_EMAILS } from '../services/supabase';
 import { openCheckoutPage, PAYMENT_CONFIG } from '../services/payment';
 import { ScaleChart } from '../components/ScaleChart';
+import { Logo } from '../components/Logo';
 import { startNewSession } from '../services/session';
 
 interface VipLandingPageProps {
@@ -234,7 +235,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
       {/* MENU */}
       <header className="sticky top-0 z-40 bg-[#010013]/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <a href="#inicio" className="font-extrabold text-lg tracking-wide gold-text-gradient">ESCALA SWIPE</a>
+          <a href="#inicio" aria-label="Escala Swipe - início"><Logo className="h-10 md:h-12" /></a>
 
           <nav className="hidden md:flex items-center gap-8 text-sm text-gray-300">
             {NAV_LINKS.map((link) => (
@@ -438,7 +439,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
       <footer className="mt-auto px-4 sm:px-6 py-10 border-t border-white/10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-gray-400">
           <div className="text-center md:text-left space-y-1">
-            <span className="font-extrabold tracking-wide gold-text-gradient">ESCALA SWIPE</span>
+            <Logo className="h-9 mx-auto md:mx-0" />
             <p className="text-xs">© 2026 Escala Swipe. Todos os direitos reservados.</p>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-5 text-xs">

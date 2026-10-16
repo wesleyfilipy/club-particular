@@ -28,6 +28,7 @@ import { openManageSubscriptionPage } from '../services/payment';
 import { supabase } from '../services/supabase';
 import { OfferItem, fetchOffersFromSupabase, isImageCreative } from '../services/offersService';
 import { ScaleChart } from '../components/ScaleChart';
+import { Logo } from '../components/Logo';
 
 interface MemberDashboardProps {
   userEmail: string;
@@ -141,20 +142,11 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
       <header className="bg-[#0b0a1f]/90 backdrop-blur-md border-b border-[#25244a] px-6 py-4 sticky top-0 z-40 shadow-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#bc060f] to-[#3e4be1] p-0.5 shadow-lg shadow-[#6b76ff]/20">
-              <div className="w-full h-full bg-[#010013] rounded-[14px] flex items-center justify-center">
-                <Crown className="w-6 h-6 text-[#a8aeff]" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-lg tracking-wider gold-text-gradient">ESCALA SWIPE</h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff] text-[10px] font-extrabold text-[#a8aeff] uppercase tracking-widest">
-                  ÁREA DE MEMBROS
-                </span>
-              </div>
-              <p className="text-xs text-gray-400">Ofertas escaladas, VSLs e anúncios da Biblioteca do Meta</p>
-            </div>
+            <h1 className="sr-only">Escala Swipe</h1>
+            <Logo className="h-9 md:h-11" />
+            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff] text-[10px] font-extrabold text-[#a8aeff] uppercase tracking-widest">
+              Área de membros
+            </span>
           </div>
 
           <div className="flex items-center gap-4">
