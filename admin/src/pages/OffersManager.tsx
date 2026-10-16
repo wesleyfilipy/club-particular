@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, UploadCloud, Film, Package, CheckCircle2, Image as ImageIcon, Video, X, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
-import { uploadToR2, R2_BUCKET, slugify } from '../services/r2';
+import { uploadToR2, R2_BUCKET, slugify, getR2PresignedDownloadUrl } from '../services/r2';
+import { captureVideoFrame } from '../services/thumbnail';
 import {
   OfferItem,
   OfferInput,
@@ -142,8 +143,42 @@ export const OffersManager: React.FC = () => {
 
   const handleVslUpload = async (file: File) => {
     const idx = activeDraft;
+    // Sem capa enviada: gera a capa a partir de um quadro da própria VSL (em paralelo ao upload)
+    if (!drafts[idx].form.posterKey) autoPosterFromVideo(idx, file);
     const key = await uploadFile(idx, 'vsl', 'vsl', file);
     if (key) updateDraft(idx, (prev) => ({ ...prev, vslKey: key, vslFileName: file.name }));
+  };
+
+  const autoPosterFromVideo = async (idx: number, file: File) => {
+    try {
+      const frame = await captureVideoFrame(file);
+      const posterFile = new File([frame], 'capa-automatica.jpg', { type: 'image/jpeg' });
+      const key = await uploadFile(idx, 'poster', 'poster', posterFile);
+      // Não substitui uma capa que você tenha enviado nesse meio-tempo
+      if (key) updateDraft(idx, (prev) => (prev.posterKey ? prev : { ...prev, posterKey: key }));
+    } catch {
+      // Formato que o navegador não lê: a oferta fica sem capa e você pode enviar uma imagem
+    }
+  };
+
+  // Ofertas já cadastradas sem capa: gera a capa a partir da VSL que está no R2
+  const [generatingPoster, setGeneratingPoster] = useState<string | null>(null);
+  const handleGeneratePoster = async (offer: OfferItem) => {
+    if (!offer.vslKey) return;
+    setGeneratingPoster(offer.id);
+    try {
+      const videoUrl = await getR2PresignedDownloadUrl(offer.vslKey, false);
+      const frame = await captureVideoFrame(videoUrl);
+      const keyPath = `offers/${offer.id}/poster/${Date.now()}-capa-automatica.jpg`;
+      await uploadToR2(frame, keyPath, 'image/jpeg');
+      const { id, ...rest } = offer;
+      const updated = await updateOffer(id, { ...rest, posterKey: keyPath });
+      setOffersList((prev) => prev.map((o) => (o.id === id ? updated : o)));
+    } catch (err: any) {
+      alert(`Não foi possível gerar a capa: ${err.message}`);
+    } finally {
+      setGeneratingPoster(null);
+    }
   };
 
   const handlePosterUpload = async (file: File) => {
@@ -334,6 +369,17 @@ export const OffersManager: React.FC = () => {
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex items-center justify-end gap-2">
+                    {offer.vslKey && !offer.posterKey && (
+                      <button
+                        onClick={() => handleGeneratePoster(offer)}
+                        disabled={generatingPoster === offer.id}
+                        className="px-3 py-2 rounded-lg bg-[#13122b] text-[#a8aeff] hover:bg-[#1c1b3a] transition-all cursor-pointer text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
+                        title="Gerar a capa a partir de um quadro da VSL"
+                      >
+                        {generatingPoster === offer.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                        Gerar capa
+                      </button>
+                    )}
                     <button
                       onClick={() => openEdit(offer)}
                       className="p-2 rounded-lg bg-[#13122b] text-[#a8aeff] hover:bg-[#1c1b3a] transition-all cursor-pointer"
@@ -510,7 +556,7 @@ export const OffersManager: React.FC = () => {
                       className="cursor-pointer border border-dashed border-[#6b76ff]/50 rounded-xl p-3 text-center block hover:bg-[#6b76ff]/10 transition-all"
                     >
                       <ImageIcon className="w-6 h-6 text-[#6b76ff] mx-auto mb-1" />
-                      <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('poster', 'Selecionar imagem de capa')}</span>
+                      <span className="text-xs font-semibold text-gray-300 block">{uploadLabel('poster', 'Selecionar imagem (opcional: sem ela, a capa sai da VSL)')}</span>
                     </label>
                     {formData.posterKey && (
                       <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   Film,
@@ -137,6 +137,17 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Capa da VSL de uma oferta sorteada para a prévia (função pública, só entrega a imagem)
+  const [preview, setPreview] = useState<{ posterUrl: string | null; category: string | null; resolution: string | null } | null>(null);
+  useEffect(() => {
+    supabase.functions
+      .invoke('landing-preview')
+      .then(({ data }) => {
+        if (data?.posterUrl) setPreview(data);
+      })
+      .catch(() => {});
+  }, []);
 
   // Form states
   const [email, setEmail] = useState('');
@@ -342,14 +353,17 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             </div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="md:col-span-2 rounded-3xl bg-black/40 border border-white/10 overflow-hidden">
-                <div className="aspect-video bg-gradient-to-br from-[#bc060f]/30 to-[#3e4be1]/30 flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                <div className="relative aspect-video bg-gradient-to-br from-[#bc060f]/30 to-[#3e4be1]/30 flex items-center justify-center overflow-hidden">
+                  {preview?.posterUrl && (
+                    <img src={preview.posterUrl} alt="Capa de uma VSL da plataforma" className="absolute inset-0 w-full h-full object-cover" />
+                  )}
+                  <div className="relative w-14 h-14 rounded-full bg-black/40 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                     <Play className="w-6 h-6 text-white ml-0.5" />
                   </div>
                 </div>
                 <div className="p-4 space-y-2">
-                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-[#a8aeff]">Saúde & Emagrecimento</span>
-                  <p className="text-sm font-semibold">VSL original · 1080p</p>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-[#a8aeff]">{preview?.category || 'Saúde & Emagrecimento'}</span>
+                  <p className="text-sm font-semibold">VSL original · {preview?.resolution || '1080p'}</p>
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <span className="text-[11px] text-center py-2 rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] font-semibold">Baixar VSL</span>
                     <span className="text-[11px] text-center py-2 rounded-full bg-white/5 border border-white/10">Pack criativos</span>
