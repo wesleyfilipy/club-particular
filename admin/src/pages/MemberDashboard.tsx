@@ -34,6 +34,7 @@ import { ScaleChart } from '../components/ScaleChart';
 import { Logo } from '../components/Logo';
 import { OfferCard } from '../components/member/OfferCard';
 import { FiltersPanel } from '../components/member/FiltersPanel';
+import { OfferDetail } from '../components/member/OfferDetail';
 import {
   OfferFilters,
   emptyFilters,
@@ -150,6 +151,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
   const goTo = (tab: Tab) => {
     setActiveTab(tab);
+    setSelectedOffer(null);
     setMenuOpen(false);
     setShowFilters(false);
     setShowSort(false);
@@ -238,7 +240,19 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
         <main className="flex-1 p-4 md:p-6 space-y-5">
           {/* OFERTAS / FAVORITOS */}
-          {activeTab !== 'profile' && (
+          {activeTab !== 'profile' && selectedOffer && (
+            <OfferDetail
+              offer={selectedOffer}
+              mediaSrc={mediaSrc}
+              favorite={favorites.has(selectedOffer.id)}
+              onToggleFavorite={() => toggleFavorite(selectedOffer.id)}
+              onDownload={handleDownload}
+              downloadingKey={downloadingKey}
+              onBack={() => setSelectedOffer(null)}
+            />
+          )}
+
+          {activeTab !== 'profile' && !selectedOffer && (
             <>
               {/* BARRA DE FERRAMENTAS */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -346,7 +360,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                     posterSrc={mediaSrc(offer.posterKey)}
                     favorite={favorites.has(offer.id)}
                     onToggleFavorite={() => toggleFavorite(offer.id)}
-                    onOpen={() => setSelectedOffer(offer)}
+                    onOpen={() => { setSelectedOffer(offer); window.scrollTo({ top: 0 }); }}
                   />
                 ))}
               </div>
@@ -438,145 +452,6 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
         </main>
       </div>
 
-      {/* MODAL DETALHES DA OFERTA */}
-      {selectedOffer && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4" onClick={() => setSelectedOffer(null)}>
-          <div
-            className="bg-[#0b0a1f] border border-[#25244a] rounded-3xl max-w-3xl w-full max-h-[94vh] overflow-y-auto p-5 md:p-8 space-y-6 relative shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setSelectedOffer(null)}
-              className="absolute top-5 right-5 p-2 rounded-xl bg-[#13122b] border border-[#25244a] text-gray-400 hover:text-white transition-all cursor-pointer"
-              aria-label="Fechar"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="space-y-2 pr-12">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                {selectedOffer.category}
-              </span>
-              <h2 className="font-extrabold text-xl md:text-2xl text-white">{selectedOffer.name}</h2>
-              <div className="flex flex-wrap gap-1.5 text-[11px] text-gray-300">
-                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex items-center gap-1">
-                  {selectedOffer.network === 'Facebook' ? <Facebook className="w-3 h-3 text-[#4f8cff]" /> : <Globe className="w-3 h-3" />} {selectedOffer.network}
-                </span>
-                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex items-center gap-1"><Layers className="w-3 h-3" /> {selectedOffer.structure}</span>
-                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex items-center gap-1"><Package className="w-3 h-3" /> {selectedOffer.productType}</span>
-                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex items-center gap-1"><Languages className="w-3 h-3" /> {selectedOffer.language}</span>
-                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10">Rodando há {formatAge(sinceDate(selectedOffer))}</span>
-              </div>
-            </div>
-
-            {mediaSrc(selectedOffer.vslKey) && (
-              <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-[#25244a]">
-                <video controls poster={mediaSrc(selectedOffer.posterKey) || undefined} className="w-full h-full object-contain" src={mediaSrc(selectedOffer.vslKey)} />
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => handleDownload(selectedOffer.vslKey)}
-                disabled={!selectedOffer.vslKey || downloadingKey === selectedOffer.vslKey}
-                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-xs flex items-center gap-1.5 shadow-lg cursor-pointer disabled:opacity-40"
-              >
-                <Download className="w-4 h-4" /> Baixar VSL ({selectedOffer.vslResolution})
-              </button>
-              {selectedOffer.creativeKey && (
-                <button
-                  onClick={() => handleDownload(selectedOffer.creativeKey)}
-                  disabled={downloadingKey === selectedOffer.creativeKey}
-                  className="px-5 py-2.5 rounded-full bg-white/5 border border-white/15 text-gray-100 font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
-                >
-                  <Package className="w-4 h-4" /> Baixar pack de criativos
-                </button>
-              )}
-              {(selectedOffer.landingPageUrl || selectedOffer.siteUrl) && (
-                <button
-                  onClick={() => copyToClipboard(selectedOffer.landingPageUrl || selectedOffer.siteUrl, selectedOffer.id)}
-                  className="px-4 py-2.5 rounded-full bg-white/5 border border-white/15 text-gray-200 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
-                >
-                  {copiedId === selectedOffer.id ? <><Check className="w-4 h-4 text-emerald-400" /> Copiado!</> : <><Share2 className="w-4 h-4" /> Copiar link</>}
-                </button>
-              )}
-              <button
-                onClick={() => toggleFavorite(selectedOffer.id)}
-                className={`px-4 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
-                  favorites.has(selectedOffer.id) ? 'bg-amber-400/15 border-amber-400/40 text-amber-200' : 'bg-white/5 border-white/15 text-gray-200'
-                }`}
-              >
-                <Star className="w-4 h-4" fill={favorites.has(selectedOffer.id) ? 'currentColor' : 'none'} />
-                {favorites.has(selectedOffer.id) ? 'Favoritada' : 'Favoritar'}
-              </button>
-            </div>
-
-            {selectedOffer.description && <p className="text-sm text-gray-300 leading-relaxed">{selectedOffer.description}</p>}
-
-            {/* GRÁFICO DE ESCALA */}
-            <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] space-y-3">
-              <h3 className="font-extrabold text-sm text-white uppercase tracking-wider">Escala por dia — anúncios ativos na Biblioteca do Meta</h3>
-              <ScaleChart data={selectedOffer.dailyScale} />
-            </div>
-
-            {/* CRIATIVOS DOS ANÚNCIOS (VÍDEOS E IMAGENS) */}
-            {selectedOffer.adVideos.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-extrabold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                  <Video className="w-4 h-4 text-[#6b76ff]" />
-                  Criativos dos anúncios ({selectedOffer.adVideos.length})
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {selectedOffer.adVideos.map((ad) => (
-                    <div key={ad.key} className="rounded-2xl overflow-hidden border border-[#25244a] bg-[#13122b]">
-                      {!mediaSrc(ad.key) ? (
-                        <div className="w-full h-40 bg-black flex items-center justify-center text-xs text-gray-500">Carregando criativo...</div>
-                      ) : isImageCreative(ad) ? (
-                        <img src={mediaSrc(ad.key)} alt={ad.name} loading="lazy" className="w-full max-h-80 bg-black object-contain" />
-                      ) : (
-                        <video controls preload="metadata" className="w-full aspect-[9/16] max-h-80 bg-black object-contain" src={mediaSrc(ad.key)} />
-                      )}
-                      <div className="p-3 flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-gray-300 truncate flex items-center gap-1.5">
-                          {isImageCreative(ad) ? <ImageIcon className="w-3.5 h-3.5 shrink-0 text-[#a8aeff]" /> : <Video className="w-3.5 h-3.5 shrink-0 text-[#a8aeff]" />}
-                          {ad.name}
-                        </span>
-                        <button
-                          onClick={() => handleDownload(ad.key)}
-                          disabled={downloadingKey === ad.key}
-                          className="p-1.5 rounded-lg bg-[#0b0a1f] border border-[#25244a] text-[#a8aeff] hover:bg-[#1c1b3a] cursor-pointer disabled:opacity-40"
-                          title={isImageCreative(ad) ? 'Baixar imagem' : 'Baixar vídeo'}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-[#25244a]">
-              {selectedOffer.siteUrl && (
-                <a href={selectedOffer.siteUrl} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2">
-                  <ExternalLink className="w-4 h-4 text-[#6b76ff]" /> Site Oficial
-                </a>
-              )}
-              {selectedOffer.landingPageUrl && (
-                <a href={selectedOffer.landingPageUrl} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-400" /> Landing Page
-                </a>
-              )}
-              {selectedOffer.adsLibraryUrl && (
-                <a href={selectedOffer.adsLibraryUrl} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2">
-                  <Share2 className="w-4 h-4 text-purple-400" /> Biblioteca de Anúncios (Meta)
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

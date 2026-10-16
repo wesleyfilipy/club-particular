@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Flame, ChevronDown, Languages, Globe, Layers, Package, Tag, X, Check } from 'lucide-react';
-import { OfferItem } from '../../services/offersService';
+import { Flame, ChevronDown, Languages, Globe, Layers, Package, Tag, X, Check, Ticket } from 'lucide-react';
+import { OfferItem, LANGUAGES, NETWORKS, STRUCTURES, PRODUCT_TYPES, TICKET_TYPES, NICHES } from '../../services/offersService';
 import { OfferFilters, emptyFilters, lastAds } from './offerUtils';
 
 interface FiltersPanelProps {
@@ -10,14 +10,16 @@ interface FiltersPanelProps {
   onClose: () => void;
 }
 
-type ListKey = 'languages' | 'networks' | 'structures' | 'productTypes' | 'niches';
+type ListKey = 'languages' | 'networks' | 'structures' | 'productTypes' | 'tickets' | 'niches';
 
-const LISTS: { key: ListKey; label: string; icon: React.ElementType; field: (o: OfferItem) => string }[] = [
-  { key: 'languages', label: 'Idioma', icon: Languages, field: (o) => o.language },
-  { key: 'networks', label: 'Rede de tráfego', icon: Globe, field: (o) => o.network },
-  { key: 'structures', label: 'Estrutura', icon: Layers, field: (o) => o.structure },
-  { key: 'productTypes', label: 'Tipo de produto', icon: Package, field: (o) => o.productType },
-  { key: 'niches', label: 'Nichos', icon: Tag, field: (o) => o.category },
+// Cada lista mostra todas as opções possíveis (mesmo sem ofertas ainda), com a quantidade de cada uma
+const LISTS: { key: ListKey; label: string; icon: React.ElementType; field: (o: OfferItem) => string; all: string[] }[] = [
+  { key: 'tickets', label: 'Tipo (ticket)', icon: Ticket, field: (o) => o.ticketType, all: TICKET_TYPES },
+  { key: 'languages', label: 'Idioma', icon: Languages, field: (o) => o.language, all: LANGUAGES },
+  { key: 'networks', label: 'Rede de tráfego', icon: Globe, field: (o) => o.network, all: NETWORKS },
+  { key: 'structures', label: 'Estrutura', icon: Layers, field: (o) => o.structure, all: STRUCTURES },
+  { key: 'productTypes', label: 'Tipo de produto', icon: Package, field: (o) => o.productType, all: PRODUCT_TYPES },
+  { key: 'niches', label: 'Nichos', icon: Tag, field: (o) => o.category, all: NICHES },
 ];
 
 const BINS = 24;
@@ -103,9 +105,9 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
 
       {/* LISTAS */}
       <div className="divide-y divide-white/5">
-        {LISTS.map(({ key, label, icon: Icon, field }) => {
-          const counts = new Map<string, number>();
-          offers.forEach((o) => counts.set(field(o), (counts.get(field(o)) || 0) + 1));
+        {LISTS.map(({ key, label, icon: Icon, field, all }) => {
+          const counts = new Map<string, number>(all.map((v) => [v, 0]));
+          offers.forEach((o) => field(o) && counts.set(field(o), (counts.get(field(o)) || 0) + 1));
           filters[key].forEach((v) => counts.has(v) || counts.set(v, 0));
           const options = [...counts.entries()].sort((a, b) => b[1] - a[1]);
           const selected = filters[key].length;

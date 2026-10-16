@@ -40,12 +40,35 @@ export interface OfferItem {
   productType: string; // Infoproduto, Nutracêutico...
   language: string; // idioma da oferta
   startedAt: string; // AAAA-MM-DD: desde quando a oferta está rodando
+  ticketType: string; // Low Ticket, Mid Ticket, High Ticket
+  transcript: string; // transcrição da VSL (texto colado pelo admin)
   createdAt?: string; // data de cadastro (preenchida pelo Supabase)
+  updatedAt?: string; // última atualização
 }
 
 export const NETWORKS = ['Facebook', 'Instagram', 'TikTok', 'Google', 'YouTube', 'Kwai'];
 export const STRUCTURES = ['VSL', 'TSL', 'Quiz', 'Advertorial', 'Lead', 'Webinar'];
 export const PRODUCT_TYPES = ['Infoproduto', 'Nutracêutico', 'Físico', 'Software', 'Serviço'];
+export const TICKET_TYPES = ['Low Ticket', 'Mid Ticket', 'High Ticket'];
+export const NICHES = [
+  'Saúde & Emagrecimento',
+  'Renda Extra & Finanças',
+  'Desenvolvimento Pessoal',
+  'Relacionamento & Conquista',
+  'Investimentos & Cripto',
+  'E-commerce & Dropshipping',
+  'Disfunção Erétil',
+  'Rejuvenescimento',
+  'Visão',
+  'Memória & Alzheimer',
+  'Diabetes',
+  'Dores & Articulações',
+  'Beleza & Cabelo',
+  'Lei da Atração & Prosperidade',
+  'Espiritualidade',
+  'Pets',
+  'Outros',
+];
 export const LANGUAGES = ['Português', 'English', 'Español', 'Français', 'Deutsch', 'Italiano'];
 
 export type OfferInput = Omit<OfferItem, 'id'>;
@@ -75,7 +98,10 @@ const fromRow = (item: any): OfferItem => ({
   productType: item.product_type || 'Infoproduto',
   language: item.language || 'Português',
   startedAt: item.started_at || '',
+  ticketType: item.ticket_type || '',
+  transcript: item.transcript || '',
   createdAt: item.created_at,
+  updatedAt: item.updated_at,
 });
 
 const toLegacyRow = (offer: OfferInput) => ({
@@ -97,7 +123,7 @@ const toLegacyRow = (offer: OfferInput) => ({
   facebook_ads_library_url: offer.adsLibraryUrl || null,
 });
 
-const toRow = (offer: OfferInput) => ({
+const toFilterRow = (offer: OfferInput) => ({
   ...toLegacyRow(offer),
   traffic_network: offer.network,
   structure: offer.structure,
@@ -105,6 +131,15 @@ const toRow = (offer: OfferInput) => ({
   language: offer.language,
   started_at: offer.startedAt || null,
 });
+
+const toRow = (offer: OfferInput) => ({
+  ...toFilterRow(offer),
+  ticket_type: offer.ticketType || null,
+  transcript: offer.transcript || null,
+});
+
+// Tenta salvar com todos os campos; se algum SQL ainda não foi rodado, salva com o que o banco já tem
+const ROW_VERSIONS = [toRow, toFilterRow, toLegacyRow];
 
 // Coluna inexistente: o SQL painel_ofertas.sql ainda não foi rodado -> salva sem os campos novos
 const isMissingColumn = (error: { code?: string; message?: string } | null) =>
@@ -121,15 +156,23 @@ export const fetchOffersFromSupabase = async (): Promise<OfferItem[]> => {
 };
 
 export const createOffer = async (offer: OfferInput): Promise<OfferItem> => {
-  let { data, error } = await supabase.from('es_offers').insert([toRow(offer)]).select('*').single();
-  if (isMissingColumn(error)) ({ data, error } = await supabase.from('es_offers').insert([toLegacyRow(offer)]).select('*').single());
+  let data: any = null;
+  let error: any = null;
+  for (const version of ROW_VERSIONS) {
+    ({ data, error } = await supabase.from('es_offers').insert([version(offer)]).select('*').single());
+    if (!isMissingColumn(error)) break;
+  }
   if (error) throw new Error(error.message);
   return fromRow(data);
 };
 
 export const updateOffer = async (id: string, offer: OfferInput): Promise<OfferItem> => {
-  let { data, error } = await supabase.from('es_offers').update(toRow(offer)).eq('id', id).select('*').single();
-  if (isMissingColumn(error)) ({ data, error } = await supabase.from('es_offers').update(toLegacyRow(offer)).eq('id', id).select('*').single());
+  let data: any = null;
+  let error: any = null;
+  for (const version of ROW_VERSIONS) {
+    ({ data, error } = await supabase.from('es_offers').update(version(offer)).eq('id', id).select('*').single());
+    if (!isMissingColumn(error)) break;
+  }
   if (error) throw new Error(error.message);
   return fromRow(data);
 };

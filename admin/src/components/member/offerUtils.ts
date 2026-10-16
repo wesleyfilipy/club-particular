@@ -50,6 +50,7 @@ export interface OfferFilters {
   networks: string[];
   structures: string[];
   productTypes: string[];
+  tickets: string[];
   niches: string[];
 }
 
@@ -63,6 +64,7 @@ export const emptyFilters = (): OfferFilters => ({
   networks: [],
   structures: [],
   productTypes: [],
+  tickets: [],
   niches: [],
 });
 
@@ -70,7 +72,7 @@ export const activeFilterCount = (f: OfferFilters) =>
   (f.scalingOnly ? 1 : 0) +
   (f.minAds || f.maxAds ? 1 : 0) +
   (f.from || f.to ? 1 : 0) +
-  [f.languages, f.networks, f.structures, f.productTypes, f.niches].filter((l) => l.length > 0).length;
+  [f.languages, f.networks, f.structures, f.productTypes, f.tickets, f.niches].filter((l) => l.length > 0).length;
 
 export const applyFilters = (offers: OfferItem[], f: OfferFilters, search: string): OfferItem[] => {
   const q = search.trim().toLowerCase();
@@ -89,6 +91,7 @@ export const applyFilters = (offers: OfferItem[], f: OfferFilters, search: strin
     if (f.networks.length && !f.networks.includes(o.network)) return false;
     if (f.structures.length && !f.structures.includes(o.structure)) return false;
     if (f.productTypes.length && !f.productTypes.includes(o.productType)) return false;
+    if (f.tickets.length && !f.tickets.includes(o.ticketType)) return false;
     if (f.niches.length && !f.niches.includes(o.category)) return false;
     return true;
   });

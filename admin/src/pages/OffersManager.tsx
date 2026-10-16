@@ -15,27 +15,12 @@ import {
   STRUCTURES,
   PRODUCT_TYPES,
   LANGUAGES,
+  TICKET_TYPES,
+  NICHES,
 } from '../services/offersService';
 import { ScaleChart } from '../components/ScaleChart';
 
-const CATEGORIES = [
-  'Saúde & Emagrecimento',
-  'Renda Extra & Finanças',
-  'Desenvolvimento Pessoal',
-  'Relacionamento & Conquista',
-  'Investimentos & Cripto',
-  'E-commerce & Dropshipping',
-  'Disfunção Erétil',
-  'Rejuvenescimento',
-  'Visão',
-  'Memória & Alzheimer',
-  'Diabetes',
-  'Dores & Articulações',
-  'Beleza & Cabelo',
-  'Espiritualidade',
-  'Pets',
-  'Outros',
-];
+const CATEGORIES = NICHES;
 
 const emptyForm = (): OfferInput => ({
   name: '',
@@ -59,6 +44,8 @@ const emptyForm = (): OfferInput => ({
   productType: PRODUCT_TYPES[0],
   language: LANGUAGES[0],
   startedAt: '',
+  ticketType: TICKET_TYPES[0],
+  transcript: '',
 });
 
 const formatSize = (bytes: number) =>
@@ -517,12 +504,13 @@ export const OffersManager: React.FC = () => {
               </div>
 
               {/* DADOS USADOS NOS FILTROS DA ÁREA DE MEMBROS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
                   { label: 'Rede de tráfego', key: 'network' as const, options: NETWORKS },
                   { label: 'Estrutura', key: 'structure' as const, options: STRUCTURES },
                   { label: 'Tipo de produto', key: 'productType' as const, options: PRODUCT_TYPES },
                   { label: 'Idioma', key: 'language' as const, options: LANGUAGES },
+                  { label: 'Ticket', key: 'ticketType' as const, options: TICKET_TYPES },
                 ].map((field) => (
                   <div key={field.key}>
                     <label className="block text-gray-300 mb-1 font-semibold text-xs">{field.label}</label>
@@ -556,6 +544,17 @@ export const OffersManager: React.FC = () => {
                   className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 mb-1 font-semibold">Transcrição da VSL <span className="text-xs text-gray-500 font-normal">(opcional)</span></label>
+                <textarea
+                  rows={4}
+                  placeholder="Cole aqui o texto da VSL. Os membros podem ler e baixar."
+                  className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none text-xs"
+                  value={formData.transcript}
+                  onChange={(e) => setFormData({ ...formData, transcript: e.target.value })}
                 />
               </div>
 

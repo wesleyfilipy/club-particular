@@ -9,6 +9,8 @@ ALTER TABLE public.es_offers ADD COLUMN IF NOT EXISTS structure TEXT NOT NULL DE
 ALTER TABLE public.es_offers ADD COLUMN IF NOT EXISTS product_type TEXT NOT NULL DEFAULT 'Infoproduto';
 ALTER TABLE public.es_offers ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'Português';
 ALTER TABLE public.es_offers ADD COLUMN IF NOT EXISTS started_at DATE; -- desde quando a oferta está rodando
+ALTER TABLE public.es_offers ADD COLUMN IF NOT EXISTS ticket_type TEXT;  -- Low Ticket, Mid Ticket, High Ticket
+ALTER TABLE public.es_offers ADD COLUMN IF NOT EXISTS transcript TEXT;   -- transcrição da VSL
 
 -- 2. Ofertas favoritas de cada membro
 CREATE TABLE IF NOT EXISTS public.es_favorites (
