@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 export const STRIPE_CONFIG = {
   checkoutUrl: 'https://lastlink.com/p/CB91A400B/checkout-payment/',
   customerPortalUrl: 'https://lastlink.com/',
-  monthlyPriceFormatted: 'R$ 0,01/mês',
+  monthlyPriceFormatted: 'R$ 150,00/mês',
 };
 
 /**

@@ -30,7 +30,7 @@ export const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) 
         </View>
 
         <Text style={styles.description}>
-          Sua assinatura do <Text style={{ color: COLORS.gold }}>Escala Swipe (R$ 0,01/mês)</Text> está inativa ou expirada.
+          Sua assinatura do <Text style={{ color: COLORS.gold }}>Escala Swipe (R$ 150,00/mês)</Text> está inativa ou expirada.
         </Text>
 
         <Text style={styles.subtext}>
@@ -38,12 +38,12 @@ export const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) 
         </Text>
 
         <View style={styles.priceTag}>
-          <Text style={styles.priceText}>R$ 0,01</Text>
+          <Text style={styles.priceText}>R$ 150,00</Text>
           <Text style={styles.pricePeriod}> / mês</Text>
         </View>
 
         <LuxuryButton
-          title="Assinar Agora no Stripe"
+          title="Assinar Agora na Lastlink"
           onPress={() => user && openStripeCheckout(user.id, user.email)}
           variant="gold"
           style={styles.actionBtn}
