@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Crown,
-  Gift,
   LogOut,
   Download,
   ExternalLink,
@@ -9,7 +7,6 @@ import {
   User,
   Sparkles,
   CheckCircle2,
-  Film,
   Package,
   Search,
   Flame,
@@ -17,18 +14,37 @@ import {
   FileText,
   Check,
   X,
-  Maximize2,
-  TrendingUp,
   Video,
   Image as ImageIcon,
   Loader2,
+  Star,
+  Menu,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Facebook,
+  Globe,
+  Layers,
+  Languages,
 } from 'lucide-react';
 import { getR2SignedUrls, getR2PresignedDownloadUrl, isR2Key } from '../services/r2';
 import { openManageSubscriptionPage } from '../services/payment';
 import { supabase } from '../services/supabase';
-import { OfferItem, fetchOffersFromSupabase, isImageCreative } from '../services/offersService';
+import { OfferItem, fetchOffersFromSupabase, isImageCreative, fetchFavoriteIds, setFavorite } from '../services/offersService';
 import { ScaleChart } from '../components/ScaleChart';
 import { Logo } from '../components/Logo';
+import { OfferCard } from '../components/member/OfferCard';
+import { FiltersPanel } from '../components/member/FiltersPanel';
+import {
+  OfferFilters,
+  emptyFilters,
+  activeFilterCount,
+  applyFilters,
+  sortOffers,
+  SortMode,
+  SORT_LABELS,
+  sinceDate,
+  formatAge,
+} from '../components/member/offerUtils';
 
 interface MemberDashboardProps {
   userEmail: string;
@@ -37,10 +53,23 @@ interface MemberDashboardProps {
   onLogout: () => void;
 }
 
+type Tab = 'offers' | 'favorites' | 'profile';
+
+const PAGE_TITLES: Record<Tab, { title: string; icon: React.ElementType }> = {
+  offers: { title: 'Escalando agora', icon: Flame },
+  favorites: { title: 'Favoritos', icon: Star },
+  profile: { title: 'Minha conta', icon: User },
+};
+
 export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, userName, isAdmin = false, onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'offers' | 'profile'>('offers');
+  const [activeTab, setActiveTab] = useState<Tab>('offers');
+  const [menuOpen, setMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [filters, setFilters] = useState<OfferFilters>(emptyFilters);
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>('ads');
+  const [showSort, setShowSort] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedOffer, setSelectedOffer] = useState<OfferItem | null>(null);
   const [offers, setOffers] = useState<OfferItem[]>([]);
@@ -63,8 +92,9 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
   useEffect(() => {
     const loadOffers = async () => {
-      const data = await fetchOffersFromSupabase();
+      const [data, favs] = await Promise.all([fetchOffersFromSupabase(), fetchFavoriteIds()]);
       setOffers(data);
+      setFavorites(favs);
       setLoadingOffers(false);
 
       const keys = data.flatMap((o) => [o.vslKey, o.posterKey, ...o.adVideos.map((v) => v.key)]).filter(isR2Key);
@@ -105,327 +135,227 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Categorias na ordem em que aparecem (as ofertas já vêm da mais nova para a mais antiga)
-  const categories = [...new Set(offers.map((o) => o.category))];
-
-  const filteredOffers = offers.filter(
-    (o) =>
-      (categoryFilter === 'all' || o.category === categoryFilter) &&
-      (o.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.category.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Selo "Nova" nas ofertas cadastradas nos últimos 7 dias
-  const isNew = (offer: OfferItem) =>
-    !!offer.createdAt && Date.now() - new Date(offer.createdAt).getTime() < 7 * 86400000;
-
-  const lastAds = (offer: OfferItem) =>
-    offer.dailyScale.length > 0 ? offer.dailyScale[offer.dailyScale.length - 1].ads : null;
-
-  // Crescimento de anúncios ativos nos últimos 7 registros do gráfico de escala
-  const growthOf = (offer: OfferItem) => {
-    const pts = offer.dailyScale.slice(-7);
-    return pts.length >= 2 ? pts[pts.length - 1].ads - pts[0].ads : 0;
+  const toggleFavorite = async (offerId: string) => {
+    const willFavorite = !favorites.has(offerId);
+    const next = new Set(favorites);
+    willFavorite ? next.add(offerId) : next.delete(offerId);
+    setFavorites(next);
+    try {
+      await setFavorite(offerId, willFavorite);
+    } catch {
+      setFavorites(favorites); // desfaz se não salvou
+      alert('Não foi possível salvar o favorito agora. Tente novamente.');
+    }
   };
 
-  const newCount = offers.filter(isNew).length;
-  const scalingCount = offers.filter((o) => growthOf(o) > 0).length;
-  const trending = offers
-    .map((offer) => ({ offer, growth: growthOf(offer) }))
-    .filter((t) => t.growth > 0)
-    .sort((a, b) => b.growth - a.growth)
-    .slice(0, 3);
+  const goTo = (tab: Tab) => {
+    setActiveTab(tab);
+    setMenuOpen(false);
+    setShowFilters(false);
+    setShowSort(false);
+  };
+
+  const baseList = activeTab === 'favorites' ? offers.filter((o) => favorites.has(o.id)) : offers;
+  const visibleOffers = useMemo(
+    () => sortOffers(applyFilters(baseList, filters, searchTerm), sortMode),
+    [baseList, filters, searchTerm, sortMode]
+  );
+  const filterCount = activeFilterCount(filters);
+  const PageIcon = PAGE_TITLES[activeTab].icon;
+
+  const navButton = (tab: Tab, label: string, Icon: React.ElementType, count?: number) => (
+    <button
+      onClick={() => goTo(tab)}
+      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+        activeTab === tab ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+      }`}
+    >
+      <span className="flex items-center gap-3">
+        <Icon className={`w-4 h-4 ${activeTab === tab ? 'text-[#a8aeff]' : ''}`} />
+        {label}
+      </span>
+      {count !== undefined && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-300">{count}</span>}
+    </button>
+  );
 
   return (
-    <div className="min-h-screen bg-[#010013] text-white flex flex-col font-sans selection:bg-[#6b76ff] selection:text-white">
-      {/* HEADER PRINCIPAL */}
-      <header className="bg-[#0b0a1f]/90 backdrop-blur-md border-b border-[#25244a] px-6 py-4 sticky top-0 z-40 shadow-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="sr-only">Escala Swipe</h1>
-            <Logo className="h-9 md:h-11" />
-            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff] text-[10px] font-extrabold text-[#a8aeff] uppercase tracking-widest">
-              Área de membros
-            </span>
+    <div className="flex min-h-screen bg-[#010013] text-white font-sans selection:bg-[#6b76ff] selection:text-white">
+      {/* MENU LATERAL (gaveta no celular) */}
+      {menuOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setMenuOpen(false)} />}
+      <aside
+        className={`fixed md:sticky top-0 left-0 z-50 w-64 h-screen shrink-0 bg-[#0b0a1f] border-r border-[#25244a] flex flex-col transition-transform md:translate-x-0 ${
+          menuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="p-5 flex items-center justify-between">
+          <h1 className="sr-only">Escala Swipe</h1>
+          <Logo className="h-9" />
+          <button onClick={() => setMenuOpen(false)} className="md:hidden p-2 rounded-full bg-white/5 text-gray-300 cursor-pointer" aria-label="Fechar menu">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="mx-4 mb-4 p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#bc060f] to-[#3e4be1] flex items-center justify-center text-xs font-bold shrink-0">
+            {(userName || userEmail).substring(0, 2).toUpperCase()}
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-inner">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-              <span className="text-xs font-bold text-gray-200 truncate max-w-[180px]">{userEmail}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#6b76ff]/20 text-[#a8aeff] font-bold uppercase tracking-wider ml-1">
-                {isAdmin ? 'ADMINISTRADOR' : 'ASSINATURA ATIVA'}
-              </span>
-            </div>
-
-            <button
-              onClick={onLogout}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all text-xs font-bold shadow-md cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              Sair
-            </button>
+          <div className="min-w-0">
+            <span className="block text-sm font-semibold truncate">{userName}</span>
+            <span className="block text-[11px] text-gray-400">{isAdmin ? 'Administrador' : 'Assinante'}</span>
           </div>
         </div>
-      </header>
 
-      <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-4 md:p-6 gap-6">
-        {/* NAVEGAÇÃO LATERAL */}
-        <aside className="w-full md:w-64 bg-[#0b0a1f] border border-[#25244a] rounded-3xl p-4 space-y-3 shrink-0 h-fit shadow-2xl">
-          <div className="px-3 py-2 text-xs font-extrabold text-[#a8aeff] uppercase tracking-wider">Navegação</div>
+        <nav className="flex-1 overflow-y-auto px-3 space-y-5">
+          <div className="space-y-1">
+            <span className="px-3 text-[11px] font-semibold text-gray-500">Geral</span>
+            {navButton('offers', 'Escalando agora', Flame, offers.length)}
+            {navButton('favorites', 'Favoritos', Star, favorites.size)}
+          </div>
+          <div className="space-y-1">
+            <span className="px-3 text-[11px] font-semibold text-gray-500">Conta</span>
+            {navButton('profile', 'Minha conta', User)}
+          </div>
+        </nav>
 
-          <button
-            onClick={() => setActiveTab('offers')}
-            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'offers'
-                ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-lg shadow-[#6b76ff]/20 font-extrabold scale-[1.02]'
-                : 'text-gray-400 hover:text-white hover:bg-[#13122b]'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Gift className="w-5 h-5" />
-              Ofertas Escaladas
-            </div>
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded-full ${
-                activeTab === 'offers' ? 'bg-[#010013] text-[#a8aeff]' : 'bg-[#13122b] text-gray-400'
-              }`}
-            >
-              {offers.length}
-            </span>
+        <div className="p-3 border-t border-[#25244a]">
+          <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 cursor-pointer">
+            <LogOut className="w-4 h-4" /> Sair
           </button>
+        </div>
+      </aside>
 
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'profile'
-                ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-lg shadow-[#6b76ff]/20 font-extrabold scale-[1.02]'
-                : 'text-gray-400 hover:text-white hover:bg-[#13122b]'
-            }`}
-          >
-            <User className="w-5 h-5" />
-            Minha Conta
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* CABEÇALHO */}
+        <header className="sticky top-0 z-30 h-16 bg-[#010013]/90 backdrop-blur-md border-b border-[#25244a] px-4 md:px-6 flex items-center gap-3">
+          <button onClick={() => setMenuOpen(true)} className="md:hidden p-2 rounded-full bg-white/5 text-gray-200 cursor-pointer" aria-label="Abrir menu">
+            <Menu className="w-5 h-5" />
           </button>
-        </aside>
+          <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
+            <PageIcon className="w-4 h-4 text-[#a8aeff]" />
+            {PAGE_TITLES[activeTab].title}
+          </h2>
+        </header>
 
-        <main className="flex-1 min-w-0">
-          {/* TAB 1: OFERTAS */}
-          {activeTab === 'offers' && (
-            <div className="space-y-6">
-              {/* RESUMO DAS OFERTAS ESCALADAS */}
-              <div className="glass rounded-[30px] p-6 md:p-8 space-y-6 relative overflow-hidden">
-                <div className="absolute inset-0 hero-glow opacity-60 pointer-events-none" />
-                <div className="relative space-y-2">
-                  <span className="section-tag">// ofertas escaladas</span>
-                  <h2 className="font-bold text-2xl md:text-3xl text-white">
-                    Ofertas que estão <span className="gold-text-gradient">escalando agora</span>
-                  </h2>
-                  <p className="text-sm text-gray-300 max-w-3xl">
-                    Acompanhe quantos anúncios cada oferta tem ativos por dia e modele as que mais crescem.
-                  </p>
-                </div>
+        <main className="flex-1 p-4 md:p-6 space-y-5">
+          {/* OFERTAS / FAVORITOS */}
+          {activeTab !== 'profile' && (
+            <>
+              {/* BARRA DE FERRAMENTAS */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="relative flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => { setShowFilters((v) => !v); setShowSort(false); }}
+                    className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
+                      showFilters || filterCount ? 'bg-[#3e4be1]/20 border-[#3e4be1]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
+                    }`}
+                    aria-expanded={showFilters}
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5" /> Filtros
+                    {filterCount > 0 && <span className="px-1.5 rounded-full bg-[#3e4be1] text-[10px]">{filterCount}</span>}
+                  </button>
 
-                <div className="relative grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Ofertas disponíveis', value: offers.length },
-                    { label: 'Novas esta semana', value: newCount },
-                    { label: 'Escalando agora', value: scalingCount },
-                  ].map((stat) => (
-                    <div key={stat.label} className="p-4 rounded-2xl bg-black/30 border border-white/10">
-                      <span className="block text-2xl md:text-3xl font-bold text-white">{stat.value}</span>
-                      <span className="block text-[11px] md:text-xs text-gray-400 mt-1">{stat.label}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {trending.length > 0 && (
-                  <div className="relative space-y-2">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#a8aeff] flex items-center gap-1.5">
-                      <Flame className="w-4 h-4" /> Em alta nos últimos 7 dias
-                    </h3>
-                    {trending.map(({ offer, growth }, i) => (
-                      <button
-                        key={offer.id}
-                        onClick={() => setSelectedOffer(offer)}
-                        className="w-full flex items-center gap-3 p-3 rounded-2xl bg-black/30 border border-white/10 hover:border-white/25 transition-all text-left cursor-pointer"
-                      >
-                        <span className="text-lg font-bold gold-text-gradient w-6 text-center">{i + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          <span className="block text-sm font-semibold text-white truncate">{offer.name}</span>
-                          <span className="block text-[11px] text-gray-400 truncate">{offer.category}</span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="block text-sm font-bold text-white">{lastAds(offer)} anúncios</span>
-                          <span className="block text-[11px] font-semibold text-emerald-400">+{growth} em 7 dias</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* BUSCA */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0b0a1f] p-6 rounded-3xl border border-[#25244a] shadow-xl">
-                <div>
-                  <h3 className="font-extrabold text-xl text-white">Biblioteca de Ofertas</h3>
-                  <p className="text-xs text-gray-400 mt-1">Clique em "Detalhes" para ver os anúncios e o gráfico de escala.</p>
-                </div>
-
-                <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar oferta ou nicho..."
-                    className="w-full bg-[#13122b] border border-[#25244a] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white focus:border-[#6b76ff] outline-none shadow-inner"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* FILTRO POR CATEGORIA */}
-              {categories.length > 1 && (
-                <div className="flex flex-wrap gap-2">
-                  {[{ id: 'all', label: `Todas (${offers.length})` }, ...categories.map((c) => ({ id: c, label: `${c} (${offers.filter((o) => o.category === c).length})` }))].map((chip) => (
+                  <div className="relative">
                     <button
-                      key={chip.id}
-                      onClick={() => setCategoryFilter(chip.id)}
-                      className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                        categoryFilter === chip.id
-                          ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-lg'
-                          : 'bg-white/5 border border-white/10 text-gray-300 hover:text-white'
-                      }`}
+                      onClick={() => { setShowSort((v) => !v); setShowFilters(false); }}
+                      className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-gray-200 hover:text-white flex items-center gap-1.5 cursor-pointer"
+                      aria-expanded={showSort}
+                      title="Ordenar"
                     >
-                      {chip.label}
+                      <ArrowUpDown className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{SORT_LABELS[sortMode]}</span>
                     </button>
-                  ))}
+                    {showSort && (
+                      <div className="absolute left-0 top-full mt-2 z-40 w-60 rounded-xl bg-[#0b0a1f] border border-[#25244a] shadow-2xl p-1.5">
+                        {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                          <button
+                            key={mode}
+                            onClick={() => { setSortMode(mode); setShowSort(false); }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer ${sortMode === mode ? 'bg-[#3e4be1]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
+                          >
+                            {SORT_LABELS[mode]}
+                            {sortMode === mode && <Check className="w-3.5 h-3.5" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setFilters({ ...filters, scalingOnly: !filters.scalingOnly })}
+                    className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
+                      filters.scalingOnly ? 'bg-[#bc060f]/25 border-[#bc060f]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
+                    }`}
+                    aria-pressed={filters.scalingOnly}
+                  >
+                    <Flame className="w-3.5 h-3.5 text-[#ff6b6b]" /> Escalando agora
+                  </button>
+
+                  {filterCount > 0 && (
+                    <button onClick={() => setFilters(emptyFilters())} className="px-2 py-2 text-xs text-gray-400 hover:text-white cursor-pointer">
+                      Limpar filtros
+                    </button>
+                  )}
+
+                  {showFilters && (
+                    <FiltersPanel offers={baseList} filters={filters} onChange={setFilters} onClose={() => setShowFilters(false)} />
+                  )}
                 </div>
-              )}
+
+                <div className="flex items-center gap-3">
+                  <span className="hidden sm:inline text-xs text-gray-400 shrink-0">
+                    {visibleOffers.length} oferta{visibleOffers.length === 1 ? '' : 's'}
+                  </span>
+                  <div className="relative w-full lg:w-72">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Pesquisar oferta ou nicho..."
+                      className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:border-[#6b76ff] outline-none"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
 
               {loadingOffers && (
-                <div className="p-8 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                <div className="p-10 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-[#6b76ff]" /> Carregando ofertas...
                 </div>
               )}
-              {!loadingOffers && filteredOffers.length === 0 && (
-                <div className="p-8 text-center text-xs text-gray-400 bg-[#0b0a1f] border border-[#25244a] rounded-3xl">
-                  Nenhuma oferta encontrada.
+
+              {!loadingOffers && visibleOffers.length === 0 && (
+                <div className="p-10 text-center text-sm text-gray-400 bg-[#0b0a1f] border border-[#25244a] rounded-2xl space-y-2">
+                  {activeTab === 'favorites' && favorites.size === 0 ? (
+                    <>
+                      <Star className="w-6 h-6 mx-auto text-gray-500" />
+                      <p>Você ainda não favoritou nenhuma oferta. Toque na ⭐ de uma oferta para salvá-la aqui.</p>
+                    </>
+                  ) : (
+                    <p>Nenhuma oferta encontrada com esses filtros.</p>
+                  )}
                 </div>
               )}
 
-              {/* GRID DE OFERTAS */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredOffers.map((offer) => (
-                  <div
+              {/* GRADE DE OFERTAS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[1800px]:grid-cols-5 gap-4">
+                {visibleOffers.map((offer) => (
+                  <OfferCard
                     key={offer.id}
-                    className="bg-[#0b0a1f] border border-[#25244a] hover:border-[#6b76ff]/60 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 shadow-xl flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="relative w-full aspect-video bg-black overflow-hidden border-b border-[#25244a]">
-                        {mediaSrc(offer.vslKey) ? (
-                          <video
-                            key={mediaSrc(offer.vslKey)}
-                            controls
-                            poster={mediaSrc(offer.posterKey) || undefined}
-                            className="w-full h-full object-cover"
-                            preload="metadata"
-                            src={mediaSrc(offer.vslKey)}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
-                            {offer.vslKey ? 'Carregando VSL...' : 'VSL não enviada'}
-                          </div>
-                        )}
-
-                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
-                          <span className="px-2.5 py-0.5 rounded-lg bg-[#010013]/80 backdrop-blur-md border border-[#6b76ff] text-[#a8aeff] text-[10px] font-extrabold flex items-center gap-1 shadow-md">
-                            <Film className="w-3 h-3 text-[#6b76ff]" />
-                            {offer.vslResolution}
-                          </span>
-                          {lastAds(offer) !== null && (
-                            <span className="px-2.5 py-0.5 rounded-lg bg-[#010013]/80 backdrop-blur-md text-white text-[10px] font-extrabold flex items-center gap-1 shadow-md">
-                              <TrendingUp className="w-3 h-3 text-[#6b76ff]" />
-                              {lastAds(offer)} anúncios ativos
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="px-2.5 py-0.5 rounded-md bg-[#13122b] border border-[#25244a] text-[10px] font-bold text-[#a8aeff] truncate">
-                            {offer.category}
-                          </span>
-                          {isNew(offer) && (
-                            <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-[10px] font-extrabold text-white shrink-0">
-                              NOVA
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 className="font-extrabold text-base text-white line-clamp-1 tracking-tight group-hover:text-[#a8aeff] transition-colors">
-                          {offer.name}
-                        </h3>
-
-                        <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">{offer.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="p-4 pt-0 space-y-2.5 border-t border-[#25244a]/50 mt-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => handleDownload(offer.vslKey)}
-                          disabled={!offer.vslKey || downloadingKey === offer.vslKey}
-                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 shadow-md hover:opacity-95 transition-all cursor-pointer disabled:opacity-40"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Baixar VSL
-                        </button>
-
-                        <button
-                          onClick={() => handleDownload(offer.creativeKey)}
-                          disabled={!offer.creativeKey || downloadingKey === offer.creativeKey}
-                          className="px-3 py-2 rounded-xl bg-[#13122b] border border-[#6b76ff]/40 text-[#a8aeff] hover:bg-[#1c1b3a] font-extrabold text-[11px] flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer disabled:opacity-40"
-                        >
-                          <Package className="w-3.5 h-3.5 text-purple-400" />
-                          Pack Criativos
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-1.5 pt-1">
-                        <button
-                          onClick={() => copyToClipboard(offer.landingPageUrl || offer.siteUrl, offer.id)}
-                          disabled={!offer.landingPageUrl && !offer.siteUrl}
-                          className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#13122b] border border-[#25244a] text-[10px] font-bold text-gray-300 hover:text-white flex items-center justify-center gap-1 transition-all disabled:opacity-40"
-                        >
-                          {copiedId === offer.id ? (
-                            <>
-                              <Check className="w-3 h-3 text-emerald-400" /> Copiado!
-                            </>
-                          ) : (
-                            <>
-                              <Share2 className="w-3 h-3 text-[#6b76ff]" /> Copiar Link
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          onClick={() => setSelectedOffer(offer)}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#13122b] border border-[#25244a] text-[10px] font-bold text-gray-300 hover:text-white flex items-center gap-1 transition-all cursor-pointer"
-                        >
-                          <Maximize2 className="w-3 h-3 text-[#6b76ff]" /> Detalhes
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                    offer={offer}
+                    posterSrc={mediaSrc(offer.posterKey)}
+                    favorite={favorites.has(offer.id)}
+                    onToggleFavorite={() => toggleFavorite(offer.id)}
+                    onOpen={() => setSelectedOffer(offer)}
+                  />
                 ))}
               </div>
-            </div>
+            </>
           )}
 
-          {/* TAB 2: MINHA CONTA */}
+          {/* MINHA CONTA */}
           {activeTab === 'profile' && (
-            <div className="bg-[#0b0a1f] border border-[#25244a] rounded-3xl p-5 sm:p-8 space-y-6 shadow-2xl">
+            <div className="max-w-3xl bg-[#0b0a1f] border border-[#25244a] rounded-3xl p-5 sm:p-8 space-y-6 shadow-2xl">
               <div className="flex items-center gap-4 sm:gap-5 border-b border-[#25244a] pb-6">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-2xl bg-gradient-to-br from-[#bc060f] to-[#3e4be1] p-0.5 shadow-lg">
                   <div className="w-full h-full bg-[#010013] rounded-[14px] flex items-center justify-center text-[#a8aeff] font-extrabold text-xl">
@@ -450,65 +380,58 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                     <ShieldCheck className="w-4 h-4 text-[#6b76ff]" />
                     Administrador — acesso total, sem assinatura
                   </span>
-                  <span className="text-[11px] text-gray-400 block mt-1">
-                    Você está vendo a área de membros como os clientes a veem.
-                  </span>
+                  <span className="text-[11px] text-gray-400 block mt-1">Você está vendo a área de membros como os clientes a veem.</span>
                 </div>
               ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
-                      <span className="text-xs text-gray-400 block mb-1">Acesso</span>
-                      <span className="font-bold text-[#a8aeff] text-sm flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-[#6b76ff]" />
-                        Individual — 1 aparelho por vez
-                      </span>
-                    </div>
-
-                    <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
-                      <span className="text-xs text-gray-400 block mb-1">Status da assinatura</span>
-                      <span className="font-bold text-emerald-400 text-sm flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4" />
-                        {subscription?.cancel_at_period_end ? 'Ativa — renovação cancelada' : 'Ativa'}
-                      </span>
-                      {subscription?.current_period_end && (
-                        <span className="text-[11px] text-gray-400 block mt-1">
-                          Acesso pago até {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
-                        </span>
-                      )}
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
+                    <span className="text-xs text-gray-400 block mb-1">Acesso</span>
+                    <span className="font-bold text-[#a8aeff] text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#6b76ff]" />
+                      Individual — 1 aparelho por vez
+                    </span>
                   </div>
-                </>
+                  <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
+                    <span className="text-xs text-gray-400 block mb-1">Status da assinatura</span>
+                    <span className="font-bold text-emerald-400 text-sm flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4" />
+                      {subscription?.cancel_at_period_end ? 'Ativa — renovação cancelada' : 'Ativa'}
+                    </span>
+                    {subscription?.current_period_end && (
+                      <span className="text-[11px] text-gray-400 block mt-1">
+                        Acesso pago até {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
 
               {/* CANCELAR / GERENCIAR (o admin vê como prévia do que o cliente vê) */}
               <div className="p-6 rounded-3xl bg-[#13122b]/80 border border-[#25244a] space-y-4">
-                    {isAdmin && (
-                      <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#6b76ff]/15 text-[#a8aeff]">
-                        Prévia — é assim que o cliente vê
-                      </span>
-                    )}
-                    <div>
-                      <h4 className="font-extrabold text-base text-white">Cancelar ou gerenciar assinatura</h4>
-                      <p className="text-xs text-gray-400 mt-1">
-                        A assinatura é feita pela Lastlink no e-mail <strong className="text-gray-200">{userEmail}</strong>. Ao cancelar, você continua com acesso até o fim do período já pago.
-                      </p>
-                    </div>
-
-                    <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
-                      <li>Entre na Lastlink com o e-mail <strong className="text-gray-100">{userEmail}</strong></li>
-                      <li>Abra <strong className="text-gray-100">Minhas compras</strong> e encontre o Escala Swipe</li>
-                      <li>Clique em <strong className="text-gray-100">"..."</strong> → <strong className="text-gray-100">Detalhes da compra</strong></li>
-                      <li>Clique em <strong className="text-gray-100">Cancelar assinatura</strong></li>
-                    </ol>
-
-                    <button
-                      onClick={openManageSubscriptionPage}
-                      className="px-5 py-2.5 rounded-full bg-[#13122b] border border-[#25244a] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5 text-[#6b76ff]" />
-                      Abrir minha conta na Lastlink
-                    </button>
+                {isAdmin && (
+                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#6b76ff]/15 text-[#a8aeff]">
+                    Prévia — é assim que o cliente vê
+                  </span>
+                )}
+                <div>
+                  <h4 className="font-extrabold text-base text-white">Cancelar ou gerenciar assinatura</h4>
+                  <p className="text-xs text-gray-400 mt-1">
+                    A assinatura é feita pela Lastlink no e-mail <strong className="text-gray-200">{userEmail}</strong>. Ao cancelar, você continua com acesso até o fim do período já pago.
+                  </p>
+                </div>
+                <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
+                  <li>Entre na Lastlink com o e-mail <strong className="text-gray-100">{userEmail}</strong></li>
+                  <li>Abra <strong className="text-gray-100">Minhas compras</strong> e encontre o Escala Swipe</li>
+                  <li>Clique em <strong className="text-gray-100">"..."</strong> → <strong className="text-gray-100">Detalhes da compra</strong></li>
+                  <li>Clique em <strong className="text-gray-100">Cancelar assinatura</strong></li>
+                </ol>
+                <button
+                  onClick={openManageSubscriptionPage}
+                  className="px-5 py-2.5 rounded-full bg-[#13122b] border border-[#25244a] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-[#6b76ff]" />
+                  Abrir minha conta na Lastlink
+                </button>
               </div>
             </div>
           )}
@@ -517,43 +440,79 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
       {/* MODAL DETALHES DA OFERTA */}
       {selectedOffer && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0b0a1f] border border-[#25244a] rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 relative shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4" onClick={() => setSelectedOffer(null)}>
+          <div
+            className="bg-[#0b0a1f] border border-[#25244a] rounded-3xl max-w-3xl w-full max-h-[94vh] overflow-y-auto p-5 md:p-8 space-y-6 relative shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setSelectedOffer(null)}
-              className="absolute top-6 right-6 p-2 rounded-xl bg-[#13122b] border border-[#25244a] text-gray-400 hover:text-white transition-all cursor-pointer"
+              className="absolute top-5 right-5 p-2 rounded-xl bg-[#13122b] border border-[#25244a] text-gray-400 hover:text-white transition-all cursor-pointer"
+              aria-label="Fechar"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <span className="px-3 py-1 rounded-full bg-[#13122b] border border-[#25244a] text-xs font-bold text-[#a8aeff] inline-block">
-              {selectedOffer.category}
-            </span>
-
-            <h2 className="font-extrabold text-2xl text-white pr-12">{selectedOffer.name}</h2>
+            <div className="space-y-2 pr-12">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                {selectedOffer.category}
+              </span>
+              <h2 className="font-extrabold text-xl md:text-2xl text-white">{selectedOffer.name}</h2>
+              <div className="flex flex-wrap gap-1.5 text-[11px] text-gray-300">
+                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex items-center gap-1">
+                  {selectedOffer.network === 'Facebook' ? <Facebook className="w-3 h-3 text-[#4f8cff]" /> : <Globe className="w-3 h-3" />} {selectedOffer.network}
+                </span>
+                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex items-center gap-1"><Layers className="w-3 h-3" /> {selectedOffer.structure}</span>
+                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex items-center gap-1"><Package className="w-3 h-3" /> {selectedOffer.productType}</span>
+                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex items-center gap-1"><Languages className="w-3 h-3" /> {selectedOffer.language}</span>
+                <span className="px-2 py-1 rounded-md bg-white/5 border border-white/10">Rodando há {formatAge(sinceDate(selectedOffer))}</span>
+              </div>
+            </div>
 
             {mediaSrc(selectedOffer.vslKey) && (
               <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-[#25244a]">
-                <video
-                  controls
-                  poster={mediaSrc(selectedOffer.posterKey) || undefined}
-                  className="w-full h-full object-contain"
-                  src={mediaSrc(selectedOffer.vslKey)}
-                />
+                <video controls poster={mediaSrc(selectedOffer.posterKey) || undefined} className="w-full h-full object-contain" src={mediaSrc(selectedOffer.vslKey)} />
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => handleDownload(selectedOffer.vslKey)}
-                disabled={!selectedOffer.vslKey}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg cursor-pointer disabled:opacity-40"
+                disabled={!selectedOffer.vslKey || downloadingKey === selectedOffer.vslKey}
+                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-xs flex items-center gap-1.5 shadow-lg cursor-pointer disabled:opacity-40"
               >
                 <Download className="w-4 h-4" /> Baixar VSL ({selectedOffer.vslResolution})
               </button>
+              {selectedOffer.creativeKey && (
+                <button
+                  onClick={() => handleDownload(selectedOffer.creativeKey)}
+                  disabled={downloadingKey === selectedOffer.creativeKey}
+                  className="px-5 py-2.5 rounded-full bg-white/5 border border-white/15 text-gray-100 font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  <Package className="w-4 h-4" /> Baixar pack de criativos
+                </button>
+              )}
+              {(selectedOffer.landingPageUrl || selectedOffer.siteUrl) && (
+                <button
+                  onClick={() => copyToClipboard(selectedOffer.landingPageUrl || selectedOffer.siteUrl, selectedOffer.id)}
+                  className="px-4 py-2.5 rounded-full bg-white/5 border border-white/15 text-gray-200 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  {copiedId === selectedOffer.id ? <><Check className="w-4 h-4 text-emerald-400" /> Copiado!</> : <><Share2 className="w-4 h-4" /> Copiar link</>}
+                </button>
+              )}
+              <button
+                onClick={() => toggleFavorite(selectedOffer.id)}
+                className={`px-4 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
+                  favorites.has(selectedOffer.id) ? 'bg-amber-400/15 border-amber-400/40 text-amber-200' : 'bg-white/5 border-white/15 text-gray-200'
+                }`}
+              >
+                <Star className="w-4 h-4" fill={favorites.has(selectedOffer.id) ? 'currentColor' : 'none'} />
+                {favorites.has(selectedOffer.id) ? 'Favoritada' : 'Favoritar'}
+              </button>
             </div>
 
-            <p className="text-sm text-gray-300 leading-relaxed">{selectedOffer.description}</p>
+            {selectedOffer.description && <p className="text-sm text-gray-300 leading-relaxed">{selectedOffer.description}</p>}
 
             {/* GRÁFICO DE ESCALA */}
             <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] space-y-3">
@@ -600,34 +559,17 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
             <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-[#25244a]">
               {selectedOffer.siteUrl && (
-                <a
-                  href={selectedOffer.siteUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2"
-                >
+                <a href={selectedOffer.siteUrl} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2">
                   <ExternalLink className="w-4 h-4 text-[#6b76ff]" /> Site Oficial
                 </a>
               )}
-
               {selectedOffer.landingPageUrl && (
-                <a
-                  href={selectedOffer.landingPageUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2"
-                >
+                <a href={selectedOffer.landingPageUrl} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2">
                   <FileText className="w-4 h-4 text-blue-400" /> Landing Page
                 </a>
               )}
-
               {selectedOffer.adsLibraryUrl && (
-                <a
-                  href={selectedOffer.adsLibraryUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2"
-                >
+                <a href={selectedOffer.adsLibraryUrl} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-xs text-gray-200 font-semibold hover:text-[#a8aeff] flex items-center gap-2">
                   <Share2 className="w-4 h-4 text-purple-400" /> Biblioteca de Anúncios (Meta)
                 </a>
               )}

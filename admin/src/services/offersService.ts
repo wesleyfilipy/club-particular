@@ -34,8 +34,19 @@ export interface OfferItem {
   siteUrl: string;
   landingPageUrl: string;
   adsLibraryUrl: string;
+  // Dados usados nos filtros da área de membros
+  network: string; // rede de tráfego (Facebook, TikTok...)
+  structure: string; // VSL, TSL, Quiz...
+  productType: string; // Infoproduto, Nutracêutico...
+  language: string; // idioma da oferta
+  startedAt: string; // AAAA-MM-DD: desde quando a oferta está rodando
   createdAt?: string; // data de cadastro (preenchida pelo Supabase)
 }
+
+export const NETWORKS = ['Facebook', 'Instagram', 'TikTok', 'Google', 'YouTube', 'Kwai'];
+export const STRUCTURES = ['VSL', 'TSL', 'Quiz', 'Advertorial', 'Lead', 'Webinar'];
+export const PRODUCT_TYPES = ['Infoproduto', 'Nutracêutico', 'Físico', 'Software', 'Serviço'];
+export const LANGUAGES = ['Português', 'English', 'Español', 'Français', 'Deutsch', 'Italiano'];
 
 export type OfferInput = Omit<OfferItem, 'id'>;
 
@@ -59,10 +70,15 @@ const fromRow = (item: any): OfferItem => ({
   siteUrl: item.official_site_url || '',
   landingPageUrl: item.landing_page_url || '',
   adsLibraryUrl: item.facebook_ads_library_url || '',
+  network: item.traffic_network || 'Facebook',
+  structure: item.structure || 'VSL',
+  productType: item.product_type || 'Infoproduto',
+  language: item.language || 'Português',
+  startedAt: item.started_at || '',
   createdAt: item.created_at,
 });
 
-const toRow = (offer: OfferInput) => ({
+const toLegacyRow = (offer: OfferInput) => ({
   name: offer.name,
   category: offer.category,
   commission: offer.commission,
@@ -81,6 +97,19 @@ const toRow = (offer: OfferInput) => ({
   facebook_ads_library_url: offer.adsLibraryUrl || null,
 });
 
+const toRow = (offer: OfferInput) => ({
+  ...toLegacyRow(offer),
+  traffic_network: offer.network,
+  structure: offer.structure,
+  product_type: offer.productType,
+  language: offer.language,
+  started_at: offer.startedAt || null,
+});
+
+// Coluna inexistente: o SQL painel_ofertas.sql ainda não foi rodado -> salva sem os campos novos
+const isMissingColumn = (error: { code?: string; message?: string } | null) =>
+  !!error && (error.code === 'PGRST204' || /column/i.test(error.message || ''));
+
 /** Ofertas salvas no Supabase (o RLS só libera para assinantes ativos e admins) */
 export const fetchOffersFromSupabase = async (): Promise<OfferItem[]> => {
   const { data, error } = await supabase.from('es_offers').select('*').order('created_at', { ascending: false });
@@ -92,18 +121,38 @@ export const fetchOffersFromSupabase = async (): Promise<OfferItem[]> => {
 };
 
 export const createOffer = async (offer: OfferInput): Promise<OfferItem> => {
-  const { data, error } = await supabase.from('es_offers').insert([toRow(offer)]).select('*').single();
+  let { data, error } = await supabase.from('es_offers').insert([toRow(offer)]).select('*').single();
+  if (isMissingColumn(error)) ({ data, error } = await supabase.from('es_offers').insert([toLegacyRow(offer)]).select('*').single());
   if (error) throw new Error(error.message);
   return fromRow(data);
 };
 
 export const updateOffer = async (id: string, offer: OfferInput): Promise<OfferItem> => {
-  const { data, error } = await supabase.from('es_offers').update(toRow(offer)).eq('id', id).select('*').single();
+  let { data, error } = await supabase.from('es_offers').update(toRow(offer)).eq('id', id).select('*').single();
+  if (isMissingColumn(error)) ({ data, error } = await supabase.from('es_offers').update(toLegacyRow(offer)).eq('id', id).select('*').single());
   if (error) throw new Error(error.message);
   return fromRow(data);
 };
 
 export const deleteOffer = async (id: string): Promise<void> => {
   const { error } = await supabase.from('es_offers').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+// ---------------- Favoritos do membro ----------------
+
+export const fetchFavoriteIds = async (): Promise<Set<string>> => {
+  const { data, error } = await supabase.from('es_favorites').select('offer_id');
+  if (error) return new Set();
+  return new Set((data || []).map((f: any) => f.offer_id));
+};
+
+export const setFavorite = async (offerId: string, favorite: boolean): Promise<void> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+  if (!userId) return;
+  const { error } = favorite
+    ? await supabase.from('es_favorites').upsert({ user_id: userId, offer_id: offerId })
+    : await supabase.from('es_favorites').delete().eq('user_id', userId).eq('offer_id', offerId);
   if (error) throw new Error(error.message);
 };

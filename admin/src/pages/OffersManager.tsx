@@ -11,6 +11,10 @@ import {
   updateOffer,
   deleteOffer,
   isImageCreative,
+  NETWORKS,
+  STRUCTURES,
+  PRODUCT_TYPES,
+  LANGUAGES,
 } from '../services/offersService';
 import { ScaleChart } from '../components/ScaleChart';
 
@@ -21,6 +25,16 @@ const CATEGORIES = [
   'Relacionamento & Conquista',
   'Investimentos & Cripto',
   'E-commerce & Dropshipping',
+  'Disfunção Erétil',
+  'Rejuvenescimento',
+  'Visão',
+  'Memória & Alzheimer',
+  'Diabetes',
+  'Dores & Articulações',
+  'Beleza & Cabelo',
+  'Espiritualidade',
+  'Pets',
+  'Outros',
 ];
 
 const emptyForm = (): OfferInput => ({
@@ -40,6 +54,11 @@ const emptyForm = (): OfferInput => ({
   siteUrl: '',
   landingPageUrl: '',
   adsLibraryUrl: '',
+  network: NETWORKS[0],
+  structure: STRUCTURES[0],
+  productType: PRODUCT_TYPES[0],
+  language: LANGUAGES[0],
+  startedAt: '',
 });
 
 const formatSize = (bytes: number) =>
@@ -472,7 +491,7 @@ export const OffersManager: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-300 mb-1 font-semibold">Categoria</label>
+                  <label className="block text-gray-300 mb-1 font-semibold">Nicho</label>
                   <select
                     className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                     value={formData.category}
@@ -494,6 +513,38 @@ export const OffersManager: React.FC = () => {
                     <option>1080p Full HD</option>
                     <option>720p HD</option>
                   </select>
+                </div>
+              </div>
+
+              {/* DADOS USADOS NOS FILTROS DA ÁREA DE MEMBROS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                {[
+                  { label: 'Rede de tráfego', key: 'network' as const, options: NETWORKS },
+                  { label: 'Estrutura', key: 'structure' as const, options: STRUCTURES },
+                  { label: 'Tipo de produto', key: 'productType' as const, options: PRODUCT_TYPES },
+                  { label: 'Idioma', key: 'language' as const, options: LANGUAGES },
+                ].map((field) => (
+                  <div key={field.key}>
+                    <label className="block text-gray-300 mb-1 font-semibold text-xs">{field.label}</label>
+                    <select
+                      className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-3 py-2.5 text-white focus:border-[#6b76ff] outline-none text-xs"
+                      value={formData[field.key]}
+                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                    >
+                      {field.options.map((o) => (
+                        <option key={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-gray-300 mb-1 font-semibold text-xs">Rodando desde</label>
+                  <input
+                    type="date"
+                    className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-3 py-2 text-white focus:border-[#6b76ff] outline-none text-xs"
+                    value={formData.startedAt}
+                    onChange={(e) => setFormData({ ...formData, startedAt: e.target.value })}
+                  />
                 </div>
               </div>
 
