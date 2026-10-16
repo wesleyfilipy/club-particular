@@ -120,6 +120,20 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
   const lastAds = (offer: OfferItem) =>
     offer.dailyScale.length > 0 ? offer.dailyScale[offer.dailyScale.length - 1].ads : null;
 
+  // Crescimento de anúncios ativos nos últimos 7 registros do gráfico de escala
+  const growthOf = (offer: OfferItem) => {
+    const pts = offer.dailyScale.slice(-7);
+    return pts.length >= 2 ? pts[pts.length - 1].ads - pts[0].ads : 0;
+  };
+
+  const newCount = offers.filter(isNew).length;
+  const scalingCount = offers.filter((o) => growthOf(o) > 0).length;
+  const trending = offers
+    .map((offer) => ({ offer, growth: growthOf(offer) }))
+    .filter((t) => t.growth > 0)
+    .sort((a, b) => b.growth - a.growth)
+    .slice(0, 3);
+
   return (
     <div className="min-h-screen bg-[#010013] text-white flex flex-col font-sans selection:bg-[#6b76ff] selection:text-white">
       {/* HEADER PRINCIPAL */}
@@ -205,39 +219,56 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
           {/* TAB 1: OFERTAS */}
           {activeTab === 'offers' && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-br from-[#0b0a1f] via-[#13122b] to-[#0b0a1f] border border-[#6b76ff]/50 p-6 md:p-8 rounded-3xl space-y-5 shadow-2xl relative overflow-hidden">
-                <div className="space-y-2">
-                  <span className="px-3 py-1 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff] text-[10px] font-extrabold text-[#a8aeff] uppercase tracking-widest inline-flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#6b76ff]" />
-                    Portal de Alta Performance
-                  </span>
-                  <h2 className="font-extrabold text-2xl md:text-3xl text-white gold-text-gradient">Ofertas Escaladas</h2>
+              {/* RESUMO DAS OFERTAS ESCALADAS */}
+              <div className="glass rounded-[30px] p-6 md:p-8 space-y-6 relative overflow-hidden">
+                <div className="absolute inset-0 hero-glow opacity-60 pointer-events-none" />
+                <div className="relative space-y-2">
+                  <span className="section-tag">// ofertas escaladas</span>
+                  <h2 className="font-bold text-2xl md:text-3xl text-white">
+                    Ofertas que estão <span className="gold-text-gradient">escalando agora</span>
+                  </h2>
+                  <p className="text-sm text-gray-300 max-w-3xl">
+                    Acompanhe quantos anúncios cada oferta tem ativos por dia e modele as que mais crescem.
+                  </p>
                 </div>
 
-                <p className="text-sm text-gray-300 leading-relaxed max-w-4xl">
-                  Ofertas analisadas com VSL original, vídeos dos anúncios da Biblioteca do Meta, site oficial e o gráfico de escala diário — tudo num só lugar.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                <div className="relative grid grid-cols-3 gap-3">
                   {[
-                    'Vídeo VSL original (Full HD / 4K)',
-                    'Criativos (vídeos e imagens) da Biblioteca do Meta',
-                    'Gráfico de escala por dia',
-                    'Packs completos de criativos',
-                    'Site oficial e landing page',
-                    'Arquivos no Cloudflare R2',
-                  ].map((item) => (
-                    <div key={item} className="p-3 rounded-2xl bg-[#010013]/60 border border-[#25244a] text-xs text-gray-200 font-semibold flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>{item}</span>
+                    { label: 'Ofertas disponíveis', value: offers.length },
+                    { label: 'Novas esta semana', value: newCount },
+                    { label: 'Escalando agora', value: scalingCount },
+                  ].map((stat) => (
+                    <div key={stat.label} className="p-4 rounded-2xl bg-black/30 border border-white/10">
+                      <span className="block text-2xl md:text-3xl font-bold text-white">{stat.value}</span>
+                      <span className="block text-[11px] md:text-xs text-gray-400 mt-1">{stat.label}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-[#6b76ff]/10 border border-[#6b76ff]/30 text-xs font-semibold text-[#a8aeff] flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-[#6b76ff] shrink-0" />
-                  <span>Escolha a oferta, veja se ela está escalando, assista à VSL e baixe os materiais para começar suas campanhas.</span>
-                </div>
+                {trending.length > 0 && (
+                  <div className="relative space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#a8aeff] flex items-center gap-1.5">
+                      <Flame className="w-4 h-4" /> Em alta nos últimos 7 dias
+                    </h3>
+                    {trending.map(({ offer, growth }, i) => (
+                      <button
+                        key={offer.id}
+                        onClick={() => setSelectedOffer(offer)}
+                        className="w-full flex items-center gap-3 p-3 rounded-2xl bg-black/30 border border-white/10 hover:border-white/25 transition-all text-left cursor-pointer"
+                      >
+                        <span className="text-lg font-bold gold-text-gradient w-6 text-center">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="block text-sm font-semibold text-white truncate">{offer.name}</span>
+                          <span className="block text-[11px] text-gray-400 truncate">{offer.category}</span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="block text-sm font-bold text-white">{lastAds(offer)} anúncios</span>
+                          <span className="block text-[11px] font-semibold text-emerald-400">+{growth} em 7 dias</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* BUSCA */}
@@ -342,13 +373,6 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                         <h3 className="font-extrabold text-base text-white line-clamp-1 tracking-tight group-hover:text-[#a8aeff] transition-colors">
                           {offer.name}
                         </h3>
-
-                        {offer.commission && (
-                          <div className="p-2.5 rounded-xl bg-gradient-to-r from-[#13122b] to-[#010013] border border-[#6b76ff]/30 flex items-center justify-between">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase">Comissão:</span>
-                            <span className="font-extrabold text-xs text-[#a8aeff] tracking-wide">{offer.commission}</span>
-                          </div>
-                        )}
 
                         <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">{offer.description}</p>
                       </div>
@@ -498,12 +522,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
               </div>
             )}
 
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-[#13122b] to-[#010013] border border-[#6b76ff]/40 flex items-center justify-between gap-4">
-              <div>
-                <span className="text-xs text-gray-400 uppercase font-bold block">Comissão:</span>
-                <span className="font-extrabold text-lg text-[#a8aeff]">{selectedOffer.commission || '—'}</span>
-              </div>
-
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => handleDownload(selectedOffer.vslKey)}
                 disabled={!selectedOffer.vslKey}

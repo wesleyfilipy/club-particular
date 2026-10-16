@@ -200,10 +200,10 @@ export const OffersManager: React.FC = () => {
       setError('Preencha pelo menos uma oferta.');
       return;
     }
-    const invalid = filled.find((d) => !d.form.name.trim() || !d.form.commission.trim());
+    const invalid = filled.find((d) => !d.form.name.trim());
     if (invalid) {
       setActiveDraft(invalid.idx);
-      setError(`Oferta ${invalid.idx + 1}: preencha o nome e a comissão.`);
+      setError(`Oferta ${invalid.idx + 1}: preencha o nome da oferta.`);
       return;
     }
 
@@ -424,7 +424,7 @@ export const OffersManager: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-300 mb-1 font-semibold">Categoria</label>
                   <select
@@ -436,16 +436,6 @@ export const OffersManager: React.FC = () => {
                       <option key={c}>{c}</option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <label className="block text-gray-300 mb-1 font-semibold">Comissão</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 80% (R$ 180,00)"
-                    className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
-                    value={formData.commission}
-                    onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
-                  />
                 </div>
                 <div>
                   <label className="block text-gray-300 mb-1 font-semibold">Qualidade da VSL</label>
