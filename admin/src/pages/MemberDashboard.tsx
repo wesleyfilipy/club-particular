@@ -37,6 +37,7 @@ interface MemberDashboardProps {
 export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, userName, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'offers' | 'profile'>('offers');
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedOffer, setSelectedOffer] = useState<OfferItem | null>(null);
   const [offers, setOffers] = useState<OfferItem[]>([]);
@@ -101,11 +102,19 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // Categorias na ordem em que aparecem (as ofertas já vêm da mais nova para a mais antiga)
+  const categories = [...new Set(offers.map((o) => o.category))];
+
   const filteredOffers = offers.filter(
     (o) =>
-      o.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.category.toLowerCase().includes(searchTerm.toLowerCase())
+      (categoryFilter === 'all' || o.category === categoryFilter) &&
+      (o.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Selo "Nova" nas ofertas cadastradas nos últimos 7 dias
+  const isNew = (offer: OfferItem) =>
+    !!offer.createdAt && Date.now() - new Date(offer.createdAt).getTime() < 7 * 86400000;
 
   const lastAds = (offer: OfferItem) =>
     offer.dailyScale.length > 0 ? offer.dailyScale[offer.dailyScale.length - 1].ads : null;
@@ -249,6 +258,25 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                 </div>
               </div>
 
+              {/* FILTRO POR CATEGORIA */}
+              {categories.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {[{ id: 'all', label: `Todas (${offers.length})` }, ...categories.map((c) => ({ id: c, label: `${c} (${offers.filter((o) => o.category === c).length})` }))].map((chip) => (
+                    <button
+                      key={chip.id}
+                      onClick={() => setCategoryFilter(chip.id)}
+                      className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                        categoryFilter === chip.id
+                          ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-lg'
+                          : 'bg-white/5 border border-white/10 text-gray-300 hover:text-white'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {loadingOffers && (
                 <div className="p-8 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-[#6b76ff]" /> Carregando ofertas...
@@ -299,9 +327,16 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                       </div>
 
                       <div className="p-4 space-y-3">
-                        <span className="px-2.5 py-0.5 rounded-md bg-[#13122b] border border-[#25244a] text-[10px] font-bold text-[#a8aeff] inline-block truncate max-w-full">
-                          {offer.category}
-                        </span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-2.5 py-0.5 rounded-md bg-[#13122b] border border-[#25244a] text-[10px] font-bold text-[#a8aeff] truncate">
+                            {offer.category}
+                          </span>
+                          {isNew(offer) && (
+                            <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-[10px] font-extrabold text-white shrink-0">
+                              NOVA
+                            </span>
+                          )}
+                        </div>
 
                         <h3 className="font-extrabold text-base text-white line-clamp-1 tracking-tight group-hover:text-[#a8aeff] transition-colors">
                           {offer.name}

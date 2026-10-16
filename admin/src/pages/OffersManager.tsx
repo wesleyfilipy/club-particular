@@ -49,18 +49,41 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 type UploadSlot = 'vsl' | 'poster' | 'ads' | 'creative';
 
+// Quantas ofertas podem ser cadastradas de uma vez (uma por aba)
+const BATCH_SIZE = 3;
+
+interface Draft {
+  folder: string; // pasta da oferta no R2
+  form: OfferInput;
+}
+
+const newDraft = (n: number): Draft => ({ folder: `oferta-${Date.now()}-${n}`, form: emptyForm() });
+
+const hasContent = (f: OfferInput) =>
+  !!(f.name.trim() || f.vslKey || f.posterKey || f.creativeKey || f.adVideos.length || f.dailyScale.length);
+
 export const OffersManager: React.FC = () => {
   const [offersList, setOffersList] = useState<OfferItem[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [folder, setFolder] = useState('');
-  const [formData, setFormData] = useState<OfferInput>(emptyForm);
-  const [uploads, setUploads] = useState<Partial<Record<UploadSlot, number>>>({});
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [activeDraft, setActiveDraft] = useState(0);
+  // Uploads em andamento, por aba: "<aba>-<slot>" -> porcentagem
+  const [uploads, setUploads] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [scaleDate, setScaleDate] = useState(today());
   const [scaleAds, setScaleAds] = useState('');
+
+  const formData = drafts[activeDraft]?.form || emptyForm();
+
+  const updateDraft = (idx: number, updater: (prev: OfferInput) => OfferInput) =>
+    setDrafts((prev) => prev.map((d, i) => (i === idx ? { ...d, form: updater(d.form) } : d)));
+
+  // Edita a aba ativa
+  const setFormData = (next: OfferInput | ((prev: OfferInput) => OfferInput)) =>
+    updateDraft(activeDraft, typeof next === 'function' ? next : () => next);
 
   const loadOffers = async () => {
     setLoadingList(true);
@@ -74,8 +97,8 @@ export const OffersManager: React.FC = () => {
 
   const openCreate = () => {
     setEditingId(null);
-    setFolder(`oferta-${Date.now()}`);
-    setFormData(emptyForm());
+    setDrafts(Array.from({ length: BATCH_SIZE }, (_, i) => newDraft(i + 1)));
+    setActiveDraft(0);
     setError('');
     setShowModal(true);
   };
@@ -83,57 +106,64 @@ export const OffersManager: React.FC = () => {
   const openEdit = (offer: OfferItem) => {
     const { id, ...rest } = offer;
     setEditingId(id);
-    setFolder(id);
-    setFormData(rest);
+    setDrafts([{ folder: id, form: rest }]);
+    setActiveDraft(0);
     setError('');
     setShowModal(true);
   };
 
   const isUploading = Object.keys(uploads).length > 0;
+  const uploadingIn = (idx: number) => Object.keys(uploads).some((k) => k.startsWith(`${idx}-`));
 
-  // Envia um arquivo para offers/<pasta-da-oferta>/<subpasta>/<arquivo> no Cloudflare R2
-  const uploadFile = async (slot: UploadSlot, subfolder: string, file: File) => {
-    const keyPath = `offers/${folder}/${subfolder}/${Date.now()}-${slugify(file.name)}`;
+  // Envia um arquivo para offers/<pasta-da-oferta>/<subpasta>/<arquivo> no Cloudflare R2.
+  // O resultado vai para a aba onde o upload começou, mesmo que você troque de aba no meio.
+  const uploadFile = async (idx: number, slot: UploadSlot, subfolder: string, file: File) => {
+    const uploadId = `${idx}-${slot}`;
+    const keyPath = `offers/${drafts[idx].folder}/${subfolder}/${Date.now()}-${slugify(file.name)}`;
     setError('');
-    setUploads((prev) => ({ ...prev, [slot]: 0 }));
+    setUploads((prev) => ({ ...prev, [uploadId]: 0 }));
     try {
       await uploadToR2(file, keyPath, file.type || 'application/octet-stream', (percent) =>
-        setUploads((prev) => ({ ...prev, [slot]: percent }))
+        setUploads((prev) => ({ ...prev, [uploadId]: percent }))
       );
       return keyPath;
     } catch (err: any) {
-      setError(err.message || 'Erro no upload para o Cloudflare R2.');
+      setError(`Oferta ${idx + 1}: ${err.message || 'Erro no upload para o Cloudflare R2.'}`);
       return null;
     } finally {
       setUploads((prev) => {
         const next = { ...prev };
-        delete next[slot];
+        delete next[uploadId];
         return next;
       });
     }
   };
 
   const handleVslUpload = async (file: File) => {
-    const key = await uploadFile('vsl', 'vsl', file);
-    if (key) setFormData((prev) => ({ ...prev, vslKey: key, vslFileName: file.name }));
+    const idx = activeDraft;
+    const key = await uploadFile(idx, 'vsl', 'vsl', file);
+    if (key) updateDraft(idx, (prev) => ({ ...prev, vslKey: key, vslFileName: file.name }));
   };
 
   const handlePosterUpload = async (file: File) => {
-    const key = await uploadFile('poster', 'poster', file);
-    if (key) setFormData((prev) => ({ ...prev, posterKey: key }));
+    const idx = activeDraft;
+    const key = await uploadFile(idx, 'poster', 'poster', file);
+    if (key) updateDraft(idx, (prev) => ({ ...prev, posterKey: key }));
   };
 
   const handleAdVideosUpload = async (files: FileList) => {
+    const idx = activeDraft;
     for (const file of Array.from(files)) {
-      const key = await uploadFile('ads', 'ad-videos', file);
-      if (key) setFormData((prev) => ({ ...prev, adVideos: [...prev.adVideos, { key, name: file.name }] }));
+      const key = await uploadFile(idx, 'ads', 'ad-videos', file);
+      if (key) updateDraft(idx, (prev) => ({ ...prev, adVideos: [...prev.adVideos, { key, name: file.name }] }));
     }
   };
 
   const handleCreativeUpload = async (file: File) => {
-    const key = await uploadFile('creative', 'creatives', file);
+    const idx = activeDraft;
+    const key = await uploadFile(idx, 'creative', 'creatives', file);
     if (key) {
-      setFormData((prev) => ({
+      updateDraft(idx, (prev) => ({
         ...prev,
         creativeKey: key,
         creativeFileName: file.name,
@@ -160,22 +190,62 @@ export const OffersManager: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isUploading) return;
-    setSaving(true);
     setError('');
-    try {
-      if (editingId) {
-        const updated = await updateOffer(editingId, formData);
-        setOffersList((prev) => prev.map((o) => (o.id === editingId ? updated : o)));
-      } else {
-        const created = await createOffer(formData);
-        setOffersList((prev) => [created, ...prev]);
-      }
-      setShowModal(false);
-    } catch (err: any) {
-      setError(`Erro ao salvar no Supabase: ${err.message}`);
-    } finally {
-      setSaving(false);
+
+    // Abas preenchidas (as vazias são ignoradas)
+    const filled = drafts.map((d, i) => ({ ...d, idx: i })).filter((d) => hasContent(d.form));
+    if (filled.length === 0) {
+      setError('Preencha pelo menos uma oferta.');
+      return;
     }
+    const invalid = filled.find((d) => !d.form.name.trim() || !d.form.commission.trim());
+    if (invalid) {
+      setActiveDraft(invalid.idx);
+      setError(`Oferta ${invalid.idx + 1}: preencha o nome e a comissão.`);
+      return;
+    }
+
+    setSaving(true);
+
+    if (editingId) {
+      try {
+        const updated = await updateOffer(editingId, drafts[0].form);
+        setOffersList((prev) => prev.map((o) => (o.id === editingId ? updated : o)));
+        setShowModal(false);
+      } catch (err: any) {
+        setError(`Erro ao salvar no Supabase: ${err.message}`);
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // Salva da última para a primeira: a lista mostra a mais nova primeiro,
+    // então para os membros as ofertas aparecem na ordem 1, 2, 3.
+    const created: OfferItem[] = [];
+    const savedIdx = new Set<number>();
+    let failure = '';
+    for (const d of [...filled].reverse()) {
+      try {
+        created.unshift(await createOffer(d.form));
+        savedIdx.add(d.idx);
+      } catch (err: any) {
+        setActiveDraft(d.idx);
+        failure = `Oferta ${d.idx + 1}: ${err.message}`;
+        break;
+      }
+    }
+
+    setOffersList((prev) => [...created, ...prev]);
+    setSaving(false);
+
+    if (failure) {
+      // Limpa as abas já salvas para não duplicar ao tentar de novo
+      setDrafts((prev) => prev.map((d, i) => (savedIdx.has(i) ? newDraft(i + 1) : d)));
+      setError(`Erro ao salvar no Supabase. ${failure}`);
+      return;
+    }
+    setShowModal(false);
   };
 
   const handleDelete = async (offer: OfferItem) => {
@@ -188,8 +258,12 @@ export const OffersManager: React.FC = () => {
     }
   };
 
-  const uploadLabel = (slot: UploadSlot, idle: string) =>
-    uploads[slot] !== undefined ? `Enviando... ${uploads[slot]}%` : idle;
+  const uploadLabel = (slot: UploadSlot, idle: string) => {
+    const percent = uploads[`${activeDraft}-${slot}`];
+    return percent !== undefined ? `Enviando... ${percent}%` : idle;
+  };
+
+  const filledCount = drafts.filter((d) => hasContent(d.form)).length;
 
   return (
     <div className="space-y-6">
@@ -206,7 +280,7 @@ export const OffersManager: React.FC = () => {
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-sm shadow-lg shadow-[#6b76ff]/20 hover:opacity-95 transition-all cursor-pointer"
         >
           <Plus className="w-5 h-5" />
-          Cadastrar Nova Oferta
+          Cadastrar Novas Ofertas
         </button>
       </div>
 
@@ -286,15 +360,48 @@ export const OffersManager: React.FC = () => {
           <div className="bg-[#0b0a1f] border border-[#6b76ff] w-full max-w-3xl rounded-2xl p-6 space-y-6 max-h-[92vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#25244a] pb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                {editingId ? 'Editar Oferta' : 'Cadastrar Nova Oferta'}
+                {editingId ? 'Editar Oferta' : `Cadastrar Novas Ofertas (até ${BATCH_SIZE})`}
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#6b76ff]/10 text-[#a8aeff] border border-[#6b76ff]">
                   Bucket: {R2_BUCKET}
                 </span>
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white cursor-pointer">
+              <button
+                onClick={() => {
+                  if (isUploading && !confirm('Há uploads em andamento. Fechar agora cancela o cadastro. Fechar mesmo assim?')) return;
+                  setShowModal(false);
+                }}
+                className="text-gray-400 hover:text-white cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* ABAS: uma oferta por aba */}
+            {!editingId && (
+              <div className="flex gap-2 p-1 rounded-full bg-white/5 border border-white/10">
+                {drafts.map((d, i) => {
+                  const active = i === activeDraft;
+                  const busy = uploadingIn(i);
+                  return (
+                    <button
+                      key={d.folder}
+                      type="button"
+                      onClick={() => { setActiveDraft(i); setScaleAds(''); }}
+                      className={`flex-1 px-3 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        active ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-lg' : 'text-gray-300 hover:text-white'
+                      }`}
+                    >
+                      {busy ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : hasContent(d.form) ? (
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      ) : null}
+                      <span className="truncate">{d.form.name.trim() || `Oferta ${i + 1}`}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {error && (
               <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-400">
@@ -308,7 +415,6 @@ export const OffersManager: React.FC = () => {
                 <label className="block text-gray-300 mb-1 font-semibold">Nome da Oferta</label>
                 <input
                   type="text"
-                  required
                   placeholder="Ex: Oferta Especial VSL 4K"
                   className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                   value={formData.name}
@@ -333,7 +439,6 @@ export const OffersManager: React.FC = () => {
                   <label className="block text-gray-300 mb-1 font-semibold">Comissão</label>
                   <input
                     type="text"
-                    required
                     placeholder="Ex: 80% (R$ 180,00)"
                     className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
                     value={formData.commission}
@@ -583,7 +688,7 @@ export const OffersManager: React.FC = () => {
                   className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold shadow-lg cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isUploading ? 'Aguarde o upload...' : 'Salvar Oferta'}
+                  {isUploading ? 'Aguarde os uploads...' : editingId ? 'Salvar Oferta' : `Salvar ${filledCount || ''} oferta${filledCount === 1 ? '' : 's'}`}
                 </button>
               </div>
             </form>

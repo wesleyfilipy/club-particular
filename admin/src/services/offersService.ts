@@ -28,6 +28,7 @@ export interface OfferItem {
   siteUrl: string;
   landingPageUrl: string;
   adsLibraryUrl: string;
+  createdAt?: string; // data de cadastro (preenchida pelo Supabase)
 }
 
 export type OfferInput = Omit<OfferItem, 'id'>;
@@ -52,6 +53,7 @@ const fromRow = (item: any): OfferItem => ({
   siteUrl: item.official_site_url || '',
   landingPageUrl: item.landing_page_url || '',
   adsLibraryUrl: item.facebook_ads_library_url || '',
+  createdAt: item.created_at,
 });
 
 const toRow = (offer: OfferInput) => ({
