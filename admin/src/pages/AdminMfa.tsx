@@ -71,13 +71,13 @@ export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout, onCanc
   };
 
   return (
-    <div className="min-h-screen bg-[#010013] text-white flex items-center justify-center p-4 hero-glow">
-      <div className="bg-[#0b0a1f] border border-white/10 rounded-[30px] max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl">
+    <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-4 hero-glow">
+      <div className="bg-[#0e0d0b] border border-white/10 rounded-xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl">
         <Logo className="h-10 mx-auto" />
 
         <div className="text-center space-y-1">
           <h1 className="text-xl font-bold flex items-center justify-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#a8aeff]" /> Verificação do administrador
+            <ShieldCheck className="w-5 h-5 text-[#e8c766]" /> Verificação do administrador
           </h1>
           <p className="text-xs text-gray-400">
             {mode === 'enroll'
@@ -87,7 +87,7 @@ export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout, onCanc
         </div>
 
         {error && (
-          <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-300">
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-300">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -95,7 +95,7 @@ export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout, onCanc
 
         {mode === 'loading' && !error && (
           <div className="flex justify-center py-6">
-            <Loader2 className="w-6 h-6 animate-spin text-[#6b76ff]" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#d4af37]" />
           </div>
         )}
 
@@ -108,7 +108,7 @@ export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout, onCanc
               <li>No app, toque em <strong className="text-white">+</strong> e escaneie o QR code abaixo</li>
               <li>Digite o código de 6 dígitos que aparecer no app</li>
             </ol>
-            <div className="bg-white rounded-2xl p-3 w-48 h-48 mx-auto flex items-center justify-center">
+            <div className="bg-white rounded-lg p-3 w-48 h-48 mx-auto flex items-center justify-center">
               <img src={qrCode} alt="QR code para o app autenticador" className="w-full h-full" />
             </div>
             <p className="text-[11px] text-gray-400 text-center break-all">
@@ -130,7 +130,7 @@ export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout, onCanc
                 required
                 autoFocus
                 placeholder="000000"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl pl-11 pr-4 py-3 text-lg tracking-[0.4em] text-white placeholder-gray-600 focus:border-[#6b76ff] outline-none"
+                className="w-full bg-white/5 border border-white/10 rounded-lg pl-11 pr-4 py-3 text-lg tracking-[0.4em] text-white placeholder-gray-600 focus:border-[#d4af37] outline-none"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               />
@@ -138,7 +138,7 @@ export const AdminMfa: React.FC<AdminMfaProps> = ({ onVerified, onLogout, onCanc
             <button
               type="submit"
               disabled={busy || code.length !== 6}
-              className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold uppercase tracking-wide text-sm shadow-lg hover:opacity-90 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
+              className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black font-bold uppercase tracking-wide text-sm shadow-lg hover:opacity-90 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
             >
               {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : mode === 'enroll' ? 'Ativar e entrar' : 'Confirmar'}
             </button>

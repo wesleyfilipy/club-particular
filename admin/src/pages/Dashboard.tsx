@@ -85,9 +85,9 @@ export const Dashboard: React.FC = () => {
         <button
           onClick={loadDashboardData}
           disabled={loading}
-          className="px-4 py-2 rounded-xl bg-[#13122b] border border-[#25244a] text-gray-300 hover:text-white text-xs font-bold flex items-center gap-2 cursor-pointer"
+          className="px-4 py-2 rounded-xl bg-[#17150f] border border-[#2c2818] text-gray-300 hover:text-white text-xs font-bold flex items-center gap-2 cursor-pointer"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-[#6b76ff] ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-[#d4af37] ${loading ? 'animate-spin' : ''}`} />
           Atualizar Dados
         </button>
       </div>
@@ -99,16 +99,16 @@ export const Dashboard: React.FC = () => {
           return (
             <div
               key={idx}
-              className={`p-6 rounded-2xl border transition-all ${
+              className={`p-6 rounded-lg border transition-all ${
                 stat.isGold
-                  ? 'bg-gradient-to-br from-[#0b0a1f] to-[#13122b] border-[#6b76ff]'
-                  : 'bg-[#0b0a1f] border-[#25244a]'
+                  ? 'bg-gradient-to-br from-[#0e0d0b] to-[#17150f] border-[#d4af37]'
+                  : 'bg-[#0e0d0b] border-[#2c2818]'
               }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-semibold text-gray-400">{stat.title}</span>
-                <div className="w-10 h-10 rounded-xl bg-[#13122b] border border-[#25244a] flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-[#6b76ff]" />
+                <div className="w-10 h-10 rounded-xl bg-[#17150f] border border-[#2c2818] flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-[#d4af37]" />
                 </div>
               </div>
               <div className="text-2xl font-extrabold text-white mb-2">{stat.value}</div>
@@ -122,10 +122,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Per-Offer Analytics Breakdown */}
-      <div className="bg-[#0b0a1f] rounded-2xl border border-[#25244a] p-6 space-y-4">
+      <div className="bg-[#0e0d0b] rounded-lg border border-[#2c2818] p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Eye className="w-5 h-5 text-[#6b76ff]" />
+            <Eye className="w-5 h-5 text-[#d4af37]" />
             Ofertas & Mídias Disponíveis no Banco
           </h3>
           <span className="text-xs text-gray-400">Sincronizado via Supabase</span>
@@ -133,7 +133,7 @@ export const Dashboard: React.FC = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-300">
-            <thead className="bg-[#13122b] text-xs font-bold text-[#a8aeff] uppercase border-b border-[#25244a]">
+            <thead className="bg-[#17150f] text-xs font-bold text-[#e8c766] uppercase border-b border-[#2c2818]">
               <tr>
                 <th className="p-3 md:p-4">Oferta</th>
                 <th className="p-3 md:p-4 hidden md:table-cell">Categoria</th>
@@ -143,14 +143,14 @@ export const Dashboard: React.FC = () => {
                 <th className="p-3 md:p-4">Anúncios ativos</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#25244a]">
+            <tbody className="divide-y divide-[#2c2818]">
               {offersList.map((item, idx) => (
-                <tr key={idx} className="hover:bg-[#13122b]/50 transition-all">
+                <tr key={idx} className="hover:bg-[#17150f]/50 transition-all">
                   <td className="p-3 md:p-4 font-bold text-white">
                     {item.name}
                   </td>
                   <td className="p-3 md:p-4 text-gray-300 font-semibold hidden md:table-cell">{item.category}</td>
-                  <td className="p-3 md:p-4 font-bold text-[#a8aeff] hidden md:table-cell">{item.vslResolution}</td>
+                  <td className="p-3 md:p-4 font-bold text-[#e8c766] hidden md:table-cell">{item.vslResolution}</td>
                   <td className="p-3 md:p-4 font-mono text-xs text-emerald-400 hidden md:table-cell">{item.vslFileName || '—'}</td>
                   <td className="p-3 md:p-4 text-purple-400 font-mono text-xs hidden md:table-cell">{item.adVideos.length}</td>
                   <td className="p-3 md:p-4 text-xs font-bold text-white">
@@ -164,16 +164,16 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent System Activity */}
-      <div className="bg-[#0b0a1f] rounded-2xl border border-[#25244a] p-6">
+      <div className="bg-[#0e0d0b] rounded-lg border border-[#2c2818] p-6">
         <h3 className="text-lg font-bold text-white mb-4">Contas cadastradas (1 por e-mail)</h3>
         <div className="space-y-3">
           {usersList.length === 0 && <p className="text-xs text-gray-400">Nenhuma conta cadastrada ainda.</p>}
           {usersList.map((userItem) => {
             const isActive = activeUserIds.has(userItem.id);
             return (
-              <div key={userItem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 rounded-xl bg-[#13122b] border border-[#25244a]">
+              <div key={userItem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 rounded-xl bg-[#17150f] border border-[#2c2818]">
                 <div>
-                  <span className="font-bold text-sm text-[#a8aeff]">{userItem.full_name || userItem.email}</span>
+                  <span className="font-bold text-sm text-[#e8c766]">{userItem.full_name || userItem.email}</span>
                   <p className="text-xs text-gray-300 break-all">{userItem.email}</p>
                 </div>
                 <span className={`text-xs font-bold ${isActive ? 'text-emerald-400' : 'text-gray-500'}`}>

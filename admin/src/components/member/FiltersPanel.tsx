@@ -23,7 +23,7 @@ const LISTS: { key: ListKey; label: string; icon: React.ElementType; field: (o: 
 ];
 
 const BINS = 24;
-const inputClass = 'w-full min-w-0 bg-[#010013] border border-[#25244a] rounded-lg px-3 py-2 text-xs text-white focus:border-[#6b76ff] outline-none';
+const inputClass = 'w-full min-w-0 bg-[#050505] border border-[#2c2818] rounded-lg px-3 py-2 text-xs text-white focus:border-[#d4af37] outline-none';
 
 export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onChange, onClose }) => {
   const [open, setOpen] = useState<ListKey | null>(null);
@@ -44,7 +44,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
   };
 
   return (
-    <div className="fixed inset-x-3 top-20 md:absolute md:inset-x-auto md:left-0 md:top-full md:mt-2 z-40 md:w-80 max-h-[75vh] overflow-y-auto rounded-2xl bg-[#0b0a1f] border border-[#25244a] shadow-2xl p-4 space-y-5">
+    <div className="fixed inset-x-3 top-20 md:absolute md:inset-x-auto md:left-0 md:top-full md:mt-2 z-40 md:w-80 max-h-[75vh] overflow-y-auto rounded-lg bg-[#0e0d0b] border border-[#2c2818] shadow-2xl p-4 space-y-5">
       <div className="flex items-center justify-between">
         <span className="text-sm font-bold">Filtros</span>
         <button onClick={onClose} className="p-1.5 rounded-full bg-white/5 text-gray-300 hover:text-white cursor-pointer" aria-label="Fechar filtros">
@@ -55,7 +55,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
       {/* ESCALANDO */}
       <button
         onClick={() => set({ scalingOnly: !filters.scalingOnly })}
-        className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer"
+        className="w-full flex items-center justify-between gap-3 p-3 rounded-md bg-white/5 border border-white/10 cursor-pointer"
         aria-pressed={filters.scalingOnly}
       >
         <span className="flex items-center gap-2 text-left">
@@ -65,7 +65,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
             <span className="block text-[10px] text-gray-400">Mais anúncios que há 7 dias</span>
           </span>
         </span>
-        <span className={`w-9 h-5 rounded-full p-0.5 transition-colors ${filters.scalingOnly ? 'bg-[#3e4be1]' : 'bg-white/15'}`}>
+        <span className={`w-9 h-5 rounded-full p-0.5 transition-colors ${filters.scalingOnly ? 'bg-[#d4af37]' : 'bg-white/15'}`}>
           <span className={`block w-4 h-4 rounded-full bg-white transition-transform ${filters.scalingOnly ? 'translate-x-4' : ''}`} />
         </span>
       </button>
@@ -80,7 +80,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
             return (
               <span
                 key={i}
-                className={`flex-1 rounded-t-sm ${inRange ? 'bg-[#4f5bff]' : 'bg-white/15'}`}
+                className={`flex-1 rounded-t-sm ${inRange ? 'bg-[#d4af37]' : 'bg-white/15'}`}
                 style={{ height: `${count ? Math.max(12, (count / peak) * 100) : 6}%` }}
               />
             );
@@ -119,9 +119,9 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
                 aria-expanded={open === key}
               >
                 <span className="flex items-center gap-2">
-                  <Icon className="w-4 h-4 text-[#a8aeff]" />
+                  <Icon className="w-4 h-4 text-[#e8c766]" />
                   {label}
-                  {selected > 0 && <span className="px-1.5 rounded-full bg-[#3e4be1] text-[10px]">{selected}</span>}
+                  {selected > 0 && <span className="px-1.5 rounded-full bg-[#d4af37] text-[10px] text-black font-bold">{selected}</span>}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open === key ? 'rotate-180' : ''}`} />
               </button>
@@ -134,11 +134,11 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
                       <button
                         key={value}
                         onClick={() => toggle(key, value)}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer ${on ? 'bg-[#3e4be1]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer ${on ? 'bg-[#d4af37]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
                       >
                         <span className="flex items-center gap-2">
-                          <span className={`w-4 h-4 rounded border flex items-center justify-center ${on ? 'bg-[#3e4be1] border-[#3e4be1]' : 'border-white/25'}`}>
-                            {on && <Check className="w-3 h-3" />}
+                          <span className={`w-4 h-4 rounded border flex items-center justify-center ${on ? 'bg-[#d4af37] border-[#d4af37]' : 'border-white/25'}`}>
+                            {on && <Check className="w-3 h-3 text-black" />}
                           </span>
                           {value}
                         </span>
@@ -157,7 +157,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
         <button onClick={() => onChange(emptyFilters())} className="flex-1 py-2.5 rounded-full border border-white/15 text-xs font-semibold text-gray-300 hover:text-white cursor-pointer">
           Limpar
         </button>
-        <button onClick={onClose} className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-xs font-bold cursor-pointer">
+        <button onClick={onClose} className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-xs font-bold text-black cursor-pointer">
           Ver ofertas
         </button>
       </div>

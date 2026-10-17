@@ -3,13 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --bg-dark: #010013;
-  --surface: #0b0a1f;
-  --surface-elevated: #13122b;
-  --accent-red: #bc060f;
-  --accent-blue: #3e4be1;
-  --accent-light: #a8aeff;
-  --border: #25244a;
+  --bg-dark: #050505;
+  --surface: #0e0d0b;
+  --surface-elevated: #17150f;
+  --gold: #d4af37;
+  --gold-light: #f6e27a;
+  --gold-dark: #a8801f;
+  --accent-light: #e8c766;
+  --border: #2c2818;
 }
 
 body {
@@ -19,49 +20,49 @@ body {
   font-family: 'Sora', sans-serif;
 }
 
-/* Degradê principal (vermelho -> azul) */
+/* Degradê principal (ouro) */
 .gold-gradient {
-  background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-blue) 100%);
+  background: linear-gradient(90deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
 }
 
-/* Texto com degradê: tons claros para ficar legível sobre o fundo escuro */
+/* Texto com degradê dourado */
 .gold-text-gradient {
-  background: linear-gradient(90deg, #ff4d57 0%, #8f98ff 100%);
+  background: linear-gradient(90deg, #fbeeb0 0%, #e8c766 40%, #c99a2e 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gold-border {
-  border-color: var(--accent-blue);
+  border-color: var(--gold);
 }
 
 .gold-shadow {
-  box-shadow: 0 4px 24px rgba(62, 75, 225, 0.25);
+  box-shadow: 0 4px 24px rgba(212, 175, 55, 0.25);
 }
 
 /* Cartão de vidro translúcido */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 175, 55, 0.18);
   backdrop-filter: blur(12px);
 }
 
-/* Etiqueta de seção no estilo "// recursos" */
+/* Etiqueta de seção */
 .section-tag {
   font-family: 'Sora', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
   color: var(--accent-light);
 }
 
 /* Brilho de fundo do hero */
 .hero-glow {
   background:
-    radial-gradient(600px 300px at 20% 0%, rgba(188, 6, 15, 0.35), transparent 70%),
-    radial-gradient(600px 300px at 80% 10%, rgba(62, 75, 225, 0.35), transparent 70%);
+    radial-gradient(700px 320px at 50% -10%, rgba(212, 175, 55, 0.28), transparent 70%),
+    radial-gradient(500px 260px at 90% 20%, rgba(168, 128, 31, 0.18), transparent 70%);
 }
 
 /* Custom Scrollbars */
@@ -80,5 +81,5 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-blue);
+  background: var(--gold);
 }

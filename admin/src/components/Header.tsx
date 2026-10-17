@@ -8,7 +8,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenMenu }) => {
   return (
-    <header className="h-16 bg-[#0b0a1f] border-b border-[#25244a] px-4 md:px-8 flex items-center justify-between gap-3 sticky top-0 z-30">
+    <header className="h-16 bg-[#0e0d0b] border-b border-[#2c2818] px-4 md:px-8 flex items-center justify-between gap-3 sticky top-0 z-30">
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onOpenMenu}
@@ -24,8 +24,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMenu }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff]/40 text-xs font-bold text-[#a8aeff] shrink-0">
-        <ShieldCheck className="w-4 h-4 text-[#6b76ff]" />
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/40 text-xs font-bold text-[#e8c766] shrink-0">
+        <ShieldCheck className="w-4 h-4 text-[#d4af37]" />
         <span className="hidden sm:inline">ADMINISTRADOR</span>
         <span className="sm:hidden">ADMIN</span>
       </div>

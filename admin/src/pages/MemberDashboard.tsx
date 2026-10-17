@@ -168,12 +168,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
   const navButton = (tab: Tab, label: string, Icon: React.ElementType, count?: number) => (
     <button
       onClick={() => goTo(tab)}
-      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all cursor-pointer ${
         activeTab === tab ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
       }`}
     >
       <span className="flex items-center gap-3">
-        <Icon className={`w-4 h-4 ${activeTab === tab ? 'text-[#a8aeff]' : ''}`} />
+        <Icon className={`w-4 h-4 ${activeTab === tab ? 'text-[#e8c766]' : ''}`} />
         {label}
       </span>
       {count !== undefined && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-300">{count}</span>}
@@ -181,11 +181,11 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
   );
 
   return (
-    <div className="flex min-h-screen bg-[#010013] text-white font-sans selection:bg-[#6b76ff] selection:text-white">
+    <div className="flex min-h-screen bg-[#050505] text-white font-sans selection:bg-[#d4af37] selection:text-black">
       {/* MENU LATERAL (gaveta no celular) */}
       {menuOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setMenuOpen(false)} />}
       <aside
-        className={`fixed md:sticky top-0 left-0 z-50 w-64 h-screen shrink-0 bg-[#0b0a1f] border-r border-[#25244a] flex flex-col transition-transform md:translate-x-0 ${
+        className={`fixed md:sticky top-0 left-0 z-50 w-64 h-screen shrink-0 bg-[#0e0d0b] border-r border-[#2c2818] flex flex-col transition-transform md:translate-x-0 ${
           menuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -197,8 +197,8 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
           </button>
         </div>
 
-        <div className="mx-4 mb-4 p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#bc060f] to-[#3e4be1] flex items-center justify-center text-xs font-bold shrink-0">
+        <div className="mx-4 mb-4 p-3 rounded-lg bg-white/5 border border-white/10 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#f6e27a] via-[#d4af37] to-[#a8801f] flex items-center justify-center text-xs font-bold text-black shrink-0">
             {(userName || userEmail).substring(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -219,8 +219,8 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
           </div>
         </nav>
 
-        <div className="p-3 border-t border-[#25244a]">
-          <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 cursor-pointer">
+        <div className="p-3 border-t border-[#2c2818]">
+          <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold text-red-400 hover:bg-red-500/10 cursor-pointer">
             <LogOut className="w-4 h-4" /> Sair
           </button>
         </div>
@@ -228,12 +228,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* CABEÇALHO */}
-        <header className="sticky top-0 z-30 h-16 bg-[#010013]/90 backdrop-blur-md border-b border-[#25244a] px-4 md:px-6 flex items-center gap-3">
+        <header className="sticky top-0 z-30 h-16 bg-[#050505]/90 backdrop-blur-md border-b border-[#2c2818] px-4 md:px-6 flex items-center gap-3">
           <button onClick={() => setMenuOpen(true)} className="md:hidden p-2 rounded-full bg-white/5 text-gray-200 cursor-pointer" aria-label="Abrir menu">
             <Menu className="w-5 h-5" />
           </button>
           <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
-            <PageIcon className="w-4 h-4 text-[#a8aeff]" />
+            <PageIcon className="w-4 h-4 text-[#e8c766]" />
             {PAGE_TITLES[activeTab].title}
           </h2>
         </header>
@@ -261,12 +261,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <button
                     onClick={() => { setShowFilters((v) => !v); setShowSort(false); }}
                     className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
-                      showFilters || filterCount ? 'bg-[#3e4be1]/20 border-[#3e4be1]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
+                      showFilters || filterCount ? 'bg-[#d4af37]/20 border-[#d4af37]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
                     }`}
                     aria-expanded={showFilters}
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5" /> Filtros
-                    {filterCount > 0 && <span className="px-1.5 rounded-full bg-[#3e4be1] text-[10px]">{filterCount}</span>}
+                    {filterCount > 0 && <span className="px-1.5 rounded-full bg-[#d4af37] text-[10px] text-black font-bold">{filterCount}</span>}
                   </button>
 
                   <div className="relative">
@@ -280,12 +280,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                       <span className="hidden sm:inline">{SORT_LABELS[sortMode]}</span>
                     </button>
                     {showSort && (
-                      <div className="absolute left-0 top-full mt-2 z-40 w-60 rounded-xl bg-[#0b0a1f] border border-[#25244a] shadow-2xl p-1.5">
+                      <div className="absolute left-0 top-full mt-2 z-40 w-60 rounded-md bg-[#0e0d0b] border border-[#2c2818] shadow-2xl p-1.5">
                         {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
                           <button
                             key={mode}
                             onClick={() => { setSortMode(mode); setShowSort(false); }}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer ${sortMode === mode ? 'bg-[#3e4be1]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer ${sortMode === mode ? 'bg-[#d4af37]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
                           >
                             {SORT_LABELS[mode]}
                             {sortMode === mode && <Check className="w-3.5 h-3.5" />}
@@ -298,7 +298,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <button
                     onClick={() => setFilters({ ...filters, scalingOnly: !filters.scalingOnly })}
                     className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
-                      filters.scalingOnly ? 'bg-[#bc060f]/25 border-[#bc060f]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
+                      filters.scalingOnly ? 'bg-[#b8860b]/25 border-[#b8860b]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
                     }`}
                     aria-pressed={filters.scalingOnly}
                   >
@@ -325,7 +325,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                     <input
                       type="text"
                       placeholder="Pesquisar oferta ou nicho..."
-                      className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:border-[#6b76ff] outline-none"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:border-[#d4af37] outline-none"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -335,12 +335,12 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
               {loadingOffers && (
                 <div className="p-10 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-[#6b76ff]" /> Carregando ofertas...
+                  <Loader2 className="w-4 h-4 animate-spin text-[#d4af37]" /> Carregando ofertas...
                 </div>
               )}
 
               {!loadingOffers && visibleOffers.length === 0 && (
-                <div className="p-10 text-center text-sm text-gray-400 bg-[#0b0a1f] border border-[#25244a] rounded-2xl space-y-2">
+                <div className="p-10 text-center text-sm text-gray-400 bg-[#0e0d0b] border border-[#2c2818] rounded-lg space-y-2">
                   {activeTab === 'favorites' && favorites.size === 0 ? (
                     <>
                       <Star className="w-6 h-6 mx-auto text-gray-500" />
@@ -370,10 +370,10 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
 
           {/* MINHA CONTA */}
           {activeTab === 'profile' && (
-            <div className="max-w-3xl bg-[#0b0a1f] border border-[#25244a] rounded-3xl p-5 sm:p-8 space-y-6 shadow-2xl">
-              <div className="flex items-center gap-4 sm:gap-5 border-b border-[#25244a] pb-6">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-2xl bg-gradient-to-br from-[#bc060f] to-[#3e4be1] p-0.5 shadow-lg">
-                  <div className="w-full h-full bg-[#010013] rounded-[14px] flex items-center justify-center text-[#a8aeff] font-extrabold text-xl">
+            <div className="max-w-3xl bg-[#0e0d0b] border border-[#2c2818] rounded-md p-5 sm:p-8 space-y-6 shadow-2xl">
+              <div className="flex items-center gap-4 sm:gap-5 border-b border-[#2c2818] pb-6">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-lg bg-gradient-to-br from-[#f6e27a] via-[#d4af37] to-[#a8801f] p-0.5 shadow-lg">
+                  <div className="w-full h-full bg-[#050505] rounded-md flex items-center justify-center text-[#e8c766] font-extrabold text-xl">
                     {userEmail.substring(0, 2).toUpperCase()}
                   </div>
                 </div>
@@ -389,24 +389,24 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
               </div>
 
               {isAdmin ? (
-                <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
+                <div className="p-5 rounded-lg bg-[#17150f] border border-[#2c2818] shadow-md">
                   <span className="text-xs text-gray-400 block mb-1">Acesso</span>
-                  <span className="font-bold text-[#a8aeff] text-sm flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#6b76ff]" />
+                  <span className="font-bold text-[#e8c766] text-sm flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-[#d4af37]" />
                     Administrador — acesso total, sem assinatura
                   </span>
                   <span className="text-[11px] text-gray-400 block mt-1">Você está vendo a área de membros como os clientes a veem.</span>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
+                  <div className="p-5 rounded-lg bg-[#17150f] border border-[#2c2818] shadow-md">
                     <span className="text-xs text-gray-400 block mb-1">Acesso</span>
-                    <span className="font-bold text-[#a8aeff] text-sm flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#6b76ff]" />
+                    <span className="font-bold text-[#e8c766] text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#d4af37]" />
                       Individual — 1 aparelho por vez
                     </span>
                   </div>
-                  <div className="p-5 rounded-2xl bg-[#13122b] border border-[#25244a] shadow-md">
+                  <div className="p-5 rounded-lg bg-[#17150f] border border-[#2c2818] shadow-md">
                     <span className="text-xs text-gray-400 block mb-1">Status da assinatura</span>
                     <span className="font-bold text-emerald-400 text-sm flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4" />
@@ -422,9 +422,9 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
               )}
 
               {/* CANCELAR / GERENCIAR (o admin vê como prévia do que o cliente vê) */}
-              <div className="p-6 rounded-3xl bg-[#13122b]/80 border border-[#25244a] space-y-4">
+              <div className="p-6 rounded-md bg-[#17150f]/80 border border-[#2c2818] space-y-4">
                 {isAdmin && (
-                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#6b76ff]/15 text-[#a8aeff]">
+                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#d4af37]/15 text-[#e8c766]">
                     Prévia — é assim que o cliente vê
                   </span>
                 )}
@@ -442,9 +442,9 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                 </ol>
                 <button
                   onClick={openManageSubscriptionPage}
-                  className="px-5 py-2.5 rounded-full bg-[#13122b] border border-[#25244a] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-full bg-[#17150f] border border-[#2c2818] text-gray-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <ExternalLink className="w-3.5 h-3.5 text-[#6b76ff]" />
+                  <ExternalLink className="w-3.5 h-3.5 text-[#d4af37]" />
                   Abrir minha conta na Lastlink
                 </button>
               </div>

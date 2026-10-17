@@ -23,13 +23,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
       {mobileOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={onCloseMobile} />}
 
       <aside
-        className={`fixed md:sticky top-0 left-0 z-50 w-64 bg-[#0b0a1f] border-r border-[#25244a] flex flex-col justify-between h-screen transition-transform md:translate-x-0 ${
+        className={`fixed md:sticky top-0 left-0 z-50 w-64 bg-[#0e0d0b] border-r border-[#2c2818] flex flex-col justify-between h-screen transition-transform md:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div>
           {/* Brand Header */}
-          <div className="p-6 border-b border-[#25244a] space-y-2 relative">
+          <div className="p-6 border-b border-[#2c2818] space-y-2 relative">
             <h1 className="sr-only">Escala Swipe</h1>
             <Logo className="h-10" />
             <p className="text-xs text-gray-400">Painel Administrativo</p>
@@ -53,8 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
                   onClick={() => { setActiveTab(item.id); onCloseMobile(); }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-left transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-lg shadow-[#6b76ff]/20 font-bold'
-                      : 'text-gray-400 hover:text-white hover:bg-[#13122b]'
+                      ? 'bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black shadow-lg shadow-[#d4af37]/20 font-bold'
+                      : 'text-gray-400 hover:text-white hover:bg-[#17150f]'
                   }`}
                 >
                   <Icon className="w-5 h-5 shrink-0" />
@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
         </div>
 
         {/* Logout Button */}
-        <div className="p-4 border-t border-[#25244a]">
+        <div className="p-4 border-t border-[#2c2818]">
           <button
             onClick={onLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-all"

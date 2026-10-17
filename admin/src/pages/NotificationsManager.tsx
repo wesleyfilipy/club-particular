@@ -26,7 +26,7 @@ export const NotificationsManager: React.FC = () => {
         </p>
       </div>
 
-      <div className="bg-[#0b0a1f] border border-[#25244a] rounded-2xl p-6 space-y-6">
+      <div className="bg-[#0e0d0b] border border-[#2c2818] rounded-lg p-6 space-y-6">
         {sentSuccess && (
           <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3 text-emerald-400 text-sm font-bold">
             <CheckCircle2 className="w-5 h-5" />
@@ -41,7 +41,7 @@ export const NotificationsManager: React.FC = () => {
               type="text"
               required
               placeholder="Ex: 🚨 Nova VSL 4K de Alta Conversão Liberada!"
-              className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
+              className="w-full bg-[#17150f] border border-[#2c2818] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -53,7 +53,7 @@ export const NotificationsManager: React.FC = () => {
               rows={4}
               required
               placeholder="Digite o texto detalhado da notificação..."
-              className="w-full bg-[#13122b] border border-[#25244a] rounded-xl px-4 py-3 text-white focus:border-[#6b76ff] outline-none"
+              className="w-full bg-[#17150f] border border-[#2c2818] rounded-xl px-4 py-3 text-white focus:border-[#d4af37] outline-none"
               value={body}
               onChange={(e) => setBody(e.target.value)}
             />
@@ -62,7 +62,7 @@ export const NotificationsManager: React.FC = () => {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-extrabold text-base shadow-lg shadow-[#6b76ff]/20 hover:opacity-95 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black font-extrabold text-base shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all"
             >
               <Send className="w-5 h-5" />
               Disparar Notificação para Membros VIP

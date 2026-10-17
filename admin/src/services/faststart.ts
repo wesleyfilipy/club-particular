@@ -1,53 +1,69 @@
-// "Otimizar para web" (faststart) no navegador, antes do upload.
+// "Otimizar para web" no navegador, antes do upload. Corrige dois formatos de MP4/MOV
+// que fazem a VSL travar ou nunca começar a tocar no navegador:
 //
-// Vídeos MP4/MOV guardam um índice (caixa "moov"). Quando ele fica no FIM do arquivo,
-// o navegador precisa buscar o fim antes de começar a tocar, e a VSL parece travada.
-// Aqui movemos o "moov" para antes dos dados do vídeo ("mdat") e corrigimos as posições
-// que ele aponta (tabelas stco/co64). O vídeo não é reprocessado: a qualidade é idêntica,
-// e o arquivo novo é montado com fatias do original (não carrega gigabytes na memória).
+// 1. Índice ("moov") no FIM do arquivo: o navegador precisa buscar o fim antes de tocar.
+// 2. Dados do vídeo em MILHARES de blocos "mdat" separados (alguns editores/gravadores de
+//    tela salvam assim): o navegador percorre bloco por bloco, um pedido de rede por bloco,
+//    e a VSL nunca começa.
+//
+// O arquivo é remontado como ftyp → moov → um único mdat, corrigindo as posições que o
+// índice aponta (tabelas stco/co64). O vídeo não é reprocessado: a qualidade é idêntica, e o
+// arquivo novo é montado com fatias do original (não carrega gigabytes na memória).
 
 interface Box {
   type: string;
-  start: number;
-  size: number;
+  start: number; // posição da caixa no arquivo
+  size: number; // tamanho total (cabeçalho + conteúdo)
+  header: number; // tamanho do cabeçalho (8 ou 16 bytes)
 }
 
 const MAX_MOOV_BYTES = 200 * 1024 * 1024;
+const MAX_BOXES = 1_000_000;
 const CONTAINERS = new Set(['moov', 'trak', 'mdia', 'minf', 'stbl']);
-
-const readView = async (blob: Blob, start: number, length: number) =>
-  new DataView(await blob.slice(start, start + length).arrayBuffer());
 
 const typeAt = (view: DataView, offset: number) =>
   String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
 
-/** Lista as caixas do nível principal do arquivo (ftyp, mdat, moov...) */
+/** Lista as caixas do nível principal do arquivo (ftyp, moov, mdat...) lendo só os cabeçalhos */
 async function topLevelBoxes(file: Blob): Promise<Box[] | null> {
   const boxes: Box[] = [];
   let pos = 0;
+  // Lê os cabeçalhos em blocos de 1 MB para não fazer uma leitura por caixa
+  let windowStart = -1;
+  let windowView: DataView | null = null;
+  const WINDOW = 1024 * 1024;
+
+  const header = async (at: number) => {
+    if (!windowView || at < windowStart || at + 16 > windowStart + windowView.byteLength) {
+      windowStart = at;
+      windowView = new DataView(await file.slice(at, Math.min(file.size, at + WINDOW)).arrayBuffer());
+    }
+    return { view: windowView, offset: at - windowStart };
+  };
+
   while (pos < file.size) {
-    if (file.size - pos < 8 || boxes.length > 10000) return null;
-    const header = await readView(file, pos, Math.min(16, file.size - pos));
-    let size = header.getUint32(0);
-    const type = typeAt(header, 4);
+    if (file.size - pos < 8 || boxes.length > MAX_BOXES) return null;
+    const { view, offset } = await header(pos);
+    if (offset + 8 > view.byteLength) return null;
+    let size = view.getUint32(offset);
+    const type = typeAt(view, offset + 4);
+    let headerSize = 8;
     if (size === 1) {
-      if (header.byteLength < 16) return null;
-      size = Number(header.getBigUint64(8));
+      if (offset + 16 > view.byteLength) return null;
+      size = Number(view.getBigUint64(offset + 8));
+      headerSize = 16;
     } else if (size === 0) {
       size = file.size - pos; // vai até o fim do arquivo
     }
-    if (size < 8 || pos + size > file.size) return null;
-    boxes.push({ type, start: pos, size });
+    if (size < headerSize || pos + size > file.size) return null;
+    boxes.push({ type, start: pos, size, header: headerSize });
     pos += size;
   }
   return boxes;
 }
 
-/**
- * Soma `delta` às posições de dados que ficam antes do antigo lugar do moov.
- * Retorna false se uma posição de 32 bits estourar (aí não mexemos no arquivo).
- */
-function patchChunkOffsets(moov: Uint8Array, delta: number, oldMoovStart: number): boolean {
+/** Aplica `remap` a cada posição de dados das tabelas stco/co64. False se não couber em 32 bits. */
+function patchChunkOffsets(moov: Uint8Array, remap: (offset: number) => number): boolean {
   const view = new DataView(moov.buffer, moov.byteOffset, moov.byteLength);
 
   const walk = (start: number, end: number): boolean => {
@@ -71,16 +87,14 @@ function patchChunkOffsets(moov: Uint8Array, delta: number, oldMoovStart: number
         let entry = pos + header + 8;
         for (let i = 0; i < count; i++) {
           if (type === 'stco') {
-            const offset = view.getUint32(entry);
-            if (offset < oldMoovStart) {
-              const moved = offset + delta;
-              if (moved > 0xffffffff) return false;
-              view.setUint32(entry, moved);
-            }
+            const moved = remap(view.getUint32(entry));
+            if (moved < 0 || moved > 0xffffffff) return false;
+            view.setUint32(entry, moved);
             entry += 4;
           } else {
-            const offset = view.getBigUint64(entry);
-            if (offset < BigInt(oldMoovStart)) view.setBigUint64(entry, offset + BigInt(delta));
+            const moved = remap(Number(view.getBigUint64(entry)));
+            if (moved < 0) return false;
+            view.setBigUint64(entry, BigInt(moved));
             entry += 8;
           }
         }
@@ -90,7 +104,7 @@ function patchChunkOffsets(moov: Uint8Array, delta: number, oldMoovStart: number
     return true;
   };
 
-  return walk(8, moov.byteLength) || false;
+  return walk(8, moov.byteLength);
 }
 
 /**
@@ -101,24 +115,60 @@ export async function optimizeForWeb(file: File): Promise<File | null> {
   try {
     const boxes = await topLevelBoxes(file);
     if (!boxes) return null;
-    const moov = boxes.find((b) => b.type === 'moov');
-    const firstMdat = boxes.find((b) => b.type === 'mdat');
-    if (!moov || !firstMdat || moov.start < firstMdat.start) return null; // já está no começo
-    if (moov.size > MAX_MOOV_BYTES) return null;
+    const moovs = boxes.filter((b) => b.type === 'moov');
+    const mdats = boxes.filter((b) => b.type === 'mdat');
+    if (moovs.length !== 1 || mdats.length === 0 || boxes.some((b) => b.type === 'moof')) return null; // vídeo fragmentado: não mexe
+    const moov = moovs[0];
+    if (moov.header !== 8 || moov.size > MAX_MOOV_BYTES) return null;
+
+    const moovFirst = moov.start < mdats[0].start;
+    if (moovFirst && mdats.length === 1) return null; // já está otimizado
+
+    // Arquivo novo: caixas que não são moov/mdat (ftyp, free...) → moov → um único mdat
+    const others = boxes.filter((b) => b.type !== 'moov' && b.type !== 'mdat');
+    const prefixSize = others.reduce((sum, b) => sum + b.size, 0);
+    const payload = mdats.reduce((sum, b) => sum + b.size - b.header, 0);
+    const mdatHeader = payload + 8 > 0xffffffff ? 16 : 8;
+    const newPayloadStart = prefixSize + moov.size + mdatHeader;
+
+    // Onde cada byte de dados vai parar no arquivo novo
+    const starts: number[] = [];
+    let acc = 0;
+    for (const m of mdats) {
+      starts.push(acc);
+      acc += m.size - m.header;
+    }
+    const remap = (offset: number) => {
+      for (let i = 0; i < mdats.length; i++) {
+        const m = mdats[i];
+        const dataStart = m.start + m.header;
+        if (offset >= dataStart && offset <= m.start + m.size) return newPayloadStart + starts[i] + (offset - dataStart);
+      }
+      return -1; // posição fora dos dados: não é seguro mexer
+    };
 
     const moovBytes = new Uint8Array(await file.slice(moov.start, moov.start + moov.size).arrayBuffer());
-    // moov com cabeçalho de 64 bits: o conteúdo começa depois de 16 bytes
-    const headerSize = new DataView(moovBytes.buffer).getUint32(0) === 1 ? 16 : 8;
-    if (headerSize === 16 || !patchChunkOffsets(moovBytes, moov.size, moov.start)) return null;
+    if (!patchChunkOffsets(moovBytes, remap)) return null;
 
-    const parts: BlobPart[] = [];
-    for (const box of boxes) {
-      if (box === moov) continue;
-      if (box === firstMdat) parts.push(moovBytes);
-      parts.push(file.slice(box.start, box.start + box.size));
+    const header = new Uint8Array(mdatHeader);
+    const hv = new DataView(header.buffer);
+    if (mdatHeader === 16) {
+      hv.setUint32(0, 1);
+      hv.setUint32(4, 0x6d646174); // "mdat"
+      hv.setBigUint64(8, BigInt(payload + 16));
+    } else {
+      hv.setUint32(0, payload + 8);
+      hv.setUint32(4, 0x6d646174);
     }
+
+    const parts: BlobPart[] = [
+      ...others.map((b) => file.slice(b.start, b.start + b.size)),
+      moovBytes,
+      header,
+      ...mdats.map((m) => file.slice(m.start + m.header, m.start + m.size)),
+    ];
     const optimized = new File(parts, file.name, { type: file.type || 'video/mp4', lastModified: file.lastModified });
-    return optimized.size === file.size ? optimized : null;
+    return optimized.size === prefixSize + moov.size + mdatHeader + payload ? optimized : null;
   } catch {
     return null;
   }

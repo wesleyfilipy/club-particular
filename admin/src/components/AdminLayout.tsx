@@ -16,7 +16,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onLogout, initialTab =
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#010013] text-white selection:bg-[#6b76ff] selection:text-white">
+    <div className="flex min-h-screen bg-[#050505] text-white selection:bg-[#d4af37] selection:text-black">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}

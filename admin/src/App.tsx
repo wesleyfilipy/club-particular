@@ -143,7 +143,7 @@ export default function App() {
 
   if (view === 'loading') {
     return (
-      <div className="min-h-screen bg-[#010013] flex items-center justify-center text-[#6b76ff] font-bold text-sm">
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center text-[#d4af37] font-bold text-sm">
         Carregando sessão segura do Escala Swipe...
       </div>
     );

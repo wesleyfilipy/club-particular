@@ -26,11 +26,11 @@ export const Paywall: React.FC<PaywallProps> = ({ userEmail, onRecheck, onLogout
   };
 
   return (
-    <div className="min-h-screen bg-[#010013] text-white flex items-center justify-center p-4 hero-glow">
-      <div className="bg-[#0b0a1f] border border-white/10 rounded-[30px] max-w-md w-full p-8 space-y-6 text-center shadow-2xl">
+    <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-4 hero-glow">
+      <div className="bg-[#0e0d0b] border border-white/10 rounded-xl max-w-md w-full p-8 space-y-6 text-center shadow-2xl">
         <Logo className="h-10 mx-auto" />
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#bc060f] to-[#3e4be1] flex items-center justify-center mx-auto">
-          <Lock className="w-5 h-5 text-white" />
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f6e27a] via-[#d4af37] to-[#a8801f] flex items-center justify-center mx-auto">
+          <Lock className="w-5 h-5 text-black" />
         </div>
 
         <div className="space-y-2">
@@ -41,13 +41,13 @@ export const Paywall: React.FC<PaywallProps> = ({ userEmail, onRecheck, onLogout
           </p>
         </div>
 
-        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-gray-300 text-left">
+        <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 text-left">
           Na Lastlink, pague com o e-mail <strong className="text-white">{userEmail}</strong>. É por ele que liberamos o seu acesso.
         </div>
 
         <button
           onClick={openCheckoutPage}
-          className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold uppercase tracking-wide text-sm shadow-lg shadow-[#3e4be1]/30 hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black font-bold uppercase tracking-wide text-sm shadow-lg shadow-[#d4af37]/30 hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <CreditCard className="w-5 h-5" />
           Pagar assinatura ({PAYMENT_CONFIG.priceFormatted})
@@ -58,7 +58,7 @@ export const Paywall: React.FC<PaywallProps> = ({ userEmail, onRecheck, onLogout
           disabled={checking}
           className="w-full py-3 rounded-full border border-white/15 text-gray-200 font-semibold text-xs hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
-          {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-[#a8aeff]" />}
+          {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 text-[#e8c766]" />}
           Já paguei — verificar novamente
         </button>
 

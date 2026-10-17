@@ -154,10 +154,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#010013] flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-[#0b0a1f] border border-[#6b76ff]/40 rounded-3xl p-8 space-y-6 shadow-2xl relative">
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-[#0e0d0b] border border-[#d4af37]/40 rounded-xl p-8 space-y-6 shadow-2xl relative">
         <div className="text-center space-y-3">
-          <div className="w-16 h-16 rounded-full bg-[#6b76ff]/10 border border-[#6b76ff] flex items-center justify-center mx-auto text-[#6b76ff] shadow-lg shadow-[#6b76ff]/10">
+          <div className="w-16 h-16 rounded-full bg-[#d4af37]/10 border border-[#d4af37] flex items-center justify-center mx-auto text-[#d4af37] shadow-lg shadow-[#d4af37]/10">
             <Crown className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-wider gold-text-gradient">ESCALA SWIPE</h1>
@@ -171,13 +171,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </div>
 
         {/* MODO SELETOR: ADMIN vs ALUNO/MEMBRO */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-xl bg-[#13122b] border border-[#25244a]">
+        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-xl bg-[#17150f] border border-[#2c2818]">
           <button
             type="button"
             onClick={() => { setLoginMode('admin'); setIsRegistering(false); setError(''); setSuccessMessage(''); }}
             className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
               loginMode === 'admin'
-                ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-md'
+                ? 'bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -189,7 +189,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             onClick={() => { setLoginMode('member'); setError(''); setSuccessMessage(''); }}
             className={`py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
               loginMode === 'member'
-                ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-md'
+                ? 'bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -200,12 +200,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         {/* ABA DE CADASTRO OU LOGIN PARA ALUNO */}
         {loginMode === 'member' && (
-          <div className="flex border-b border-[#25244a] text-xs font-bold">
+          <div className="flex border-b border-[#2c2818] text-xs font-bold">
             <button
               type="button"
               onClick={() => setIsRegistering(false)}
               className={`flex-1 py-2 text-center border-b-2 transition-all ${
-                !isRegistering ? 'border-[#6b76ff] text-[#a8aeff]' : 'border-transparent text-gray-500 hover:text-white'
+                !isRegistering ? 'border-[#d4af37] text-[#e8c766]' : 'border-transparent text-gray-500 hover:text-white'
               }`}
             >
               Já sou Aluno (Entrar)
@@ -214,7 +214,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               type="button"
               onClick={() => setIsRegistering(true)}
               className={`flex-1 py-2 text-center border-b-2 transition-all ${
-                isRegistering ? 'border-[#6b76ff] text-[#a8aeff]' : 'border-transparent text-gray-500 hover:text-white'
+                isRegistering ? 'border-[#d4af37] text-[#e8c766]' : 'border-transparent text-gray-500 hover:text-white'
               }`}
             >
               Criar Conta de Aluno (Novo)
@@ -246,7 +246,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   type="text"
                   required
                   placeholder="Seu Nome Completo"
-                  className="w-full bg-[#13122b] border border-[#25244a] rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:border-[#6b76ff] outline-none"
+                  className="w-full bg-[#17150f] border border-[#2c2818] rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:border-[#d4af37] outline-none"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                 />
@@ -262,7 +262,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 type="email"
                 required
                 placeholder="seu-email@dominio.com"
-                className="w-full bg-[#13122b] border border-[#25244a] rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:border-[#6b76ff] outline-none"
+                className="w-full bg-[#17150f] border border-[#2c2818] rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:border-[#d4af37] outline-none"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -277,7 +277,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 type="password"
                 required
                 placeholder="••••••••••••"
-                className="w-full bg-[#13122b] border border-[#25244a] rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:border-[#6b76ff] outline-none"
+                className="w-full bg-[#17150f] border border-[#2c2818] rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:border-[#d4af37] outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -287,7 +287,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-extrabold text-sm shadow-lg shadow-[#6b76ff]/20 hover:opacity-95 transition-all mt-6 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black font-extrabold text-sm shadow-lg shadow-[#d4af37]/20 hover:opacity-95 transition-all mt-6 disabled:opacity-50"
           >
             {loading ? (
               <>

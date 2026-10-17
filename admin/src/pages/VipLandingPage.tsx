@@ -58,25 +58,25 @@ const NAV_LINKS = [
 
 const FEATURES = [
   {
-    tag: '// escala',
+    tag: 'escala',
     icon: TrendingUp,
     title: 'Saiba quais ofertas estão escalando',
     text: 'Cada oferta tem um gráfico com a quantidade de anúncios ativos por dia na Biblioteca do Meta. Se a linha sobe, o anunciante está investindo mais.',
   },
   {
-    tag: '// anúncios',
+    tag: 'anúncios',
     icon: Video,
     title: 'Os vídeos que estão rodando no Meta Ads',
     text: 'Assista e baixe os criativos em vídeo das ofertas direto da plataforma, sem precisar garimpar a biblioteca de anúncios.',
   },
   {
-    tag: '// vsl',
+    tag: 'vsl',
     icon: Film,
     title: 'VSL original para assistir e baixar',
     text: 'A VSL de cada oferta em Full HD ou 4K, com download direto, junto do site oficial e da página de vendas.',
   },
   {
-    tag: '// arquivos',
+    tag: 'arquivos',
     icon: Package,
     title: 'Packs de criativos prontos',
     text: 'Packs completos guardados no Cloudflare R2 com links protegidos, liberados só para assinantes.',
@@ -92,10 +92,10 @@ const PLAN_ITEMS = [
 ];
 
 const inputClass =
-  'w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-[#6b76ff] outline-none transition-colors';
+  'w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-[#d4af37] outline-none transition-colors';
 
 const ctaClass =
-  'rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold uppercase tracking-wide shadow-lg shadow-[#3e4be1]/30 hover:opacity-90 transition-all cursor-pointer disabled:opacity-50';
+  'rounded-full bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black font-bold uppercase tracking-wide shadow-lg shadow-[#d4af37]/30 hover:opacity-90 transition-all cursor-pointer disabled:opacity-50';
 
 interface ModalProps {
   title: string;
@@ -107,7 +107,7 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ title, subtitle, error, onClose, children }) => (
   <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div className="bg-[#0b0a1f] border border-white/10 rounded-[30px] max-w-md w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
+    <div className="bg-[#0e0d0b] border border-white/10 rounded-xl max-w-md w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
       <button
         onClick={onClose}
         className="absolute top-5 right-5 p-2 rounded-full bg-white/5 text-gray-400 hover:text-white cursor-pointer"
@@ -122,7 +122,7 @@ const Modal: React.FC<ModalProps> = ({ title, subtitle, error, onClose, children
       </div>
 
       {error && (
-        <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-300">
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-300">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -268,9 +268,9 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
   };
 
   return (
-    <div className="min-h-screen bg-[#010013] text-white flex flex-col font-sans selection:bg-[#6b76ff] selection:text-white">
+    <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans selection:bg-[#d4af37] selection:text-black">
       {/* MENU */}
-      <header className="sticky top-0 z-40 bg-[#010013]/80 backdrop-blur-md border-b border-white/10">
+      <header className="sticky top-0 z-40 bg-[#050505]/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <a href="#inicio" aria-label="Escala Swipe - início"><Logo className="h-10 md:h-12" /></a>
 
@@ -299,7 +299,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/10 px-4 py-4 space-y-3 bg-[#010013]">
+          <div className="md:hidden border-t border-white/10 px-4 py-4 space-y-3 bg-[#050505]">
             {NAV_LINKS.map((link) => (
               <a key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)} className="block text-sm text-gray-300 py-1">
                 {link.label}
@@ -315,7 +315,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
 
       {notice && (
         <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 pt-6">
-          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-sm text-red-200">
+          <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-sm text-red-200">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{notice}</span>
           </div>
@@ -326,7 +326,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
       <section id="inicio" className="relative overflow-hidden px-4 sm:px-6 pt-16 md:pt-24 pb-16">
         <div className="absolute inset-0 hero-glow pointer-events-none" />
         <div className="relative max-w-4xl mx-auto text-center space-y-7">
-          <span className="section-tag">// escala swipe</span>
+          <span className="section-tag">✦ escala swipe</span>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight">
             Descubra quais ofertas estão <span className="gold-text-gradient">escalando agora</span>
           </h1>
@@ -345,16 +345,16 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
 
         {/* PRÉVIA DA PLATAFORMA */}
         <div className="relative max-w-5xl mx-auto mt-16">
-          <div className="glass rounded-[30px] p-4 sm:p-6 shadow-2xl shadow-[#3e4be1]/10">
+          <div className="glass rounded-xl p-4 sm:p-6 shadow-2xl shadow-[#d4af37]/10">
             <div className="flex items-center gap-1.5 mb-4">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#bc060f]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#b8860b]" />
               <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#3e4be1]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#d4af37]" />
               <span className="ml-3 text-[11px] text-gray-400">Prévia da área de membros · dados de exemplo</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="md:col-span-2 rounded-3xl bg-black/40 border border-white/10 overflow-hidden">
-                <div className="relative aspect-video bg-gradient-to-br from-[#bc060f]/30 to-[#3e4be1]/30 flex items-center justify-center overflow-hidden">
+              <div className="md:col-span-2 rounded-xl bg-black/40 border border-white/10 overflow-hidden">
+                <div className="relative aspect-video bg-gradient-to-br from-[#d4af37]/30 to-[#0e0d0b]/30 flex items-center justify-center overflow-hidden">
                   {preview?.posterUrl && (
                     <img src={preview.posterUrl} alt="Capa de uma VSL da plataforma" className="absolute inset-0 w-full h-full object-cover" />
                   )}
@@ -363,15 +363,15 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
                   </div>
                 </div>
                 <div className="p-4 space-y-2">
-                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-[#a8aeff]">{preview?.category || 'Saúde & Emagrecimento'}</span>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-[#e8c766]">{preview?.category || 'Saúde & Emagrecimento'}</span>
                   <p className="text-sm font-semibold">VSL original · {preview?.resolution || '1080p'}</p>
                   <div className="grid grid-cols-2 gap-2 pt-1">
-                    <span className="text-[11px] text-center py-2 rounded-full bg-gradient-to-r from-[#bc060f] to-[#3e4be1] font-semibold">Baixar VSL</span>
+                    <span className="text-[11px] text-center py-2 rounded-full bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black font-semibold">Baixar VSL</span>
                     <span className="text-[11px] text-center py-2 rounded-full bg-white/5 border border-white/10">Pack criativos</span>
                   </div>
                 </div>
               </div>
-              <div className="md:col-span-3 rounded-3xl bg-black/40 border border-white/10 p-4 sm:p-5">
+              <div className="md:col-span-3 rounded-xl bg-black/40 border border-white/10 p-4 sm:p-5">
                 <p className="text-xs font-semibold text-gray-300 mb-3">Anúncios ativos por dia na Biblioteca do Meta</p>
                 <ScaleChart data={PREVIEW_SCALE} height={190} />
               </div>
@@ -384,7 +384,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
       <section id="recursos" className="px-4 sm:px-6 py-16 md:py-24">
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-3">
-            <span className="section-tag">// recursos</span>
+            <span className="section-tag">✦ recursos</span>
             <h2 className="text-3xl md:text-4xl font-bold">Tudo o que você precisa para modelar uma oferta</h2>
           </div>
 
@@ -392,11 +392,11 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             {FEATURES.map((feature) => {
               const Icon = feature.icon;
               return (
-                <div key={feature.tag} className="glass rounded-[30px] p-7 space-y-4 hover:border-white/20 transition-colors">
+                <div key={feature.tag} className="glass rounded-xl p-7 space-y-4 hover:border-white/20 transition-colors">
                   <div className="flex items-center justify-between">
                     <span className="section-tag">{feature.tag}</span>
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#bc060f] to-[#3e4be1] flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-white" />
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#f6e27a] via-[#d4af37] to-[#a8801f] flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-black" />
                     </div>
                   </div>
                   <h3 className="text-xl font-semibold">{feature.title}</h3>
@@ -412,7 +412,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
       <section id="como-funciona" className="px-4 sm:px-6 py-16 md:py-24 border-y border-white/5 bg-white/[0.02]">
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-3">
-            <span className="section-tag">// como funciona</span>
+            <span className="section-tag">✦ como funciona</span>
             <h2 className="text-3xl md:text-4xl font-bold">Acesso em 3 passos</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -423,10 +423,10 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             ].map((step, i) => {
               const Icon = step.icon;
               return (
-                <div key={step.title} className="glass rounded-[30px] p-7 space-y-3">
+                <div key={step.title} className="glass rounded-xl p-7 space-y-3">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl font-bold gold-text-gradient">0{i + 1}</span>
-                    <Icon className="w-5 h-5 text-[#a8aeff]" />
+                    <Icon className="w-5 h-5 text-[#e8c766]" />
                   </div>
                   <h3 className="text-lg font-semibold">{step.title}</h3>
                   <p className="text-sm text-gray-300">{step.text}</p>
@@ -441,15 +441,15 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
       <section id="planos" className="px-4 sm:px-6 py-16 md:py-24">
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-3">
-            <span className="section-tag">// planos</span>
+            <span className="section-tag">✦ planos</span>
             <h2 className="text-3xl md:text-4xl font-bold">Escolha seu acesso</h2>
           </div>
 
-          <div className="max-w-md mx-auto rounded-[30px] p-[1px] bg-gradient-to-br from-[#bc060f] to-[#3e4be1] shadow-2xl shadow-[#3e4be1]/20">
-            <div className="rounded-[29px] bg-[#0b0a1f] p-8 space-y-6">
+          <div className="max-w-md mx-auto rounded-xl p-[1px] bg-gradient-to-br from-[#f6e27a] via-[#d4af37] to-[#a8801f] shadow-2xl shadow-[#d4af37]/20">
+            <div className="rounded-[29px] bg-[#0e0d0b] p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">Escala Swipe</h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white/10 text-[#a8aeff]">Mensal</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white/10 text-[#e8c766]">Mensal</span>
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg text-gray-400">R$</span>
@@ -459,7 +459,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
               <ul className="space-y-3 text-sm text-gray-200">
                 {PLAN_ITEMS.map((item) => (
                   <li key={item} className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#a8aeff] shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#e8c766] shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -528,11 +528,11 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             <button type="submit" disabled={loading} className={`w-full py-3.5 text-sm flex items-center justify-center ${ctaClass}`}>
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar na área de membros'}
             </button>
-            <button type="button" onClick={() => openForgot(() => setShowLoginModal(false))} className="w-full text-xs text-[#a8aeff] hover:text-white cursor-pointer">
+            <button type="button" onClick={() => openForgot(() => setShowLoginModal(false))} className="w-full text-xs text-[#e8c766] hover:text-white cursor-pointer">
               Esqueci minha senha
             </button>
             <button type="button" onClick={() => { setShowLoginModal(false); openCheckout(); }} className="w-full text-xs text-gray-400 hover:text-white cursor-pointer pt-1">
-              Ainda não tem conta? <span className="text-[#a8aeff]">Criar conta</span>
+              Ainda não tem conta? <span className="text-[#e8c766]">Criar conta</span>
             </button>
           </form>
         </Modal>
@@ -551,7 +551,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
               <p>
                 Se existir uma conta com <strong className="text-white">{email}</strong>, você vai receber um e-mail com o link para criar uma nova senha.
               </p>
-              <div className="p-3 rounded-2xl bg-[#6b76ff]/10 border border-[#6b76ff]/30 text-xs text-[#c9cdff] flex items-start gap-2">
+              <div className="p-3 rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/30 text-xs text-[#f3dc9a] flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
                   O e-mail chega com o remetente <strong className="text-white">"Supabase Auth"</strong>, o serviço que protege o login do Escala Swipe. Pode abrir com segurança.
@@ -561,7 +561,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             </div>
           ) : (
             <form onSubmit={handleForgotPassword} className="space-y-3">
-              <div className="p-3 rounded-2xl bg-[#6b76ff]/10 border border-[#6b76ff]/30 text-xs text-[#c9cdff] flex items-start gap-2">
+              <div className="p-3 rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/30 text-xs text-[#f3dc9a] flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
                   Atenção: o e-mail para trocar a senha chega com o nome <strong className="text-white">"Supabase Auth"</strong>, o serviço que protege o login do Escala Swipe.
@@ -585,7 +585,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             <button type="submit" disabled={loading} className={`w-full py-3.5 text-sm flex items-center justify-center ${ctaClass}`}>
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Acessar painel'}
             </button>
-            <button type="button" onClick={() => openForgot(() => setShowAdminModal(false))} className="w-full text-xs text-[#a8aeff] hover:text-white cursor-pointer">
+            <button type="button" onClick={() => openForgot(() => setShowAdminModal(false))} className="w-full text-xs text-[#e8c766] hover:text-white cursor-pointer">
               Esqueci minha senha
             </button>
           </form>
