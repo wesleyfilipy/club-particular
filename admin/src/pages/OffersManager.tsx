@@ -458,7 +458,7 @@ export const OffersManager: React.FC = () => {
                       type="button"
                       onClick={() => { setActiveDraft(i); setScaleAds(''); }}
                       className={`flex-1 px-3 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                        active ? 'bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black shadow-lg' : 'text-gray-300 hover:text-white'
+                        active ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-lg' : 'text-gray-300 hover:text-white'
                       }`}
                     >
                       {busy ? (

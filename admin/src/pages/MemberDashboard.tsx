@@ -261,7 +261,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <button
                     onClick={() => { setShowFilters((v) => !v); setShowSort(false); }}
                     className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
-                      showFilters || filterCount ? 'bg-[#d4af37]/20 border-[#d4af37]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
+                      showFilters || filterCount ? 'bg-[#3e4be1]/20 border-[#3e4be1]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
                     }`}
                     aria-expanded={showFilters}
                   >
@@ -285,7 +285,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                           <button
                             key={mode}
                             onClick={() => { setSortMode(mode); setShowSort(false); }}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer ${sortMode === mode ? 'bg-[#d4af37]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer ${sortMode === mode ? 'bg-[#3e4be1]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
                           >
                             {SORT_LABELS[mode]}
                             {sortMode === mode && <Check className="w-3.5 h-3.5" />}
@@ -298,7 +298,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
                   <button
                     onClick={() => setFilters({ ...filters, scalingOnly: !filters.scalingOnly })}
                     className={`px-3 py-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
-                      filters.scalingOnly ? 'bg-[#b8860b]/25 border-[#b8860b]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
+                      filters.scalingOnly ? 'bg-[#bc060f]/25 border-[#bc060f]/60 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:text-white'
                     }`}
                     aria-pressed={filters.scalingOnly}
                   >

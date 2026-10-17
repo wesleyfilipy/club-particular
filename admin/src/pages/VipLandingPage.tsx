@@ -347,9 +347,9 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
         <div className="relative max-w-5xl mx-auto mt-16">
           <div className="glass rounded-xl p-4 sm:p-6 shadow-2xl shadow-[#d4af37]/10">
             <div className="flex items-center gap-1.5 mb-4">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#b8860b]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#bc060f]" />
               <span className="w-2.5 h-2.5 rounded-full bg-[#d4af37]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#3e4be1]" />
               <span className="ml-3 text-[11px] text-gray-400">Prévia da área de membros · dados de exemplo</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -445,7 +445,7 @@ export const VipLandingPage: React.FC<VipLandingPageProps> = ({ onLoginSuccess, 
             <h2 className="text-3xl md:text-4xl font-bold">Escolha seu acesso</h2>
           </div>
 
-          <div className="max-w-md mx-auto rounded-xl p-[1px] bg-gradient-to-br from-[#f6e27a] via-[#d4af37] to-[#a8801f] shadow-2xl shadow-[#d4af37]/20">
+          <div className="max-w-md mx-auto rounded-xl p-[1px] bg-gradient-to-br from-[#bc060f] via-[#d4af37] to-[#3e4be1] shadow-2xl shadow-[#d4af37]/20">
             <div className="rounded-[29px] bg-[#0e0d0b] p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">Escala Swipe</h3>

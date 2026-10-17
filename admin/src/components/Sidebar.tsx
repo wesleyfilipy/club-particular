@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
                   onClick={() => { setActiveTab(item.id); onCloseMobile(); }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-left transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black shadow-lg shadow-[#d4af37]/20 font-bold'
+                      ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white shadow-lg shadow-[#3e4be1]/20 font-bold'
                       : 'text-gray-400 hover:text-white hover:bg-[#17150f]'
                   }`}
                 >

@@ -65,7 +65,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
             <span className="block text-[10px] text-gray-400">Mais anúncios que há 7 dias</span>
           </span>
         </span>
-        <span className={`w-9 h-5 rounded-full p-0.5 transition-colors ${filters.scalingOnly ? 'bg-[#d4af37]' : 'bg-white/15'}`}>
+        <span className={`w-9 h-5 rounded-full p-0.5 transition-colors ${filters.scalingOnly ? 'bg-[#3e4be1]' : 'bg-white/15'}`}>
           <span className={`block w-4 h-4 rounded-full bg-white transition-transform ${filters.scalingOnly ? 'translate-x-4' : ''}`} />
         </span>
       </button>
@@ -121,7 +121,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
                 <span className="flex items-center gap-2">
                   <Icon className="w-4 h-4 text-[#e8c766]" />
                   {label}
-                  {selected > 0 && <span className="px-1.5 rounded-full bg-[#d4af37] text-[10px] text-black font-bold">{selected}</span>}
+                  {selected > 0 && <span className="px-1.5 rounded-full bg-[#3e4be1] text-[10px] text-white font-bold">{selected}</span>}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open === key ? 'rotate-180' : ''}`} />
               </button>
@@ -134,11 +134,11 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ offers, filters, onC
                       <button
                         key={value}
                         onClick={() => toggle(key, value)}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer ${on ? 'bg-[#d4af37]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer ${on ? 'bg-[#3e4be1]/25 text-white' : 'text-gray-300 hover:bg-white/5'}`}
                       >
                         <span className="flex items-center gap-2">
-                          <span className={`w-4 h-4 rounded border flex items-center justify-center ${on ? 'bg-[#d4af37] border-[#d4af37]' : 'border-white/25'}`}>
-                            {on && <Check className="w-3 h-3 text-black" />}
+                          <span className={`w-4 h-4 rounded border flex items-center justify-center ${on ? 'bg-[#3e4be1] border-[#3e4be1]' : 'border-white/25'}`}>
+                            {on && <Check className="w-3 h-3 text-white" />}
                           </span>
                           {value}
                         </span>

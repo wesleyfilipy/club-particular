@@ -11,6 +11,8 @@
   --gold-dark: #a8801f;
   --accent-light: #e8c766;
   --border: #2c2818;
+  --accent-red: #bc060f;
+  --accent-blue: #3e4be1;
 }
 
 body {
@@ -27,7 +29,7 @@ body {
 
 /* Texto com degradê dourado */
 .gold-text-gradient {
-  background: linear-gradient(90deg, #fbeeb0 0%, #e8c766 40%, #c99a2e 100%);
+  background: linear-gradient(90deg, #f6e27a 0%, #ff5a4f 55%, #8f98ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -61,8 +63,9 @@ body {
 /* Brilho de fundo do hero */
 .hero-glow {
   background:
-    radial-gradient(700px 320px at 50% -10%, rgba(212, 175, 55, 0.28), transparent 70%),
-    radial-gradient(500px 260px at 90% 20%, rgba(168, 128, 31, 0.18), transparent 70%);
+    radial-gradient(600px 300px at 15% 0%, rgba(188, 6, 15, 0.30), transparent 70%),
+    radial-gradient(600px 300px at 50% -10%, rgba(212, 175, 55, 0.22), transparent 70%),
+    radial-gradient(600px 300px at 85% 10%, rgba(62, 75, 225, 0.30), transparent 70%);
 }
 
 /* Custom Scrollbars */
@@ -81,5 +84,5 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--gold);
+  background: #3e4be1;
 }

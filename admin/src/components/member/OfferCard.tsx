@@ -22,7 +22,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({ offer, mediaSrc, favorite,
   return (
     <div className="group relative flex flex-col bg-[#0e0d0b] border border-[#2c2818] hover:border-[#d4af37]/60 rounded-md overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_40px_-12px_rgba(212,175,55,0.35)]">
       {/* Filete dourado no topo */}
-      <span className="absolute top-0 inset-x-0 h-[2px] z-10 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent opacity-70" />
+      <span className="absolute top-0 inset-x-0 h-[2px] z-10 bg-gradient-to-r from-[#bc060f] via-[#d4af37] to-[#3e4be1] opacity-80" />
 
       {/* CAPA ocupando a largura toda, com selos por cima */}
       <button onClick={onOpen} className="relative aspect-[4/5] overflow-hidden bg-gradient-to-br from-[#2c2818] to-[#0e0d0b] cursor-pointer">
@@ -42,7 +42,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({ offer, mediaSrc, favorite,
             {active ? '● Ativa' : 'Pausada'}
           </span>
           {isNewOffer(offer) && (
-            <span className="px-2 py-0.5 bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-[9px] font-extrabold uppercase tracking-widest text-black">Nova</span>
+            <span className="px-2 py-0.5 bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-[9px] font-extrabold uppercase tracking-widest text-white">Nova</span>
           )}
         </span>
         <span className="absolute bottom-2 left-3 right-3 text-left">

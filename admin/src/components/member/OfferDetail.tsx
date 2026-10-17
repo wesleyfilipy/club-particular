@@ -146,7 +146,7 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
 
       {/* FAIXA DE INFORMAÇÕES */}
       <div className={`${panel} relative overflow-hidden`}>
-        <span className="absolute left-0 inset-y-0 w-[3px] bg-gradient-to-b from-[#f6e27a] via-[#d4af37] to-[#a8801f]" />
+        <span className="absolute left-0 inset-y-0 w-[3px] bg-gradient-to-b from-[#bc060f] via-[#d4af37] to-[#3e4be1]" />
         <dl className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 divide-[#2c2818] [&>div]:border-[#2c2818] [&>div]:border-b xl:[&>div]:border-b-0 xl:[&>div:not(:last-child)]:border-r">
           {info.map(({ label, value, icon: Icon }) => (
             <div key={label} className="px-4 py-3 min-w-0">
@@ -237,7 +237,7 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
               </button>
             )}
             {offer.transcript && (
-              <button onClick={downloadTranscript} className="px-4 py-2 rounded-lg bg-[#d4af37]/25 border border-[#d4af37]/50 text-[#f3dc9a] font-semibold text-xs flex items-center gap-1.5 cursor-pointer">
+              <button onClick={downloadTranscript} className="px-4 py-2 rounded-lg bg-[#3e4be1]/25 border border-[#3e4be1]/50 text-[#c9cdff] font-semibold text-xs flex items-center gap-1.5 cursor-pointer">
                 <FileText className="w-4 h-4" /> Baixar transcrição
               </button>
             )}
@@ -315,7 +315,7 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
               <button
                 key={r.id}
                 onClick={() => setRange(r.id)}
-                className={`flex-1 py-1.5 rounded-md text-[11px] font-semibold cursor-pointer ${range === r.id ? 'bg-gradient-to-r from-[#f6e27a] via-[#d4af37] to-[#a8801f] text-black' : 'text-gray-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 rounded-md text-[11px] font-semibold cursor-pointer ${range === r.id ? 'bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white' : 'text-gray-400 hover:text-white'}`}
               >
                 {r.label}
               </button>
@@ -332,7 +332,7 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {pages.map(({ label, url, icon: Icon }) => (
               <a key={label} href={url} target="_blank" rel="noreferrer" className={`${panel} p-4 flex items-center gap-3 hover:border-[#d4af37]/50 transition-colors min-w-0`}>
-                <span className="w-10 h-10 rounded-md bg-[#d4af37]/20 flex items-center justify-center shrink-0">
+                <span className="w-10 h-10 rounded-md bg-[#3e4be1]/20 flex items-center justify-center shrink-0">
                   <Icon className="w-5 h-5 text-[#e8c766]" />
                 </span>
                 <span className="min-w-0 flex-1">
