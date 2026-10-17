@@ -42,6 +42,9 @@ export interface OfferItem {
   startedAt: string; // AAAA-MM-DD: desde quando a oferta está rodando
   ticketType: string; // Low Ticket, Mid Ticket, High Ticket
   transcript: string; // transcrição da VSL (texto colado pelo admin)
+  siteFilesKey: string; // chave R2 do arquivo do site baixado (ZIP), vazio quando não tem
+  siteFilesName: string;
+  siteFilesSize: string;
   createdAt?: string; // data de cadastro (preenchida pelo Supabase)
   updatedAt?: string; // última atualização
 }
@@ -100,6 +103,9 @@ const fromRow = (item: any): OfferItem => ({
   startedAt: item.started_at || '',
   ticketType: item.ticket_type || '',
   transcript: item.transcript || '',
+  siteFilesKey: item.site_files_key || '',
+  siteFilesName: item.site_files_name || '',
+  siteFilesSize: item.site_files_size || '',
   createdAt: item.created_at,
   updatedAt: item.updated_at,
 });
@@ -138,8 +144,19 @@ const toRow = (offer: OfferInput) => ({
   transcript: offer.transcript || null,
 });
 
+const toFullRow = (offer: OfferInput) => ({
+  ...toRow(offer),
+  site_files_key: offer.siteFilesKey || null,
+  site_files_name: offer.siteFilesName || null,
+  site_files_size: offer.siteFilesSize || null,
+});
+
 // Tenta salvar com todos os campos; se algum SQL ainda não foi rodado, salva com o que o banco já tem
-const ROW_VERSIONS = [toRow, toFilterRow, toLegacyRow];
+const ROW_VERSIONS = [toFullRow, toRow, toFilterRow, toLegacyRow];
+
+// Arquivo do site enviado mas o SQL arquivo_site.sql ainda não foi rodado: avisa em vez de perder o arquivo
+const SITE_FILES_SQL_MISSING =
+  'Para salvar o arquivo do site, rode antes o arquivo supabase/arquivo_site.sql no SQL Editor do Supabase.';
 
 // Coluna inexistente: o SQL painel_ofertas.sql ainda não foi rodado -> salva sem os campos novos
 const isMissingColumn = (error: { code?: string; message?: string } | null) =>
@@ -160,6 +177,7 @@ export const createOffer = async (offer: OfferInput): Promise<OfferItem> => {
   let error: any = null;
   for (const version of ROW_VERSIONS) {
     ({ data, error } = await supabase.from('es_offers').insert([version(offer)]).select('*').single());
+    if (version === toFullRow && isMissingColumn(error) && offer.siteFilesKey) throw new Error(SITE_FILES_SQL_MISSING);
     if (!isMissingColumn(error)) break;
   }
   if (error) throw new Error(error.message);
@@ -171,6 +189,7 @@ export const updateOffer = async (id: string, offer: OfferInput): Promise<OfferI
   let error: any = null;
   for (const version of ROW_VERSIONS) {
     ({ data, error } = await supabase.from('es_offers').update(version(offer)).eq('id', id).select('*').single());
+    if (version === toFullRow && isMissingColumn(error) && offer.siteFilesKey) throw new Error(SITE_FILES_SQL_MISSING);
     if (!isMissingColumn(error)) break;
   }
   if (error) throw new Error(error.message);

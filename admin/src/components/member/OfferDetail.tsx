@@ -20,6 +20,7 @@ import {
   CalendarDays,
   TrendingUp,
   Loader2,
+  FolderDown,
 } from 'lucide-react';
 import { OfferItem, isImageCreative } from '../../services/offersService';
 import { slugify, isR2Key, getR2PresignedDownloadUrl } from '../../services/r2';
@@ -326,10 +327,28 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
       </div>
 
       {/* PÁGINAS */}
-      {pages.length > 0 && (
+      {(pages.length > 0 || offer.siteFilesKey) && (
         <div className="space-y-3">
           <h3 className="text-sm font-bold">Páginas</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {offer.siteFilesKey && (
+              <button
+                onClick={() => onDownload(offer.siteFilesKey)}
+                disabled={downloadingKey === offer.siteFilesKey}
+                className={`${panel} p-4 flex items-center gap-3 text-left border-[#d4af37]/40 hover:border-[#d4af37] transition-colors min-w-0 cursor-pointer disabled:opacity-60`}
+              >
+                <span className="w-10 h-10 rounded-md bg-gradient-to-br from-[#f6e27a] via-[#d4af37] to-[#a8801f] flex items-center justify-center shrink-0">
+                  {downloadingKey === offer.siteFilesKey ? <Loader2 className="w-5 h-5 text-black animate-spin" /> : <FolderDown className="w-5 h-5 text-black" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-bold text-white">Arquivo do site</span>
+                  <span className="block text-[11px] text-gray-400 truncate">
+                    Site completo baixado{offer.siteFilesSize ? ` · ${offer.siteFilesSize}` : ''}
+                  </span>
+                </span>
+                <Download className="w-4 h-4 text-[#e8c766] shrink-0" />
+              </button>
+            )}
             {pages.map(({ label, url, icon: Icon }) => (
               <a key={label} href={url} target="_blank" rel="noreferrer" className={`${panel} p-4 flex items-center gap-3 hover:border-[#d4af37]/50 transition-colors min-w-0`}>
                 <span className="w-10 h-10 rounded-md bg-[#3e4be1]/20 flex items-center justify-center shrink-0">

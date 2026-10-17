@@ -4,6 +4,7 @@ import { uploadToR2, R2_BUCKET, slugify, getR2PresignedDownloadUrl } from '../se
 import { captureVideoFrame } from '../services/thumbnail';
 import { checkVideoFile } from '../services/videoCheck';
 import { optimizeForWeb } from '../services/faststart';
+import { zipFolder } from '../services/zipFolder';
 import {
   OfferItem,
   OfferInput,
@@ -48,6 +49,9 @@ const emptyForm = (): OfferInput => ({
   startedAt: '',
   ticketType: TICKET_TYPES[0],
   transcript: '',
+  siteFilesKey: '',
+  siteFilesName: '',
+  siteFilesSize: '',
 });
 
 const formatSize = (bytes: number) =>
@@ -57,7 +61,7 @@ const formatSize = (bytes: number) =>
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-type UploadSlot = 'vsl' | 'poster' | 'ads' | 'creative';
+type UploadSlot = 'vsl' | 'poster' | 'ads' | 'creative' | 'site';
 
 // Quantas ofertas podem ser cadastradas de uma vez (uma por aba)
 const BATCH_SIZE = 3;
@@ -70,7 +74,7 @@ interface Draft {
 const newDraft = (n: number): Draft => ({ folder: `oferta-${Date.now()}-${n}`, form: emptyForm() });
 
 const hasContent = (f: OfferInput) =>
-  !!(f.name.trim() || f.vslKey || f.posterKey || f.creativeKey || f.adVideos.length || f.dailyScale.length);
+  !!(f.name.trim() || f.vslKey || f.posterKey || f.creativeKey || f.siteFilesKey || f.adVideos.length || f.dailyScale.length);
 
 export const OffersManager: React.FC = () => {
   const [offersList, setOffersList] = useState<OfferItem[]>([]);
@@ -227,6 +231,33 @@ export const OffersManager: React.FC = () => {
         creativeKey: key,
         creativeFileName: file.name,
         creativeFileSize: formatSize(file.size),
+      }));
+    }
+  };
+
+  // Arquivo do site baixado: aceita um .zip pronto ou a pasta inteira (compactada aqui no navegador)
+  const [zippingSite, setZippingSite] = useState(false);
+  const handleSiteFilesUpload = async (files: FileList) => {
+    const idx = activeDraft;
+    let file = files[0];
+    if (files.length > 1 || file.webkitRelativePath) {
+      setZippingSite(true);
+      try {
+        file = await zipFolder(files);
+      } catch (err: any) {
+        setError(`Oferta ${idx + 1}: não foi possível compactar a pasta (${err.message || err}).`);
+        return;
+      } finally {
+        setZippingSite(false);
+      }
+    }
+    const key = await uploadFile(idx, 'site', 'site-files', file);
+    if (key) {
+      updateDraft(idx, (prev) => ({
+        ...prev,
+        siteFilesKey: key,
+        siteFilesName: file.name,
+        siteFilesSize: formatSize(file.size),
       }));
     }
   };
@@ -698,6 +729,71 @@ export const OffersManager: React.FC = () => {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* ARQUIVO DO SITE BAIXADO (opcional) */}
+              <div className="p-4 rounded-xl bg-[#0e0d0b] border border-[#2c2818] space-y-3">
+                <div>
+                  <span className="block font-bold text-xs text-gray-300">🌐 Arquivo do site baixado <span className="font-normal text-gray-500">(opcional — deixe em branco se não tiver)</span></span>
+                  <span className="block text-[11px] text-gray-500 mt-0.5">Escolha a pasta do site (o painel compacta em .zip sozinho) ou um arquivo .zip/.rar pronto.</span>
+                </div>
+                <input
+                  type="file"
+                  id="site-folder-input"
+                  className="hidden"
+                  {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) handleSiteFilesUpload(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+                <input
+                  type="file"
+                  id="site-zip-input"
+                  className="hidden"
+                  accept=".zip,.rar,.7z"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) handleSiteFilesUpload(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+                {zippingSite || uploads[`${activeDraft}-site`] !== undefined ? (
+                  <div className="p-3 rounded-xl border border-dashed border-[#d4af37]/50 text-center text-xs font-semibold text-gray-300 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#d4af37]" />
+                    {zippingSite ? 'Compactando a pasta...' : uploadLabel('site', '')}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label
+                      htmlFor="site-folder-input"
+                      className="cursor-pointer border border-dashed border-[#d4af37]/50 rounded-xl p-3 text-center block hover:bg-[#d4af37]/10 transition-all"
+                    >
+                      <UploadCloud className="w-5 h-5 text-[#d4af37] mx-auto mb-1" />
+                      <span className="text-xs font-semibold text-gray-300 block">Selecionar pasta do site</span>
+                    </label>
+                    <label
+                      htmlFor="site-zip-input"
+                      className="cursor-pointer border border-dashed border-[#2c2818] rounded-xl p-3 text-center block hover:bg-white/5 transition-all"
+                    >
+                      <Package className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+                      <span className="text-xs font-semibold text-gray-300 block">Selecionar arquivo .zip</span>
+                    </label>
+                  </div>
+                )}
+                {formData.siteFilesKey && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span className="truncate flex-1">{formData.siteFilesName} ({formData.siteFilesSize})</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, siteFilesKey: '', siteFilesName: '', siteFilesSize: '' })}
+                      className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white cursor-pointer"
+                      title="Remover arquivo do site"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* URLS DA OFERTA */}
