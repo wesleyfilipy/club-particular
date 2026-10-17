@@ -138,7 +138,7 @@ export const AdminMfa: React.FC<AdminMfaProps> = ({ email, onVerified, onLogout,
           <p className="text-xs text-gray-400">
             {isEmail
               ? emailSent
-                ? `Enviamos um código para ${maskedEmail}. Digite-o abaixo.`
+                ? `Enviamos um e-mail para ${maskedEmail}. Digite o código dele abaixo ou, se o e-mail tiver só um link, clique nele neste computador e depois em "Admin".`
                 : `Vamos enviar um código de acesso para o seu e-mail (${maskedEmail}).`
               : mode === 'enroll'
               ? 'Primeiro acesso: proteja o painel com o app autenticador do seu celular.'
