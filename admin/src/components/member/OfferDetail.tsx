@@ -22,7 +22,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { OfferItem, isImageCreative } from '../../services/offersService';
-import { slugify } from '../../services/r2';
+import { slugify, isR2Key, getR2PresignedDownloadUrl } from '../../services/r2';
 import { ScaleChart } from '../ScaleChart';
 import { lastAds, growthOf, sinceDate, formatAge } from './offerUtils';
 import { OfferCover, coverCandidates } from './OfferCover';
@@ -56,6 +56,26 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
   const [range, setRange] = useState<Range>('all');
   const [copied, setCopied] = useState(false);
   const [showAllCreatives, setShowAllCreatives] = useState(false);
+
+  // VSL que falhou: tenta 1 vez com um link novo (o link expira em algumas horas);
+  // se continuar falhando, o formato não é suportado por este navegador
+  const [freshVslUrl, setFreshVslUrl] = useState<string | null>(null);
+  const [retried, setRetried] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const vslSrc = freshVslUrl || mediaSrc(offer.vslKey);
+
+  const handleVideoError = async () => {
+    if (!retried && isR2Key(offer.vslKey)) {
+      setRetried(true);
+      try {
+        setFreshVslUrl(await getR2PresignedDownloadUrl(offer.vslKey, false));
+        return;
+      } catch {
+        // segue para o aviso
+      }
+    }
+    setVideoFailed(true);
+  };
 
   const ads = lastAds(offer);
   const growth = growthOf(offer);
@@ -145,12 +165,30 @@ export const OfferDetail: React.FC<OfferDetailProps> = ({ offer, mediaSrc, favor
       {/* VSL + PAINEL LATERAL */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-3 aspect-video bg-black rounded-2xl overflow-hidden border border-[#25244a]">
-          {mediaSrc(offer.vslKey) ? (
+          {vslSrc && videoFailed ? (
+            <div className="relative w-full h-full bg-gradient-to-br from-[#bc060f]/25 to-[#3e4be1]/25">
+              <OfferCover offer={offer} mediaSrc={mediaSrc} className="opacity-30" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+                <p className="text-sm font-semibold text-white">Seu navegador não conseguiu reproduzir esta VSL.</p>
+                <p className="text-xs text-gray-300 max-w-sm">O vídeo pode estar num formato que este navegador não toca. Baixe para assistir no seu computador ou celular.</p>
+                <button
+                  onClick={() => onDownload(offer.vslKey)}
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#bc060f] to-[#3e4be1] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" /> Baixar VSL
+                </button>
+              </div>
+            </div>
+          ) : vslSrc ? (
             <video
+              key={vslSrc}
               controls
+              playsInline
+              preload="metadata"
               poster={coverCandidates(offer, mediaSrc).find((c) => c.type === 'image')?.src}
               className="w-full h-full object-contain"
-              src={mediaSrc(offer.vslKey)}
+              src={vslSrc}
+              onError={handleVideoError}
             />
           ) : offer.vslKey ? (
             <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">Carregando VSL...</div>

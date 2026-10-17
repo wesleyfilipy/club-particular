@@ -242,6 +242,7 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ userEmail, use
           {/* OFERTAS / FAVORITOS */}
           {activeTab !== 'profile' && selectedOffer && (
             <OfferDetail
+              key={selectedOffer.id}
               offer={selectedOffer}
               mediaSrc={mediaSrc}
               favorite={favorites.has(selectedOffer.id)}

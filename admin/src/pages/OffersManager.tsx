@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, UploadCloud, Film, Package, CheckCircle2, Image as ImageIcon, Video, X, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
 import { uploadToR2, R2_BUCKET, slugify, getR2PresignedDownloadUrl } from '../services/r2';
 import { captureVideoFrame } from '../services/thumbnail';
+import { checkVideoFile } from '../services/videoCheck';
 import {
   OfferItem,
   OfferInput,
@@ -81,6 +82,8 @@ export const OffersManager: React.FC = () => {
   const [uploads, setUploads] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // Avisos sobre o vídeo da VSL escolhido em cada aba (formato, otimização, tamanho)
+  const [vslWarnings, setVslWarnings] = useState<Record<number, string[]>>({});
   const [scaleDate, setScaleDate] = useState(today());
   const [scaleAds, setScaleAds] = useState('');
 
@@ -106,6 +109,7 @@ export const OffersManager: React.FC = () => {
   const openCreate = () => {
     setEditingId(null);
     setDrafts(Array.from({ length: BATCH_SIZE }, (_, i) => newDraft(i + 1)));
+    setVslWarnings({});
     setActiveDraft(0);
     setError('');
     setShowModal(true);
@@ -115,6 +119,7 @@ export const OffersManager: React.FC = () => {
     const { id, ...rest } = offer;
     setEditingId(id);
     setDrafts([{ folder: id, form: rest }]);
+    setVslWarnings({});
     setActiveDraft(0);
     setError('');
     setShowModal(true);
@@ -149,6 +154,7 @@ export const OffersManager: React.FC = () => {
 
   const handleVslUpload = async (file: File) => {
     const idx = activeDraft;
+    checkVideoFile(file).then((w) => setVslWarnings((prev) => ({ ...prev, [idx]: w })));
     // Sem capa enviada: gera a capa a partir de um quadro da própria VSL (em paralelo ao upload)
     if (!drafts[idx].form.posterKey) autoPosterFromVideo(idx, file);
     const key = await uploadFile(idx, 'vsl', 'vsl', file);
@@ -589,6 +595,12 @@ export const OffersManager: React.FC = () => {
                         <span className="truncate">{formData.vslFileName}</span>
                       </div>
                     )}
+                    {(vslWarnings[activeDraft] || []).map((w) => (
+                      <div key={w} className="flex items-start gap-2 p-2 rounded-lg bg-amber-500/10 text-amber-300 text-[11px] leading-snug">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>{w}</span>
+                      </div>
+                    ))}
                   </div>
 
                   {/* CAPA */}
