@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, UploadCloud, Film, Package, CheckCircle2, Image as
 import { uploadToR2, R2_BUCKET, slugify, getR2PresignedDownloadUrl } from '../services/r2';
 import { captureVideoFrame } from '../services/thumbnail';
 import { checkVideoFile } from '../services/videoCheck';
+import { optimizeForWeb } from '../services/faststart';
 import {
   OfferItem,
   OfferInput,
@@ -152,9 +153,17 @@ export const OffersManager: React.FC = () => {
     }
   };
 
-  const handleVslUpload = async (file: File) => {
+  const handleVslUpload = async (original: File) => {
     const idx = activeDraft;
-    checkVideoFile(file).then((w) => setVslWarnings((prev) => ({ ...prev, [idx]: w })));
+    // Otimiza para web antes de enviar (índice no começo): a VSL começa a tocar na hora
+    const optimized = await optimizeForWeb(original);
+    const file = optimized || original;
+    checkVideoFile(file).then((w) =>
+      setVslWarnings((prev) => ({
+        ...prev,
+        [idx]: optimized ? ['Vídeo otimizado para web automaticamente: vai começar a tocar mais rápido.', ...w] : w,
+      }))
+    );
     // Sem capa enviada: gera a capa a partir de um quadro da própria VSL (em paralelo ao upload)
     if (!drafts[idx].form.posterKey) autoPosterFromVideo(idx, file);
     const key = await uploadFile(idx, 'vsl', 'vsl', file);
@@ -203,7 +212,8 @@ export const OffersManager: React.FC = () => {
     const idx = activeDraft;
     for (const file of Array.from(files)) {
       const type = file.type.startsWith('image/') ? 'image' : 'video';
-      const key = await uploadFile(idx, 'ads', 'ad-videos', file);
+      const toSend = type === 'video' ? (await optimizeForWeb(file)) || file : file;
+      const key = await uploadFile(idx, 'ads', 'ad-videos', toSend);
       if (key) updateDraft(idx, (prev) => ({ ...prev, adVideos: [...prev.adVideos, { key, name: file.name, type }] }));
     }
   };
