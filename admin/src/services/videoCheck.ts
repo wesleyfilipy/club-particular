@@ -4,7 +4,25 @@
 const HEAD_BYTES = 512 * 1024;
 const TAIL_BYTES = 4 * 1024 * 1024;
 
+const MAX_MBPS = 12;
+
 const asText = async (blob: Blob) => new TextDecoder('latin1').decode(await blob.arrayBuffer());
+
+/** Duração do vídeo em segundos (lida pelo próprio navegador, sem carregar o arquivo todo) */
+const videoDuration = (file: File): Promise<number> =>
+  new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    const done = (value: number) => {
+      URL.revokeObjectURL(url);
+      resolve(value);
+    };
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => done(isFinite(video.duration) ? video.duration : 0);
+    video.onerror = () => done(0);
+    setTimeout(() => done(0), 15000);
+    video.src = url;
+  });
 
 export async function checkVideoFile(file: File): Promise<string[]> {
   const warnings: string[] = [];
@@ -27,7 +45,14 @@ export async function checkVideoFile(file: File): Promise<string[]> {
       );
     }
 
-    if (file.size > 1024 * 1024 * 1024) {
+    // Peso por segundo (bitrate): acima de ~12 Mbps a VSL fica carregando para quem tem internet comum
+    const duration = await videoDuration(file);
+    const mbps = duration ? (file.size * 8) / duration / 1_000_000 : 0;
+    if (mbps > MAX_MBPS) {
+      warnings.push(
+        `Vídeo pesado demais para tocar online (${Math.round(mbps)} Mbps): vai ficar carregando para a maioria dos clientes. Comprima no HandBrake (preset "Fast 1080p30") antes de enviar.`
+      );
+    } else if (file.size > 1024 * 1024 * 1024) {
       warnings.push(`Arquivo muito grande (${(file.size / 1024 / 1024 / 1024).toFixed(1)} GB): pode demorar para carregar. Comprimir no HandBrake costuma reduzir bastante.`);
     }
   } catch {
