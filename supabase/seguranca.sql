@@ -5,12 +5,21 @@
 
 -- 1. ADMIN SÓ COM VERIFICAÇÃO EM 2 ETAPAS
 -- Os poderes de admin (ver/editar todas as ofertas, perfis e assinaturas)
--- só valem quando o login foi confirmado com o código do app autenticador
--- (sessão "aal2"). Só a senha não basta.
+-- só valem quando o login foi confirmado com o código enviado ao e-mail ou com o
+-- código do app autenticador (sessão "aal2"). Só a senha não basta.
 CREATE OR REPLACE FUNCTION public.es_is_admin(user_uuid UUID)
 RETURNS BOOLEAN AS $$
     SELECT EXISTS (SELECT 1 FROM public.es_profiles WHERE id = user_uuid AND role = 'admin')
-       AND COALESCE(auth.jwt() ->> 'aal', '') = 'aal2';
+       AND (
+            COALESCE(auth.jwt() ->> 'aal', '') = 'aal2'
+            OR EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(
+                    CASE WHEN jsonb_typeof(auth.jwt() -> 'amr') = 'array' THEN auth.jwt() -> 'amr' ELSE '[]'::jsonb END
+                ) AS m
+                WHERE m ->> 'method' IN ('totp', 'otp', 'magiclink')
+            )
+       );
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 
 -- 2. UM PERFIL POR E-MAIL

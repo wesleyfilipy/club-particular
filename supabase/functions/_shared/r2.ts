@@ -41,13 +41,19 @@ export interface AccessInfo {
   isActiveMember: boolean;
 }
 
-/** Nível de verificação do login (aal1 = só senha, aal2 = senha + código do autenticador) */
-const tokenAal = (token: string): string => {
+/**
+ * Login confirmado em 2 etapas: código do app autenticador (sessão "aal2")
+ * ou código enviado ao e-mail (método "otp"/"magiclink"). Só a senha não basta.
+ */
+const ADMIN_VERIFIED_METHODS = ['totp', 'otp', 'magiclink'];
+const tokenVerified = (token: string): boolean => {
   try {
     const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(atob(payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '='))).aal || '';
+    const claims = JSON.parse(atob(payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=')));
+    const methods: string[] = (claims.amr || []).map((m: { method?: string }) => m?.method || '');
+    return claims.aal === 'aal2' || methods.some((m) => ADMIN_VERIFIED_METHODS.includes(m));
   } catch {
-    return '';
+    return false;
   }
 };
 
@@ -69,9 +75,9 @@ export async function getAccess(req: Request): Promise<AccessInfo | null> {
     .eq('id', user.id)
     .maybeSingle();
 
-  // Admin só com login confirmado pelo app autenticador (verificação em 2 etapas = "aal2").
-  // O token já foi validado pelo getUser acima; aqui só lemos o nível de verificação dele.
-  const isAdmin = profile?.role === 'admin' && tokenAal(token) === 'aal2';
+  // Admin só com login confirmado em 2 etapas (código do e-mail ou do app autenticador).
+  // O token já foi validado pelo getUser acima; aqui só lemos como o login foi confirmado.
+  const isAdmin = profile?.role === 'admin' && tokenVerified(token);
 
   const { data: isActiveMember } = await supabaseAdmin.rpc('es_is_active_member', { user_uuid: user.id });
 

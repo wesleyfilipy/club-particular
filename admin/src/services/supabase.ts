@@ -108,3 +108,22 @@ export async function getUserRoleFromSupabase(userIdOrEmail?: string, emailParam
 
   return 'member';
 }
+
+/**
+ * Login de admin confirmado em 2 etapas: código do app autenticador (sessão "aal2")
+ * ou código enviado ao e-mail (login por código = método "otp"/"magiclink").
+ * Só a senha não basta. O banco e as funções fazem a mesma checagem.
+ */
+const ADMIN_VERIFIED_METHODS = ['totp', 'otp', 'magiclink'];
+
+export function isAdminVerified(accessToken?: string | null): boolean {
+  if (!accessToken) return false;
+  try {
+    const payload = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const claims = JSON.parse(atob(payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=')));
+    const methods: string[] = (claims.amr || []).map((m: { method?: string }) => m?.method || '');
+    return claims.aal === 'aal2' || methods.some((m) => ADMIN_VERIFIED_METHODS.includes(m));
+  } catch {
+    return false;
+  }
+}

@@ -6,7 +6,7 @@ import { VipLandingPage } from './pages/VipLandingPage';
 import { Paywall } from './pages/Paywall';
 import { ResetPassword } from './pages/ResetPassword';
 import { AdminMfa } from './pages/AdminMfa';
-import { supabase, getAccessStatus } from './services/supabase';
+import { supabase, getAccessStatus, isAdminVerified } from './services/supabase';
 import { verifySession, clearSession, startNewSession } from './services/session';
 
 // Link de "redefinir senha" do e-mail: o Supabase volta para o site com type=recovery
@@ -84,9 +84,9 @@ export default function App() {
         setView('member');
         return;
       }
-      // Painel admin: exige a verificação em 2 etapas (app autenticador)
-      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (aal?.currentLevel !== 'aal2') {
+      // Painel admin: exige a verificação em 2 etapas (código no e-mail ou app autenticador)
+      const { data: { session: current } } = await supabase.auth.getSession();
+      if (!isAdminVerified(current?.access_token)) {
         setView('mfa');
         return;
       }
@@ -166,6 +166,7 @@ export default function App() {
   if (view === 'mfa') {
     return (
       <AdminMfa
+        email={userEmail}
         onVerified={resolveView}
         onLogout={handleLogout}
         onCancel={() => {
